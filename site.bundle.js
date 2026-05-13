@@ -18,8 +18,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const chars = text.querySelectorAll(".cta_char");
 
+    gsap.set(text, {
+      overflow: "hidden"
+    });
+
     gsap.set(chars, {
-      display: "inline-block"
+      display: "inline-block",
+      yPercent: 0,
+      opacity: 1
     });
 
     gsap.set([arrow, circle], {
@@ -37,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
       yPercent: -100,
       opacity: 0,
       duration: 0.22,
-      stagger: 0.012,
+      stagger: 0.018,
       ease: "power2.in"
     }, 0);
 
@@ -49,10 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
     tl.to(chars, {
       yPercent: 0,
       opacity: 1,
-      duration: 0.45,
-      stagger: 0.012,
+      duration: 0.34,
+      stagger: 0.018,
       ease: "expo.out"
-    }, 0.24);
+    }, 0.28);
 
     tl.to(circle, {
       scale: 1.08,
@@ -64,22 +70,23 @@ document.addEventListener("DOMContentLoaded", () => {
       x: "0.75rem",
       y: "-0.75rem",
       opacity: 0,
-      duration: 0.25,
+      duration: 0.2,
       ease: "power2.in"
     }, 0);
 
     tl.set(arrow, {
       x: "-0.75rem",
-      y: "0.75rem"
+      y: "0.75rem",
+      opacity: 0
     });
 
     tl.to(arrow, {
       x: 0,
       y: 0,
       opacity: 1,
-      duration: 0.45,
+      duration: 0.28,
       ease: "expo.out"
-    });
+    }, 0.16);
 
     cta.addEventListener("mouseenter", () => {
       tl.restart();
