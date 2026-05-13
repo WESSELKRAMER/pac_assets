@@ -186,3 +186,17 @@ function initMaskTextScrollReveal() {
 document.addEventListener("DOMContentLoaded", () => {
   initMaskTextScrollReveal();
 });
+
+//Logo Marquee
+document.addEventListener("DOMContentLoaded", () => {
+
+  const track = document.querySelector(".logo-marquee_track");
+
+  gsap.to(track, {
+    xPercent: -50,
+    ease: "none",
+    duration: 50,
+    repeat: -1
+  });
+
+});
