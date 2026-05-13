@@ -135,15 +135,15 @@ function initCTAAnimation() {
 
       gsap.to(answer, {
         height: 0,
-        duration: 0.4,
-        ease: "expo.out"
+        duration: 0.65,
+        ease: "power2.out"
       });
 
       if (plusIcon) {
         gsap.to(plusIcon, {
           rotate: 0,
-          duration: 0.4,
-          ease: "expo.out"
+          duration: 0.65,
+          ease: "power2.out"
         });
       }
 
@@ -162,8 +162,8 @@ function initCTAAnimation() {
 
       gsap.to(answer, {
         height,
-        duration: 0.5,
-        ease: "expo.out",
+        duration: 0.65,
+        ease: "power2.out",
         onComplete: () => {
           gsap.set(answer, { height: "auto" });
         }
@@ -172,8 +172,8 @@ function initCTAAnimation() {
       if (plusIcon) {
         gsap.to(plusIcon, {
           rotate: 45,
-          duration: 0.5,
-          ease: "expo.out"
+          duration: 0.65,
+          ease: "power2.out"
         });
       }
 
