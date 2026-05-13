@@ -1,4 +1,5 @@
 // FAQ animation
+
 document.addEventListener("DOMContentLoaded", () => {
 
   const faqItems = document.querySelectorAll(".faq_item");
