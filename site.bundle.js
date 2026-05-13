@@ -95,52 +95,94 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Text animation
-gsap.registerPlugin(SplitText, ScrollTrigger);
-
-const splitConfig = {
-  lines: { duration: 0.8, stagger: 0.08 },
-  words: { duration: 0.6, stagger: 0.06 },
-  chars: { duration: 0.4, stagger: 0.01 }
-}
-
 function initMaskTextScrollReveal() {
-  document.querySelectorAll('[data-split="heading"]').forEach(heading => {
-    // Find the split type, the default is 'lines'
-    const type = heading.dataset.splitReveal || 'lines'
+  if (
+    typeof gsap === "undefined" ||
+    typeof SplitText === "undefined" ||
+    typeof ScrollTrigger === "undefined"
+  ) return;
+
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+
+  const splitConfig = {
+    lines: {
+      duration: 0.8,
+      stagger: 0.1
+    },
+    words: {
+      duration: 0.8,
+      stagger: 0.03
+    },
+    chars: {
+      duration: 0.8,
+      stagger: 0.015
+    }
+  };
+
+  document.querySelectorAll('[data-split="heading"]').forEach((heading) => {
+
+    const type = ["lines", "words", "chars"].includes(
+      heading.dataset.splitReveal
+    )
+      ? heading.dataset.splitReveal
+      : "lines";
+
+    const isImmediate =
+      heading.dataset.splitImmediate === "true";
+
     const typesToSplit =
-      type === 'lines' ? ['lines'] :
-      type === 'words' ? ['lines','words'] :
-      ['lines','words','chars']
-    
-    // Split the text
+      type === "lines"
+        ? ["lines"]
+        : type === "words"
+        ? ["lines", "words"]
+        : ["lines", "words", "chars"];
+
     SplitText.create(heading, {
-      type: typesToSplit.join(', '), // split into required elements
-      mask: 'lines', // wrap each line in an overflow:hidden div
+      type: typesToSplit.join(","),
+      mask: "lines",
       autoSplit: true,
-      linesClass: 'line',
-      wordsClass: 'word',
-      charsClass: 'letter',
-      onSplit: function(instance) {
-        const targets = instance[type] // Register animation targets
-        const config = splitConfig[type] // Find matching duration and stagger from our splitConfig
-        
-        return gsap.from(targets, {
+      linesClass: "line",
+      wordsClass: "word",
+      charsClass: "letter",
+
+      onSplit(instance) {
+
+        const targets = instance[type];
+        const config = splitConfig[type];
+
+        if (!targets || !targets.length) return;
+
+        const animation = {
           yPercent: 110,
           duration: config.duration,
           stagger: config.stagger,
-          ease: 'expo.out',
+          ease: "expo.out"
+        };
+
+        if (isImmediate) {
+
+          return gsap.from(targets, {
+            ...animation,
+            delay: 0.2
+          });
+
+        }
+
+        return gsap.from(targets, {
+          ...animation,
           scrollTrigger: {
             trigger: heading,
-            start: 'clamp(top 80%)',
+            start: "top 80%",
             once: true
           }
         });
-      }
-    })
-  })
 
+      }
+    });
+
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initMaskTextScrollReveal()
+  initMaskTextScrollReveal();
 });
