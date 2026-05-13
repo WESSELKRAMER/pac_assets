@@ -55,11 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   faqItems.forEach((item, index) => {
-    const question = item.querySelector(".faq_question");
     const answer = item.querySelector(".faq_answer");
     const plusIcon = item.querySelector(".plus_icon, .cta_arrow_wrapper");
 
-    if (!question || !answer) return;
+    if (!answer) return;
 
     const isFirst = index === 0;
 
@@ -76,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     item.dataset.open = isFirst ? "true" : "false";
 
-    question.addEventListener("click", () => {
+    item.addEventListener("click", () => {
       const isOpen = item.dataset.open === "true";
 
       if (isOpen) {
