@@ -9,7 +9,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!text || !arrow || !circle) return;
 
-    gsap.set([text, arrow, circle], {
+    const originalText = text.textContent.trim();
+
+    text.innerHTML = originalText
+      .split("")
+      .map((char) => {
+        const safeChar = char === " " ? "&nbsp;" : char;
+        return `<span class="cta_char">${safeChar}</span>`;
+      })
+      .join("");
+
+    const chars = text.querySelectorAll(".cta_char");
+
+    gsap.set(chars, {
+      display: "inline-block",
+      y: 0
+    });
+
+    gsap.set([arrow, circle], {
       transformOrigin: "50% 50%"
     });
 
@@ -20,10 +37,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    tl.to(text, {
-      x: "0.35rem",
-      duration: 0.45
+    tl.to(chars, {
+      yPercent: -100,
+      opacity: 0,
+      duration: 0.25,
+      stagger: 0.015,
+      ease: "power2.in"
     }, 0);
+
+    tl.set(chars, {
+      yPercent: 100,
+      opacity: 0
+    });
+
+    tl.to(chars, {
+      yPercent: 0,
+      opacity: 1,
+      duration: 0.45,
+      stagger: 0.015
+    });
 
     tl.to(circle, {
       scale: 1.08,
@@ -48,19 +80,13 @@ document.addEventListener("DOMContentLoaded", () => {
       y: 0,
       opacity: 1,
       duration: 0.45
-    });
+    }, 0.25);
 
     cta.addEventListener("mouseenter", () => {
       tl.restart();
     });
 
     cta.addEventListener("mouseleave", () => {
-      gsap.to(text, {
-        x: 0,
-        duration: 0.35,
-        ease: "expo.out"
-      });
-
       gsap.to(circle, {
         scale: 1,
         duration: 0.35,
