@@ -200,3 +200,40 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
+//Footer link hover
+document.addEventListener("DOMContentLoaded", () => {
+
+  const links = document.querySelectorAll(".footer_link");
+
+  links.forEach((link) => {
+
+    link.addEventListener("mouseenter", () => {
+
+      links.forEach((otherLink) => {
+
+        if (otherLink !== link) {
+          gsap.to(otherLink, {
+            opacity: 0.3,
+            duration: 0.4,
+            ease: "expo.out"
+          });
+        }
+
+      });
+
+    });
+
+    link.addEventListener("mouseleave", () => {
+
+      gsap.to(links, {
+        opacity: 1,
+        duration: 0.4,
+        ease: "expo.out"
+      });
+
+    });
+
+  });
+
+});
