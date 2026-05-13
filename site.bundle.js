@@ -19,208 +19,107 @@
     });
   }
 
-  // CTA animation
-  function initCTAAnimation() {
-    if (!hasGSAP()) return;
+// CTA animation
+function initCTAAnimation() {
+  if (!hasGSAP()) return;
 
-    document.querySelectorAll(".primary_cta").forEach((cta) => {
-      const text = cta.querySelector(".cta_text");
-      const arrow = cta.querySelector(".cta_arrow");
-      const circle = cta.querySelector(".cta_arrow_wrapper");
+  document.querySelectorAll(".primary_cta, .grid_card_cta_wrapper").forEach((cta) => {
+    const text = cta.querySelector(".cta_text, .grid_card_cta_text");
+    const arrow = cta.querySelector(".cta_arrow");
+    const circle = cta.querySelector(".cta_arrow_wrapper");
 
-      if (!text || !arrow || !circle) return;
-      if (text.dataset.ctaSplit === "true") return;
+    if (!text || !arrow || !circle) return;
+    if (text.dataset.ctaSplit === "true") return;
 
-      const originalText = text.textContent.trim();
+    const originalText = text.textContent.trim();
 
-      text.innerHTML = originalText
-        .split("")
-        .map((char) => `<span class="cta_char">${char === " " ? "&nbsp;" : char}</span>`)
-        .join("");
+    text.innerHTML = originalText
+      .split("")
+      .map((char) => `<span class="cta_char">${char === " " ? "&nbsp;" : char}</span>`)
+      .join("");
 
-      text.dataset.ctaSplit = "true";
+    text.dataset.ctaSplit = "true";
 
-      const chars = text.querySelectorAll(".cta_char");
+    const chars = text.querySelectorAll(".cta_char");
 
-      gsap.set(text, { overflow: "hidden" });
-      gsap.set(chars, { display: "inline-block" });
-      gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
+    gsap.set(text, { overflow: "hidden" });
+    gsap.set(chars, { display: "inline-block" });
+    gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
 
-      cta.addEventListener("mouseenter", () => {
-        gsap.killTweensOf([arrow, circle, chars]);
+    cta.addEventListener("mouseenter", () => {
+      gsap.killTweensOf([arrow, circle, chars]);
 
-        gsap.to(chars, {
-          yPercent: -100,
-          opacity: 0,
-          duration: 0.22,
-          stagger: 0.018,
-          ease: "power2.in",
-          onComplete: () => {
-            gsap.fromTo(
-              chars,
-              { yPercent: 100, opacity: 0 },
-              {
-                yPercent: 0,
-                opacity: 1,
-                duration: 0.38,
-                stagger: 0.018,
-                ease: "expo.out"
-              }
-            );
-          }
-        });
-
-        gsap.to(circle, {
-          scale: 1.08,
-          duration: 0.4,
-          ease: "expo.out"
-        });
-
-        gsap.to(arrow, {
-          x: "0.75rem",
-          y: "-0.75rem",
-          opacity: 0,
-          duration: 0.18,
-          ease: "power2.in",
-          onComplete: () => {
-            gsap.fromTo(
-              arrow,
-              {
-                x: "-0.75rem",
-                y: "0.75rem",
-                opacity: 0
-              },
-              {
-                x: 0,
-                y: 0,
-                opacity: 1,
-                duration: 0.28,
-                ease: "expo.out"
-              }
-            );
-          }
-        });
+      gsap.to(chars, {
+        yPercent: -100,
+        opacity: 0,
+        duration: 0.22,
+        stagger: 0.018,
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.fromTo(
+            chars,
+            { yPercent: 100, opacity: 0 },
+            {
+              yPercent: 0,
+              opacity: 1,
+              duration: 0.38,
+              stagger: 0.018,
+              ease: "expo.out"
+            }
+          );
+        }
       });
 
-      cta.addEventListener("mouseleave", () => {
-        gsap.to(circle, {
-          scale: 1,
-          duration: 0.35,
-          ease: "expo.out"
-        });
+      gsap.to(circle, {
+        scale: 1.08,
+        duration: 0.4,
+        ease: "expo.out"
+      });
 
-        gsap.to(arrow, {
-          x: 0,
-          y: 0,
-          opacity: 1,
-          duration: 0.2,
-          ease: "expo.out"
-        });
+      gsap.to(arrow, {
+        x: "0.75rem",
+        y: "-0.75rem",
+        opacity: 0,
+        duration: 0.18,
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.fromTo(
+            arrow,
+            {
+              x: "-0.75rem",
+              y: "0.75rem",
+              opacity: 0
+            },
+            {
+              x: 0,
+              y: 0,
+              opacity: 1,
+              duration: 0.28,
+              ease: "expo.out"
+            }
+          );
+        }
       });
     });
-  }
 
-   // Card CTA animation
-  function initCTAAnimation() {
-    if (!hasGSAP()) return;
-
-    document.querySelectorAll(".grid_card_cta_wrapper").forEach((cta) => {
-      const text = cta.querySelector(".cta_text");
-      const arrow = cta.querySelector(".cta_arrow");
-      const circle = cta.querySelector(".cta_arrow_wrapper");
-
-      if (!text || !arrow || !circle) return;
-      if (text.dataset.ctaSplit === "true") return;
-
-      const originalText = text.textContent.trim();
-
-      text.innerHTML = originalText
-        .split("")
-        .map((char) => `<span class="cta_char">${char === " " ? "&nbsp;" : char}</span>`)
-        .join("");
-
-      text.dataset.ctaSplit = "true";
-
-      const chars = text.querySelectorAll(".cta_char");
-
-      gsap.set(text, { overflow: "hidden" });
-      gsap.set(chars, { display: "inline-block" });
-      gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
-
-      cta.addEventListener("mouseenter", () => {
-        gsap.killTweensOf([arrow, circle, chars]);
-
-        gsap.to(chars, {
-          yPercent: -100,
-          opacity: 0,
-          duration: 0.22,
-          stagger: 0.018,
-          ease: "power2.in",
-          onComplete: () => {
-            gsap.fromTo(
-              chars,
-              { yPercent: 100, opacity: 0 },
-              {
-                yPercent: 0,
-                opacity: 1,
-                duration: 0.38,
-                stagger: 0.018,
-                ease: "expo.out"
-              }
-            );
-          }
-        });
-
-        gsap.to(circle, {
-          scale: 1.08,
-          duration: 0.4,
-          ease: "expo.out"
-        });
-
-        gsap.to(arrow, {
-          x: "0.75rem",
-          y: "-0.75rem",
-          opacity: 0,
-          duration: 0.18,
-          ease: "power2.in",
-          onComplete: () => {
-            gsap.fromTo(
-              arrow,
-              {
-                x: "-0.75rem",
-                y: "0.75rem",
-                opacity: 0
-              },
-              {
-                x: 0,
-                y: 0,
-                opacity: 1,
-                duration: 0.28,
-                ease: "expo.out"
-              }
-            );
-          }
-        });
+    cta.addEventListener("mouseleave", () => {
+      gsap.to(circle, {
+        scale: 1,
+        duration: 0.35,
+        ease: "expo.out"
       });
 
-      cta.addEventListener("mouseleave", () => {
-        gsap.to(circle, {
-          scale: 1,
-          duration: 0.35,
-          ease: "expo.out"
-        });
-
-        gsap.to(arrow, {
-          x: 0,
-          y: 0,
-          opacity: 1,
-          duration: 0.2,
-          ease: "expo.out"
-        });
+      gsap.to(arrow, {
+        x: 0,
+        y: 0,
+        opacity: 1,
+        duration: 0.2,
+        ease: "expo.out"
       });
     });
-  }
-
+  });
+}
+  
   // FAQ animation
   function initFAQAnimation() {
     if (!hasGSAP()) return;
