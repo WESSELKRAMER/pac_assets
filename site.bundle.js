@@ -4,10 +4,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".primary_cta").forEach((cta) => {
     const text = cta.querySelector(".cta_text");
-    const arrow = cta.querySelector(".cta_arrow");
+    const arrowCurrent = cta.querySelector(".cta_arrow.is-current");
+    const arrowNext = cta.querySelector(".cta_arrow.is-next");
     const circle = cta.querySelector(".cta_arrow_wrapper");
 
-    if (!text || !arrow || !circle) return;
+    if (!text || !arrowCurrent || !arrowNext || !circle) return;
 
     const originalText = text.textContent.trim();
 
@@ -18,26 +19,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const chars = text.querySelectorAll(".cta_char");
 
-    gsap.set(text, {
-      overflow: "hidden"
-    });
+    gsap.set(text, { overflow: "hidden" });
+    gsap.set(chars, { display: "inline-block" });
+    gsap.set(circle, { transformOrigin: "50% 50%" });
 
-    gsap.set(chars, {
-      display: "inline-block",
-      yPercent: 0,
-      opacity: 1
-    });
-
-    gsap.set([arrow, circle], {
-      transformOrigin: "50% 50%"
-    });
-
-    const tl = gsap.timeline({
-      paused: true,
-      defaults: {
-        ease: "expo.out"
-      }
-    });
+    const tl = gsap.timeline({ paused: true });
 
     tl.to(chars, {
       yPercent: -100,
@@ -55,38 +41,40 @@ document.addEventListener("DOMContentLoaded", () => {
     tl.to(chars, {
       yPercent: 0,
       opacity: 1,
-      duration: 0.34,
+      duration: 0.38,
       stagger: 0.018,
       ease: "expo.out"
     }, 0.28);
 
     tl.to(circle, {
       scale: 1.08,
-      duration: 0.45,
+      duration: 0.4,
       ease: "expo.out"
     }, 0);
 
-    tl.to(arrow, {
+    tl.to(arrowCurrent, {
       x: "0.75rem",
       y: "-0.75rem",
       opacity: 0,
-      duration: 0.2,
+      duration: 0.22,
       ease: "power2.in"
     }, 0);
 
-    tl.set(arrow, {
-      x: "-0.75rem",
-      y: "0.75rem",
-      opacity: 0
-    });
-
-    tl.to(arrow, {
-      x: 0,
-      y: 0,
-      opacity: 1,
-      duration: 0.28,
-      ease: "expo.out"
-    }, 0.16);
+    tl.fromTo(arrowNext,
+      {
+        x: "-0.75rem",
+        y: "0.75rem",
+        opacity: 0
+      },
+      {
+        x: 0,
+        y: 0,
+        opacity: 1,
+        duration: 0.32,
+        ease: "expo.out"
+      },
+      0.12
+    );
 
     cta.addEventListener("mouseenter", () => {
       tl.restart();
