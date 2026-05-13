@@ -1,3 +1,16 @@
+// Dynamic year
+function initDynamicCurrentYear() {  
+  const currentYear = new Date().getFullYear();
+  const currentYearElements = document.querySelectorAll('[data-current-year]');
+  currentYearElements.forEach(currentYearElement => {
+    currentYearElement.textContent = currentYear;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initDynamicCurrentYear();
+});
+
 // FAQ animation
 document.addEventListener("DOMContentLoaded", () => {
   if (typeof gsap === "undefined") return;
