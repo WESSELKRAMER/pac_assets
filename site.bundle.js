@@ -3,18 +3,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const faqItems = document.querySelectorAll(".faq_item");
 
-  faqItems.forEach((item) => {
+  faqItems.forEach((item, index) => {
 
     const question = item.querySelector(".faq_question");
     const answer = item.querySelector(".faq_answer");
+    const plusIcon = item.querySelector(".plus_icon");
+
+    const isFirst = index === 0;
 
     gsap.set(answer, {
-      height: 0
+      height: isFirst ? "auto" : 0
     });
 
-    let isOpen = false;
+    gsap.set(plusIcon, {
+      rotate: isFirst ? 45 : 0
+    });
+
+    item.dataset.open = isFirst ? "true" : "false";
 
     question.addEventListener("click", () => {
+
+      const isOpen = item.dataset.open === "true";
 
       if (!isOpen) {
 
@@ -24,6 +33,14 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "expo.out"
         });
 
+        gsap.to(plusIcon, {
+          rotate: 45,
+          duration: 0.5,
+          ease: "expo.out"
+        });
+
+        item.dataset.open = "true";
+
       } else {
 
         gsap.to(answer, {
@@ -32,9 +49,15 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "expo.out"
         });
 
-      }
+        gsap.to(plusIcon, {
+          rotate: 0,
+          duration: 0.4,
+          ease: "expo.out"
+        });
 
-      isOpen = !isOpen;
+        item.dataset.open = "false";
+
+      }
 
     });
 
