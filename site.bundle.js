@@ -4,11 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".primary_cta").forEach((cta) => {
     const text = cta.querySelector(".cta_text");
-    const arrowCurrent = cta.querySelector(".cta_arrow.is-current");
-    const arrowNext = cta.querySelector(".cta_arrow.is-next");
+    const arrow = cta.querySelector(".cta_arrow");
     const circle = cta.querySelector(".cta_arrow_wrapper");
 
-    if (!text || !arrowCurrent || !arrowNext || !circle) return;
+    if (!text || !arrow || !circle) return;
 
     const originalText = text.textContent.trim();
 
@@ -21,69 +20,74 @@ document.addEventListener("DOMContentLoaded", () => {
 
     gsap.set(text, { overflow: "hidden" });
     gsap.set(chars, { display: "inline-block" });
-    gsap.set(circle, { transformOrigin: "50% 50%" });
-
-    const tl = gsap.timeline({ paused: true });
-
-    tl.to(chars, {
-      yPercent: -100,
-      opacity: 0,
-      duration: 0.22,
-      stagger: 0.018,
-      ease: "power2.in"
-    }, 0);
-
-    tl.set(chars, {
-      yPercent: 100,
-      opacity: 0
-    });
-
-    tl.to(chars, {
-      yPercent: 0,
-      opacity: 1,
-      duration: 0.38,
-      stagger: 0.018,
-      ease: "expo.out"
-    }, 0.28);
-
-    tl.to(circle, {
-      scale: 1.08,
-      duration: 0.4,
-      ease: "expo.out"
-    }, 0);
-
-    tl.to(arrowCurrent, {
-      x: "0.75rem",
-      y: "-0.75rem",
-      opacity: 0,
-      duration: 0.22,
-      ease: "power2.in"
-    }, 0);
-
-    tl.fromTo(arrowNext,
-      {
-        x: "-0.75rem",
-        y: "0.75rem",
-        opacity: 0
-      },
-      {
-        x: 0,
-        y: 0,
-        opacity: 1,
-        duration: 0.32,
-        ease: "expo.out"
-      },
-      0.12
-    );
+    gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
 
     cta.addEventListener("mouseenter", () => {
-      tl.restart();
+      gsap.killTweensOf([arrow, circle, chars]);
+
+      gsap.to(chars, {
+        yPercent: -100,
+        opacity: 0,
+        duration: 0.22,
+        stagger: 0.018,
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.fromTo(chars,
+            { yPercent: 100, opacity: 0 },
+            {
+              yPercent: 0,
+              opacity: 1,
+              duration: 0.38,
+              stagger: 0.018,
+              ease: "expo.out"
+            }
+          );
+        }
+      });
+
+      gsap.to(circle, {
+        scale: 1.08,
+        duration: 0.4,
+        ease: "expo.out"
+      });
+
+      gsap.to(arrow, {
+        x: "0.75rem",
+        y: "-0.75rem",
+        opacity: 0,
+        duration: 0.18,
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.fromTo(arrow,
+            {
+              x: "-0.75rem",
+              y: "0.75rem",
+              opacity: 0
+            },
+            {
+              x: 0,
+              y: 0,
+              opacity: 1,
+              duration: 0.28,
+              ease: "expo.out"
+            }
+          );
+        }
+      });
     });
 
     cta.addEventListener("mouseleave", () => {
       gsap.to(circle, {
         scale: 1,
         duration: 0.35,
+        ease: "expo.out"
+      });
+
+      gsap.to(arrow, {
+        x: 0,
+        y: 0,
+        opacity: 1,
+        duration: 0.2,
         ease: "expo.out"
       });
     });
