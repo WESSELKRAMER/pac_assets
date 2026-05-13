@@ -1,3 +1,75 @@
+// CTA animation
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof gsap === "undefined") return;
+
+  document.querySelectorAll(".primary_cta").forEach((cta) => {
+    const text = cta.querySelector(".cta_text");
+    const arrow = cta.querySelector(".cta_arrow");
+    const circle = cta.querySelector(".cta_arrow_wrapper");
+
+    if (!text || !arrow || !circle) return;
+
+    gsap.set([text, arrow, circle], {
+      transformOrigin: "50% 50%"
+    });
+
+    const tl = gsap.timeline({
+      paused: true,
+      defaults: {
+        ease: "expo.out"
+      }
+    });
+
+    tl.to(text, {
+      x: "0.35rem",
+      duration: 0.45
+    }, 0);
+
+    tl.to(circle, {
+      scale: 1.08,
+      duration: 0.45
+    }, 0);
+
+    tl.to(arrow, {
+      x: "0.75rem",
+      y: "-0.75rem",
+      opacity: 0,
+      duration: 0.25,
+      ease: "power2.in"
+    }, 0);
+
+    tl.set(arrow, {
+      x: "-0.75rem",
+      y: "0.75rem"
+    });
+
+    tl.to(arrow, {
+      x: 0,
+      y: 0,
+      opacity: 1,
+      duration: 0.45
+    });
+
+    cta.addEventListener("mouseenter", () => {
+      tl.restart();
+    });
+
+    cta.addEventListener("mouseleave", () => {
+      gsap.to(text, {
+        x: 0,
+        duration: 0.35,
+        ease: "expo.out"
+      });
+
+      gsap.to(circle, {
+        scale: 1,
+        duration: 0.35,
+        ease: "expo.out"
+      });
+    });
+  });
+});
+
 // Dynamic year
 function initDynamicCurrentYear() {  
   const currentYear = new Date().getFullYear();
