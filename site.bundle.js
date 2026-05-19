@@ -1,3 +1,55 @@
+// Navbar Hide on Scroll
+document.addEventListener("DOMContentLoaded", () => {
+  const navbar = document.querySelector(".navbar");
+  if (!navbar) return;
+
+  let lastScroll = window.pageYOffset;
+  let ticking = false;
+
+  gsap.set(navbar, {
+    yPercent: 0
+  });
+
+  function handleScroll() {
+    const currentScroll = window.pageYOffset;
+    const scrollingDown = currentScroll > lastScroll;
+
+    if (currentScroll <= 10) {
+      gsap.to(navbar, {
+        yPercent: 0,
+        duration: 0.4,
+        ease: "expo.out"
+      });
+    } else if (scrollingDown) {
+      gsap.to(navbar, {
+        yPercent: -100,
+        duration: 0.5,
+        ease: "expo.out"
+      });
+    } else {
+      gsap.to(navbar, {
+        yPercent: 0,
+        duration: 0.5,
+        ease: "expo.out"
+      });
+    }
+
+    lastScroll = currentScroll;
+    ticking = false;
+  }
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!ticking) {
+        requestAnimationFrame(handleScroll);
+        ticking = true;
+      }
+    },
+    { passive: true }
+  );
+});
+
 (function () {
   function onReady(callback) {
     if (document.readyState === "loading") {
