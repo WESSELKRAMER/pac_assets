@@ -91,6 +91,70 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Cursor-following blob
+  function initCursorBlob() {
+    if (!hasGSAP()) return;
+
+    document.querySelectorAll("[data-blob-section]").forEach((section) => {
+      const blob = section.querySelector(".blob");
+      if (!blob) return;
+      if (section.dataset.blobInitialized === "true") return;
+      section.dataset.blobInitialized = "true";
+
+      // Blob centreren op zijn eigen middelpunt en in het midden van de section zetten
+      gsap.set(blob, {
+        xPercent: -50,
+        yPercent: -50,
+        x: section.offsetWidth / 2,
+        y: section.offsetHeight / 2
+      });
+
+      // Geen cursor (touch): blob blijft in het midden staan
+      if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
+      // Hogere duration = trager meebewegen
+      const xTo = gsap.quickTo(blob, "x", { duration: 2.5, ease: "power3.out" });
+      const yTo = gsap.quickTo(blob, "y", { duration: 2.5, ease: "power3.out" });
+
+      let mouseX = null;
+      let mouseY = null;
+      let isInside = false;
+
+      function updateTarget() {
+        if (mouseX === null) return;
+        const rect = section.getBoundingClientRect();
+        xTo(mouseX - rect.left);
+        yTo(mouseY - rect.top);
+      }
+
+      section.addEventListener("mouseenter", () => {
+        isInside = true;
+      });
+
+      section.addEventListener("mousemove", (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        updateTarget();
+      });
+
+      section.addEventListener("mouseleave", () => {
+        isInside = false;
+        // Terug naar het midden als de cursor de section verlaat
+        xTo(section.offsetWidth / 2);
+        yTo(section.offsetHeight / 2);
+      });
+
+      // Blob blijft onder de cursor als je scrollt zonder de muis te bewegen
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (isInside) updateTarget();
+        },
+        { passive: true }
+      );
+    });
+  }
+
   // CTA animation
   function initCTAAnimation() {
     if (!hasGSAP()) return;
@@ -459,6 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
   onReady(() => {
     initDynamicCurrentYear();
     initUnselectableText();
+    initCursorBlob();
     initCTAAnimation();
     initFAQAnimation();
     initMaskTextScrollReveal();
