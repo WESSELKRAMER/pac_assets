@@ -377,6 +377,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Big logo reveal (footer)
+  function initBigLogoReveal() {
+    if (!hasGSAP() || typeof window.ScrollTrigger === "undefined") return;
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.querySelectorAll(".big_logo").forEach((logo) => {
+      if (logo.dataset.logoRevealInitialized === "true") return;
+      logo.dataset.logoRevealInitialized = "true";
+
+      // Sorteer paths van links naar rechts zodat de stagger klopt
+      const paths = Array.from(logo.querySelectorAll("path")).sort((a, b) => {
+        return a.getBBox().x - b.getBBox().x;
+      });
+
+      if (!paths.length) return;
+
+      // SVG fungeert als mask
+      gsap.set(logo, { overflow: "hidden" });
+
+      gsap.from(paths, {
+        yPercent: 110,
+        duration: 1,
+        stagger: 0.04,
+        ease: "expo.out",
+        scrollTrigger: {
+          trigger: logo,
+          start: "top 95%",
+          once: true
+        }
+      });
+    });
+  }
+
   // Logo marquee
   function initLogoMarquee() {
     if (!hasGSAP()) return;
@@ -428,6 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initCTAAnimation();
     initFAQAnimation();
     initMaskTextScrollReveal();
+    initBigLogoReveal();
     initLogoMarquee();
     initFooterLinkHover();
 
