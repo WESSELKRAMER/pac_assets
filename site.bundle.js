@@ -137,11 +137,9 @@ document.addEventListener("DOMContentLoaded", () => {
         updateTarget();
       });
 
+      // Blob blijft staan op de plek waar de cursor de section verliet
       section.addEventListener("mouseleave", () => {
         isInside = false;
-        // Terug naar het midden als de cursor de section verlaat
-        xTo(section.offsetWidth / 2);
-        yTo(section.offsetHeight / 2);
       });
 
       // Blob blijft onder de cursor als je scrollt zonder de muis te bewegen
