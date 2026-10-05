@@ -71,107 +71,127 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-// CTA animation
-function initCTAAnimation() {
-  if (!hasGSAP()) return;
+  // Unselectable text
+  function initUnselectableText() {
+    const elements = document.querySelectorAll("[data-no-select]");
+    if (!elements.length) return;
 
-  document.querySelectorAll(".primary_cta, .grid_card_cta_wrapper").forEach((cta) => {
-    const text = cta.querySelector(".cta_text, .grid_card_cta_text");
-    const arrow = cta.querySelector(".cta_arrow");
-    const circle = cta.querySelector(".cta_arrow_wrapper");
+    elements.forEach((el) => {
+      if (el.dataset.noSelectInitialized === "true") return;
+      el.dataset.noSelectInitialized = "true";
 
-    if (!text || !arrow || !circle) return;
-    if (text.dataset.ctaSplit === "true") return;
+      el.style.userSelect = "none";
+      el.style.webkitUserSelect = "none";
+      el.style.msUserSelect = "none";
+      el.style.webkitTouchCallout = "none";
 
-    const originalText = text.textContent.trim();
+      el.addEventListener("selectstart", (e) => e.preventDefault());
+      el.addEventListener("copy", (e) => e.preventDefault());
+      el.addEventListener("dragstart", (e) => e.preventDefault());
+    });
+  }
 
-    text.innerHTML = originalText
-      .split("")
-      .map((char) => `<span class="cta_char">${char === " " ? "&nbsp;" : char}</span>`)
-      .join("");
+  // CTA animation
+  function initCTAAnimation() {
+    if (!hasGSAP()) return;
 
-    text.dataset.ctaSplit = "true";
+    document.querySelectorAll(".primary_cta, .grid_card_cta_wrapper").forEach((cta) => {
+      const text = cta.querySelector(".cta_text, .grid_card_cta_text");
+      const arrow = cta.querySelector(".cta_arrow");
+      const circle = cta.querySelector(".cta_arrow_wrapper");
 
-    const chars = text.querySelectorAll(".cta_char");
+      if (!text || !arrow || !circle) return;
+      if (text.dataset.ctaSplit === "true") return;
 
-    gsap.set(text, { overflow: "hidden" });
-    gsap.set(chars, { display: "inline-block" });
-    gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
+      const originalText = text.textContent.trim();
 
-    cta.addEventListener("mouseenter", () => {
-      gsap.killTweensOf([arrow, circle, chars]);
+      text.innerHTML = originalText
+        .split("")
+        .map((char) => `<span class="cta_char">${char === " " ? "&nbsp;" : char}</span>`)
+        .join("");
 
-      gsap.to(chars, {
-        yPercent: -100,
-        opacity: 0,
-        duration: 0.22,
-        stagger: 0.018,
-        ease: "power2.in",
-        onComplete: () => {
-          gsap.fromTo(
-            chars,
-            { yPercent: 100, opacity: 0 },
-            {
-              yPercent: 0,
-              opacity: 1,
-              duration: 0.38,
-              stagger: 0.018,
-              ease: "expo.out"
-            }
-          );
-        }
+      text.dataset.ctaSplit = "true";
+
+      const chars = text.querySelectorAll(".cta_char");
+
+      gsap.set(text, { overflow: "hidden" });
+      gsap.set(chars, { display: "inline-block" });
+      gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
+
+      cta.addEventListener("mouseenter", () => {
+        gsap.killTweensOf([arrow, circle, chars]);
+
+        gsap.to(chars, {
+          yPercent: -100,
+          opacity: 0,
+          duration: 0.22,
+          stagger: 0.018,
+          ease: "power2.in",
+          onComplete: () => {
+            gsap.fromTo(
+              chars,
+              { yPercent: 100, opacity: 0 },
+              {
+                yPercent: 0,
+                opacity: 1,
+                duration: 0.38,
+                stagger: 0.018,
+                ease: "expo.out"
+              }
+            );
+          }
+        });
+
+        gsap.to(circle, {
+          scale: 1.08,
+          duration: 0.4,
+          ease: "expo.out"
+        });
+
+        gsap.to(arrow, {
+          x: "0.75rem",
+          y: "-0.75rem",
+          opacity: 0,
+          duration: 0.18,
+          ease: "power2.in",
+          onComplete: () => {
+            gsap.fromTo(
+              arrow,
+              {
+                x: "-0.75rem",
+                y: "0.75rem",
+                opacity: 0
+              },
+              {
+                x: 0,
+                y: 0,
+                opacity: 1,
+                duration: 0.28,
+                ease: "expo.out"
+              }
+            );
+          }
+        });
       });
 
-      gsap.to(circle, {
-        scale: 1.08,
-        duration: 0.4,
-        ease: "expo.out"
-      });
+      cta.addEventListener("mouseleave", () => {
+        gsap.to(circle, {
+          scale: 1,
+          duration: 0.35,
+          ease: "expo.out"
+        });
 
-      gsap.to(arrow, {
-        x: "0.75rem",
-        y: "-0.75rem",
-        opacity: 0,
-        duration: 0.18,
-        ease: "power2.in",
-        onComplete: () => {
-          gsap.fromTo(
-            arrow,
-            {
-              x: "-0.75rem",
-              y: "0.75rem",
-              opacity: 0
-            },
-            {
-              x: 0,
-              y: 0,
-              opacity: 1,
-              duration: 0.28,
-              ease: "expo.out"
-            }
-          );
-        }
+        gsap.to(arrow, {
+          x: 0,
+          y: 0,
+          opacity: 1,
+          duration: 0.2,
+          ease: "expo.out"
+        });
       });
     });
+  }
 
-    cta.addEventListener("mouseleave", () => {
-      gsap.to(circle, {
-        scale: 1,
-        duration: 0.35,
-        ease: "expo.out"
-      });
-
-      gsap.to(arrow, {
-        x: 0,
-        y: 0,
-        opacity: 1,
-        duration: 0.2,
-        ease: "expo.out"
-      });
-    });
-  });
-}
-  
   // FAQ animation
   function initFAQAnimation() {
     if (!hasGSAP()) return;
@@ -404,6 +424,7 @@ function initCTAAnimation() {
 
   onReady(() => {
     initDynamicCurrentYear();
+    initUnselectableText();
     initCTAAnimation();
     initFAQAnimation();
     initMaskTextScrollReveal();
