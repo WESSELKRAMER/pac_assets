@@ -572,6 +572,8 @@ function initCTAAnimation() {
     if (!text || !arrow || !circle) return;
     if (text.dataset.ctaSplit === "true") return;
 
+    const trigger = cta.closest("[data-cta-trigger], .category_card") || cta;
+
     const originalText = text.textContent.trim();
 
     text.innerHTML = originalText
@@ -587,7 +589,7 @@ function initCTAAnimation() {
     gsap.set(chars, { display: "inline-block" });
     gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
 
-    cta.addEventListener("mouseenter", () => {
+    trigger.addEventListener("mouseenter", () => {
       gsap.killTweensOf([arrow, circle, chars]);
 
       gsap.to(chars, {
@@ -643,7 +645,7 @@ function initCTAAnimation() {
       });
     });
 
-    cta.addEventListener("mouseleave", () => {
+    trigger.addEventListener("mouseleave", () => {
       gsap.to(circle, {
         scale: 1,
         duration: 0.35,
