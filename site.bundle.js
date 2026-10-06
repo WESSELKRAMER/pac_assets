@@ -448,11 +448,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Big logo reveal (footer)
   function initBigLogoReveal() {
-    if (!hasGSAP() || typeof window.ScrollTrigger === "undefined") return;
+    const logos = document.querySelectorAll(".big_logo");
+    if (!logos.length) return;
+
+    // Fallback: zonder GSAP/ScrollTrigger het logo gewoon tonen
+    if (!hasGSAP() || typeof window.ScrollTrigger === "undefined") {
+      logos.forEach((logo) => {
+        logo.style.visibility = "visible";
+      });
+      return;
+    }
 
     gsap.registerPlugin(ScrollTrigger);
 
-    document.querySelectorAll(".big_logo").forEach((logo) => {
+    logos.forEach((logo) => {
       if (logo.dataset.logoRevealInitialized === "true") return;
       logo.dataset.logoRevealInitialized = "true";
 
@@ -461,13 +470,18 @@ document.addEventListener("DOMContentLoaded", () => {
         return a.getBBox().x - b.getBBox().x;
       });
 
-      if (!paths.length) return;
+      if (!paths.length) {
+        gsap.set(logo, { visibility: "visible" });
+        return;
+      }
 
-      // SVG fungeert als mask
+      // Eerst letters naar beneden, dan pas het logo zichtbaar maken (geen flash)
       gsap.set(logo, { overflow: "hidden" });
+      gsap.set(paths, { yPercent: 110 });
+      gsap.set(logo, { visibility: "visible" });
 
-      gsap.from(paths, {
-        yPercent: 110,
+      gsap.to(paths, {
+        yPercent: 0,
         duration: 1,
         stagger: 0.04,
         ease: "expo.out",
