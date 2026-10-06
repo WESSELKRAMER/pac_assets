@@ -32,6 +32,7 @@ function initOnceFunctions() {
   onceFunctionsInitialized = true;
 
   initNavbarHide();
+  initMobileMenu();
   initLogoHover();
   initNavCurrentUnderline();
 }
@@ -434,6 +435,160 @@ function initNavbarHide() {
     },
     { passive: true }
   );
+}
+
+const menuMQ = window.matchMedia("(max-width: 991px)");
+const MENU_CLOSED = "inset(0% 0% 100% 0% round 1.5rem)";
+const MENU_OPEN = "inset(0% 0% 0% 0% round 1.5rem)";
+
+function initMobileMenu() {
+  const navInner = document.querySelector(".nav_inner");
+  const toggle = document.querySelector(".hb_wrapper");
+  const panel = document.querySelector(".nav_items");
+  if (!navInner || !toggle || !panel) return;
+  if (toggle.dataset.menuInitialized === "true") return;
+  toggle.dataset.menuInitialized = "true";
+
+  const items = panel.querySelectorAll(".nav_item");
+  const lines = toggle.querySelectorAll(".hb_line");
+  const firstLine = lines[0];
+  const lastLine = lines[lines.length - 1];
+
+  let isOpen = false;
+
+  toggle.setAttribute("role", "button");
+  toggle.setAttribute("tabindex", "0");
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-label", "Menu");
+
+  function lineOffset() {
+    if (lines.length < 2) return 0;
+    const a = firstLine.getBoundingClientRect();
+    const b = lastLine.getBoundingClientRect();
+    return (b.top - a.top) / 2;
+  }
+
+  function setClosedState() {
+    gsap.set(panel, { clipPath: MENU_CLOSED, visibility: "hidden" });
+    gsap.set(items, { y: "1.5rem", autoAlpha: 0 });
+    gsap.set(lines, { y: 0, rotate: 0 });
+  }
+
+  function open() {
+    if (!menuMQ.matches || isOpen) return;
+    isOpen = true;
+
+    toggle.setAttribute("aria-expanded", "true");
+    navInner.setAttribute("data-menu-open", "true");
+    if (lenis) lenis.stop();
+
+    const offset = lineOffset();
+    gsap.killTweensOf([panel, items, lines]);
+
+    gsap.set(panel, { visibility: "visible" });
+
+    gsap.to(panel, {
+      clipPath: MENU_OPEN,
+      duration: 0.8,
+      ease: "expo.out"
+    });
+
+    gsap.to(items, {
+      y: 0,
+      autoAlpha: 1,
+      duration: 0.7,
+      stagger: 0.05,
+      delay: 0.1,
+      ease: "expo.out"
+    });
+
+    if (firstLine && lastLine && firstLine !== lastLine) {
+      gsap.to(firstLine, { y: offset, rotate: 45, duration: 0.6, ease: "expo.out" });
+      gsap.to(lastLine, { y: -offset, rotate: -45, duration: 0.6, ease: "expo.out" });
+    }
+  }
+
+  function close(immediate) {
+    if (!isOpen && !immediate) return;
+    const wasOpen = isOpen;
+    isOpen = false;
+
+    toggle.setAttribute("aria-expanded", "false");
+    navInner.setAttribute("data-menu-open", "false");
+    if (wasOpen && lenis) lenis.start();
+
+    gsap.killTweensOf([panel, items, lines]);
+
+    if (immediate) {
+      setClosedState();
+      return;
+    }
+
+    gsap.to(items, {
+      autoAlpha: 0,
+      duration: 0.25,
+      stagger: { each: 0.02, from: "end" },
+      ease: "power2.in"
+    });
+
+    gsap.to(panel, {
+      clipPath: MENU_CLOSED,
+      duration: 0.6,
+      delay: 0.1,
+      ease: "expo.inOut",
+      onComplete: () => {
+        gsap.set(panel, { visibility: "hidden" });
+        gsap.set(items, { y: "1.5rem" });
+      }
+    });
+
+    gsap.to(lines, { y: 0, rotate: 0, duration: 0.6, ease: "expo.out" });
+  }
+
+  function toggleMenu() {
+    if (isOpen) close();
+    else open();
+  }
+
+  toggle.addEventListener("click", toggleMenu);
+
+  toggle.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleMenu();
+    }
+  });
+
+  navInner.addEventListener("click", (e) => {
+    if (isOpen && e.target.closest("a")) close();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (isOpen && !navInner.contains(e.target)) close();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isOpen) close();
+  });
+
+  function applyMode() {
+    if (menuMQ.matches) {
+      close(true);
+    } else {
+      if (isOpen && lenis) lenis.start();
+      isOpen = false;
+      toggle.setAttribute("aria-expanded", "false");
+      navInner.setAttribute("data-menu-open", "false");
+      gsap.killTweensOf([panel, items, lines]);
+      gsap.set(panel, { clearProps: "all" });
+      gsap.set(items, { clearProps: "all" });
+      gsap.set(lines, { clearProps: "all" });
+    }
+  }
+
+  applyMode();
+  menuMQ.addEventListener?.("change", applyMode);
+  menuMQ.addListener?.(applyMode);
 }
 
 function initLogoHover() {
