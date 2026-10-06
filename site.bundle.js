@@ -71,6 +71,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Nav current underline
+  function initNavCurrentUnderline() {
+    document.querySelectorAll(".nav_item.w--current").forEach((el) => {
+      el.setAttribute("data-underline-link", "alt");
+    });
+  }
+
   // Unselectable text
   function initUnselectableText() {
     const elements = document.querySelectorAll("[data-no-select]");
@@ -520,6 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   onReady(() => {
     initDynamicCurrentYear();
+    initNavCurrentUnderline();
     initUnselectableText();
     initCursorBlob();
     initCTAAnimation();
