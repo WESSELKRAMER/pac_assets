@@ -623,15 +623,19 @@ function initLogoHover() {
 function initNavCurrentUnderline() {
   document.querySelectorAll(".nav_item").forEach((el) => {
     if (el.dataset.underlineOriginal === undefined) {
-      el.dataset.underlineOriginal = el.getAttribute("data-underline-link") || "";
+      el.dataset.underlineOriginal = el.hasAttribute("data-underline-link")
+        ? el.getAttribute("data-underline-link")
+        : "__none__";
     }
+
+    const original = el.dataset.underlineOriginal;
 
     if (el.classList.contains("w--current")) {
       el.setAttribute("data-underline-link", "alt");
-    } else if (el.dataset.underlineOriginal) {
-      el.setAttribute("data-underline-link", el.dataset.underlineOriginal);
-    } else {
+    } else if (original === "__none__") {
       el.removeAttribute("data-underline-link");
+    } else {
+      el.setAttribute("data-underline-link", original);
     }
   });
 }
