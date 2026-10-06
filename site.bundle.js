@@ -94,6 +94,38 @@
     );
   }
 
+  // Logo hover (cirkel krimpt)
+  function initLogoHover() {
+    if (!hasGSAP()) return;
+
+    document.querySelectorAll(".logo_wrapper").forEach((wrapper) => {
+      const circle = wrapper.querySelector(".logo_circle");
+      if (!circle) return;
+      if (wrapper.dataset.logoHoverInitialized === "true") return;
+      wrapper.dataset.logoHoverInitialized = "true";
+
+      gsap.set(circle, { transformOrigin: "50% 50%" });
+
+      wrapper.addEventListener("mouseenter", () => {
+        gsap.to(circle, {
+          scale: 0.92,
+          duration: 0.5,
+          ease: "expo.out",
+          overwrite: "auto"
+        });
+      });
+
+      wrapper.addEventListener("mouseleave", () => {
+        gsap.to(circle, {
+          scale: 1,
+          duration: 0.5,
+          ease: "expo.out",
+          overwrite: "auto"
+        });
+      });
+    });
+  }
+
   // Dynamic year
   function initDynamicCurrentYear() {
     const currentYear = new Date().getFullYear();
@@ -572,6 +604,7 @@
 
   onReady(() => {
     initNavbarHide();
+    initLogoHover();
     initDynamicCurrentYear();
     initNavCurrentUnderline();
     initUnselectableText();
