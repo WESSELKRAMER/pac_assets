@@ -1,55 +1,3 @@
-// Navbar Hide on Scroll
-document.addEventListener("DOMContentLoaded", () => {
-  const navbar = document.querySelector(".navbar");
-  if (!navbar) return;
-
-  let lastScroll = window.pageYOffset;
-  let ticking = false;
-
-  gsap.set(navbar, {
-    yPercent: 0
-  });
-
-  function handleScroll() {
-    const currentScroll = window.pageYOffset;
-    const scrollingDown = currentScroll > lastScroll;
-
-    if (currentScroll <= 10) {
-      gsap.to(navbar, {
-        yPercent: 0,
-        duration: 0.4,
-        ease: "expo.out"
-      });
-    } else if (scrollingDown) {
-      gsap.to(navbar, {
-        yPercent: -100,
-        duration: 0.5,
-        ease: "expo.out"
-      });
-    } else {
-      gsap.to(navbar, {
-        yPercent: 0,
-        duration: 0.5,
-        ease: "expo.out"
-      });
-    }
-
-    lastScroll = currentScroll;
-    ticking = false;
-  }
-
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (!ticking) {
-        requestAnimationFrame(handleScroll);
-        ticking = true;
-      }
-    },
-    { passive: true }
-  );
-});
-
 (function () {
   function onReady(callback) {
     if (document.readyState === "loading") {
@@ -61,6 +9,89 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function hasGSAP() {
     return typeof window.gsap !== "undefined";
+  }
+
+  function toNumber(value, fallback) {
+    const n = parseFloat(value);
+    return isNaN(n) ? fallback : n;
+  }
+
+  // Navbar hide on scroll (beheerbaar via data attributes)
+  function initNavbarHide() {
+    if (!hasGSAP()) return;
+
+    const navbar = document.querySelector("[data-navbar]") || document.querySelector(".navbar");
+    if (!navbar) return;
+    if (navbar.dataset.navbarInitialized === "true") return;
+    navbar.dataset.navbarInitialized = "true";
+
+    // Body-attributen (per pagina) gaan voor op attributen van de navbar
+    function read(key) {
+      const fromBody = document.body.dataset[key];
+      return fromBody !== undefined ? fromBody : navbar.dataset[key];
+    }
+
+    const hideEnabled = read("navbarHide") !== "false";
+    const offset = toNumber(read("navbarOffset"), 10);
+    const threshold = toNumber(read("navbarThreshold"), 0);
+    const duration = toNumber(read("navbarDuration"), 0.5);
+    const ease = read("navbarEase") || "expo.out";
+
+    let lastScroll = window.pageYOffset;
+    let ticking = false;
+    let state = lastScroll <= offset ? "top" : "visible";
+
+    gsap.set(navbar, { yPercent: 0 });
+    navbar.setAttribute("data-navbar-state", state);
+
+    function setState(newState) {
+      if (newState === state) return;
+      state = newState;
+      navbar.setAttribute("data-navbar-state", state);
+
+      gsap.to(navbar, {
+        yPercent: state === "hidden" ? -100 : 0,
+        duration,
+        ease,
+        overwrite: "auto"
+      });
+    }
+
+    function handleScroll() {
+      ticking = false;
+
+      const currentScroll = window.pageYOffset;
+      const delta = currentScroll - lastScroll;
+
+      if (currentScroll <= offset) {
+        setState("top");
+        lastScroll = currentScroll;
+        return;
+      }
+
+      if (!hideEnabled) {
+        setState("visible");
+        lastScroll = currentScroll;
+        return;
+      }
+
+      // Kleine bewegingen negeren tot de threshold is bereikt
+      if (Math.abs(delta) <= threshold) return;
+
+      setState(delta > 0 ? "hidden" : "visible");
+      lastScroll = currentScroll;
+    }
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          requestAnimationFrame(handleScroll);
+          ticking = true;
+        }
+      },
+      { passive: true }
+    );
   }
 
   // Dynamic year
@@ -540,6 +571,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   onReady(() => {
+    initNavbarHide();
     initDynamicCurrentYear();
     initNavCurrentUnderline();
     initUnselectableText();
