@@ -49,6 +49,7 @@ function initBeforeEnterFunctions(next) {
   if (has(".faq_item")) initFAQAnimation();
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
   if (has("[data-highlight-text]")) initHighlightText();
+  if (has(".floating_img_wrap")) initFloatingImages();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track")) initLogoMarquee();
   if (has(".footer_link")) initFooterLinkHover();
@@ -1083,6 +1084,86 @@ function initHighlightText() {
     });
 
     addCleanup(heading, () => split.revert());
+  });
+}
+
+function initFloatingImages() {
+  const wrapsInPage = nextPage.querySelectorAll(".floating_img_wrap");
+  if (!wrapsInPage.length) return;
+
+  if (!hasScrollTrigger || reducedMotion) {
+    gsap.set(wrapsInPage, { visibility: "visible" });
+    return;
+  }
+
+  const sections = new Set();
+  wrapsInPage.forEach((wrap) => {
+    sections.add(
+      wrap.closest("[data-floating-images], .section_floating_images") || wrap.parentElement
+    );
+  });
+
+  sections.forEach((section) => {
+    if (section.dataset.floatingInitialized === "true") return;
+    section.dataset.floatingInitialized = "true";
+
+    const wraps = section.querySelectorAll(".floating_img_wrap");
+    if (!wraps.length) return;
+
+    const start = section.dataset.floatingStart || "top 70%";
+    const duration = toNumber(section.dataset.floatingDuration, 1.2);
+    const stagger = toNumber(section.dataset.floatingStagger, 0.15);
+    const zoom = toNumber(section.dataset.floatingZoom, 1.3);
+
+    const items = Array.from(wraps).map((wrap) => {
+      const img = wrap.querySelector("img");
+
+      let radius = getComputedStyle(wrap).borderTopLeftRadius;
+      if ((!radius || radius === "0px") && img) {
+        radius = getComputedStyle(img).borderTopLeftRadius;
+      }
+      radius = radius || "0px";
+
+      const reveal = { p: 0 };
+
+      function applyClip() {
+        wrap.style.clipPath = `inset(${100 - reveal.p}% 0% 0% 0% round ${radius})`;
+      }
+
+      applyClip();
+      if (img) gsap.set(img, { scale: zoom, transformOrigin: "50% 50%" });
+
+      return { wrap, img, reveal, applyClip };
+    });
+
+    gsap.set(wraps, { visibility: "visible" });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: `clamp(${start})`,
+        once: true
+      }
+    });
+
+    items.forEach((item, i) => {
+      tl.to(item.reveal, {
+        p: 100,
+        duration,
+        ease: "expo.out",
+        onUpdate: item.applyClip
+      }, i * stagger);
+
+      if (item.img) {
+        tl.to(item.img, {
+          scale: 1,
+          duration: duration * 1.3,
+          ease: "expo.out"
+        }, i * stagger);
+      }
+    });
+
+    addCleanup(section, () => tl.kill());
   });
 }
 
