@@ -5,6 +5,7 @@ history.scrollRestoration = "manual";
 let lenis = null;
 let nextPage = document;
 let onceFunctionsInitialized = false;
+let isTransitioning = false;
 
 const hasLenis = typeof window.Lenis !== "undefined";
 const hasScrollTrigger = typeof window.ScrollTrigger !== "undefined";
@@ -31,6 +32,7 @@ function initOnceFunctions() {
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
 
+  initAutoRefresh();
   initNavbarHide();
   initMobileMenu();
   initLogoHover();
@@ -134,6 +136,8 @@ function runPageEnterAnimation(next) {
 }
 
 barba.hooks.beforeEnter(data => {
+  isTransitioning = true;
+
   gsap.set(data.next.container, {
     position: "fixed",
     top: 0,
@@ -171,6 +175,8 @@ barba.hooks.afterOnce(data => {
 });
 
 barba.hooks.afterEnter(data => {
+  isTransitioning = false;
+
   resetWebflow(data);
 
   initAfterEnterFunctions(data.next.container);
@@ -340,6 +346,28 @@ function resetWebflow(data) {
 function toNumber(value, fallback) {
   const n = parseFloat(value);
   return isNaN(n) ? fallback : n;
+}
+
+function initAutoRefresh() {
+  if (!hasScrollTrigger || typeof ResizeObserver === "undefined") return;
+
+  let lastHeight = document.body.scrollHeight;
+  let timer = null;
+
+  const observer = new ResizeObserver(() => {
+    const height = document.body.scrollHeight;
+    if (height === lastHeight) return;
+    lastHeight = height;
+
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (isTransitioning) return;
+      if (lenis) lenis.resize();
+      ScrollTrigger.refresh();
+    }, 200);
+  });
+
+  observer.observe(document.body);
 }
 
 let navbarEl = null;
@@ -957,6 +985,13 @@ function initMaskTextScrollReveal() {
         : "lines";
 
       const isImmediate = heading.dataset.splitImmediate === "true";
+      const config = splitConfig[type];
+
+      const duration = toNumber(heading.dataset.splitDuration, config.duration);
+      const stagger = toNumber(heading.dataset.splitStagger, config.stagger);
+      const delay = toNumber(heading.dataset.splitDelay, isImmediate ? 0.2 : 0);
+      const ease = heading.dataset.splitEase || "expo.out";
+      const start = heading.dataset.splitStart || "top 80%";
 
       const typesToSplit =
         type === "lines"
@@ -975,7 +1010,6 @@ function initMaskTextScrollReveal() {
 
         onSplit(instance) {
           const targets = instance[type];
-          const config = splitConfig[type];
 
           if (!targets || !targets.length) {
             gsap.set(heading, { autoAlpha: 1 });
@@ -984,21 +1018,19 @@ function initMaskTextScrollReveal() {
 
           const animation = {
             yPercent: 110,
-            duration: config.duration,
-            stagger: config.stagger,
-            ease: "expo.out"
+            duration,
+            stagger,
+            delay,
+            ease
           };
 
           const tween = isImmediate
-            ? gsap.from(targets, {
-                ...animation,
-                delay: 0.2
-              })
+            ? gsap.from(targets, animation)
             : gsap.from(targets, {
                 ...animation,
                 scrollTrigger: {
                   trigger: heading,
-                  start: "clamp(top 80%)",
+                  start: `clamp(${start})`,
                   once: true
                 }
               });
@@ -1049,7 +1081,7 @@ function initBigLogoReveal() {
       ease: "expo.out",
       scrollTrigger: {
         trigger: logo,
-        start: "top 95%",
+        start: "clamp(top 95%)",
         once: true
       }
     });
