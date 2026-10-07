@@ -438,8 +438,7 @@ function initNavbarHide() {
 }
 
 const menuMQ = window.matchMedia("(max-width: 991px)");
-const MENU_CLOSED = "inset(0% 0% 100% 0% round 1.5rem)";
-const MENU_OPEN = "inset(0% 0% 0% 0% round 1.5rem)";
+const MENU_RADIUS = "1.5rem";
 
 function initMobileMenu() {
   const navInner = document.querySelector(".nav_inner");
@@ -454,12 +453,17 @@ function initMobileMenu() {
   const firstLine = lines[0];
   const lastLine = lines[lines.length - 1];
 
+  const reveal = { p: 0 };
   let isOpen = false;
 
   toggle.setAttribute("role", "button");
   toggle.setAttribute("tabindex", "0");
   toggle.setAttribute("aria-expanded", "false");
   toggle.setAttribute("aria-label", "Menu");
+
+  function applyClip() {
+    panel.style.clipPath = `inset(0% 0% ${100 - reveal.p}% 0% round ${MENU_RADIUS})`;
+  }
 
   function lineOffset() {
     if (lines.length < 2) return 0;
@@ -469,7 +473,9 @@ function initMobileMenu() {
   }
 
   function setClosedState() {
-    gsap.set(panel, { clipPath: MENU_CLOSED, visibility: "hidden" });
+    reveal.p = 0;
+    applyClip();
+    gsap.set(panel, { visibility: "hidden" });
     gsap.set(items, { y: "1.5rem", autoAlpha: 0 });
     gsap.set(lines, { y: 0, rotate: 0 });
   }
@@ -483,14 +489,16 @@ function initMobileMenu() {
     if (lenis) lenis.stop();
 
     const offset = lineOffset();
-    gsap.killTweensOf([panel, items, lines]);
+    gsap.killTweensOf([reveal, items, lines]);
 
     gsap.set(panel, { visibility: "visible" });
+    applyClip();
 
-    gsap.to(panel, {
-      clipPath: MENU_OPEN,
+    gsap.to(reveal, {
+      p: 100,
       duration: 0.8,
-      ease: "expo.out"
+      ease: "expo.out",
+      onUpdate: applyClip
     });
 
     gsap.to(items, {
@@ -517,7 +525,7 @@ function initMobileMenu() {
     navInner.setAttribute("data-menu-open", "false");
     if (wasOpen && lenis) lenis.start();
 
-    gsap.killTweensOf([panel, items, lines]);
+    gsap.killTweensOf([reveal, items, lines]);
 
     if (immediate) {
       setClosedState();
@@ -531,11 +539,12 @@ function initMobileMenu() {
       ease: "power2.in"
     });
 
-    gsap.to(panel, {
-      clipPath: MENU_CLOSED,
+    gsap.to(reveal, {
+      p: 0,
       duration: 0.6,
       delay: 0.1,
       ease: "expo.inOut",
+      onUpdate: applyClip,
       onComplete: () => {
         gsap.set(panel, { visibility: "hidden" });
         gsap.set(items, { y: "1.5rem" });
@@ -577,9 +586,10 @@ function initMobileMenu() {
     } else {
       if (isOpen && lenis) lenis.start();
       isOpen = false;
+      reveal.p = 0;
       toggle.setAttribute("aria-expanded", "false");
       navInner.setAttribute("data-menu-open", "false");
-      gsap.killTweensOf([panel, items, lines]);
+      gsap.killTweensOf([reveal, items, lines]);
       gsap.set(panel, { clearProps: "all" });
       gsap.set(items, { clearProps: "all" });
       gsap.set(lines, { clearProps: "all" });
@@ -922,80 +932,85 @@ function initFAQAnimation() {
 }
 
 function initMaskTextScrollReveal() {
-  if (!hasSplitText || !hasScrollTrigger) return;
+  const headings = nextPage.querySelectorAll('[data-split="heading"]');
+  if (!headings.length) return;
+
+  if (!hasSplitText || !hasScrollTrigger) {
+    gsap.set(headings, { autoAlpha: 1 });
+    return;
+  }
 
   const splitConfig = {
-    lines: {
-      duration: 0.8,
-      stagger: 0.1
-    },
-    words: {
-      duration: 0.8,
-      stagger: 0.03
-    },
-    chars: {
-      duration: 0.8,
-      stagger: 0.015
-    }
+    lines: { duration: 0.8, stagger: 0.08 },
+    words: { duration: 0.6, stagger: 0.06 },
+    chars: { duration: 0.4, stagger: 0.01 }
   };
 
-  nextPage.querySelectorAll('[data-split="heading"]').forEach((heading) => {
-    if (heading.dataset.splitInitialized === "true") return;
-    heading.dataset.splitInitialized = "true";
+  document.fonts.ready.then(() => {
+    headings.forEach((heading) => {
+      if (!heading.isConnected) return;
+      if (heading.dataset.splitInitialized === "true") return;
+      heading.dataset.splitInitialized = "true";
 
-    const type = ["lines", "words", "chars"].includes(heading.dataset.splitReveal)
-      ? heading.dataset.splitReveal
-      : "lines";
+      const type = ["lines", "words", "chars"].includes(heading.dataset.splitReveal)
+        ? heading.dataset.splitReveal
+        : "lines";
 
-    const isImmediate = heading.dataset.splitImmediate === "true";
+      const isImmediate = heading.dataset.splitImmediate === "true";
 
-    const typesToSplit =
-      type === "lines"
-        ? ["lines"]
-        : type === "words"
-        ? ["lines", "words"]
-        : ["lines", "words", "chars"];
+      const typesToSplit =
+        type === "lines"
+          ? ["lines"]
+          : type === "words"
+          ? ["lines", "words"]
+          : ["lines", "words", "chars"];
 
-    const instance = SplitText.create(heading, {
-      type: typesToSplit.join(","),
-      mask: "lines",
-      autoSplit: true,
-      linesClass: "line",
-      wordsClass: "word",
-      charsClass: "letter",
+      const instance = SplitText.create(heading, {
+        type: typesToSplit.join(", "),
+        mask: "lines",
+        autoSplit: true,
+        linesClass: "line",
+        wordsClass: "word",
+        charsClass: "letter",
 
-      onSplit(instance) {
-        const targets = instance[type];
-        const config = splitConfig[type];
+        onSplit(instance) {
+          const targets = instance[type];
+          const config = splitConfig[type];
 
-        if (!targets || !targets.length) return;
-
-        const animation = {
-          yPercent: 110,
-          duration: config.duration,
-          stagger: config.stagger,
-          ease: "expo.out"
-        };
-
-        if (isImmediate) {
-          return gsap.from(targets, {
-            ...animation,
-            delay: 0.2
-          });
-        }
-
-        return gsap.from(targets, {
-          ...animation,
-          scrollTrigger: {
-            trigger: heading,
-            start: "top 80%",
-            once: true
+          if (!targets || !targets.length) {
+            gsap.set(heading, { autoAlpha: 1 });
+            return;
           }
-        });
-      }
-    });
 
-    addCleanup(heading, () => instance.revert());
+          const animation = {
+            yPercent: 110,
+            duration: config.duration,
+            stagger: config.stagger,
+            ease: "expo.out"
+          };
+
+          const tween = isImmediate
+            ? gsap.from(targets, {
+                ...animation,
+                delay: 0.2
+              })
+            : gsap.from(targets, {
+                ...animation,
+                scrollTrigger: {
+                  trigger: heading,
+                  start: "clamp(top 80%)",
+                  once: true
+                }
+              });
+
+          gsap.set(heading, { autoAlpha: 1 });
+
+          return tween;
+        }
+      });
+
+      addCleanup(heading, () => instance.revert());
+    });
   });
 }
 
