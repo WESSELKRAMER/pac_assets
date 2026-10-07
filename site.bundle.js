@@ -48,6 +48,7 @@ function initBeforeEnterFunctions(next) {
   initCTAAnimation();
   if (has(".faq_item")) initFAQAnimation();
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
+  if (has("[data-highlight-text]")) initHighlightText();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track")) initLogoMarquee();
   if (has(".footer_link")) initFooterLinkHover();
@@ -1043,6 +1044,45 @@ function initMaskTextScrollReveal() {
 
       addCleanup(heading, () => instance.revert());
     });
+  });
+}
+
+function initHighlightText() {
+  if (!hasSplitText || !hasScrollTrigger) return;
+
+  nextPage.querySelectorAll("[data-highlight-text]").forEach((heading) => {
+    if (heading.dataset.highlightInitialized === "true") return;
+    heading.dataset.highlightInitialized = "true";
+
+    const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 90%";
+    const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "center 40%";
+    const fadedValue = toNumber(heading.getAttribute("data-highlight-fade"), 0.2);
+    const staggerValue = toNumber(heading.getAttribute("data-highlight-stagger"), 0.1);
+
+    const split = new SplitText(heading, {
+      type: "words, chars",
+      autoSplit: true,
+      onSplit(self) {
+        let ctx = gsap.context(() => {
+          let tl = gsap.timeline({
+            scrollTrigger: {
+              scrub: true,
+              trigger: heading,
+              start: scrollStart,
+              end: scrollEnd,
+            }
+          });
+          tl.from(self.chars, {
+            autoAlpha: fadedValue,
+            stagger: staggerValue,
+            ease: "linear"
+          });
+        });
+        return ctx;
+      }
+    });
+
+    addCleanup(heading, () => split.revert());
   });
 }
 
