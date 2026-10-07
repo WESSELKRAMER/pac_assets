@@ -1087,6 +1087,23 @@ function initHighlightText() {
   });
 }
 
+function getLayoutCenter(el) {
+  let x = 0;
+  let y = 0;
+  let node = el;
+
+  while (node) {
+    x += node.offsetLeft;
+    y += node.offsetTop;
+    node = node.offsetParent;
+  }
+
+  return {
+    x: x + el.offsetWidth / 2,
+    y: y + el.offsetHeight / 2
+  };
+}
+
 function initFloatingImages() {
   const wrapsInPage = nextPage.querySelectorAll(".floating_img_wrap");
   if (!wrapsInPage.length) return;
@@ -1114,6 +1131,12 @@ function initFloatingImages() {
     const duration = toNumber(section.dataset.floatingDuration, 1.2);
     const stagger = toNumber(section.dataset.floatingStagger, 0.15);
     const zoom = toNumber(section.dataset.floatingZoom, 1.3);
+    const pull = toNumber(section.dataset.floatingPull, 0.12);
+
+    const target =
+      section.querySelector("[data-floating-target]") ||
+      section.querySelector(".floating_images_inner") ||
+      section;
 
     const items = Array.from(wraps).map((wrap) => {
       const img = wrap.querySelector("img");
@@ -1164,6 +1187,25 @@ function initFloatingImages() {
     });
 
     addCleanup(section, () => tl.kill());
+
+    if (pull > 0) {
+      items.forEach((item) => {
+        const drift = gsap.to(item.wrap, {
+          x: () => (getLayoutCenter(target).x - getLayoutCenter(item.wrap).x) * pull,
+          y: () => (getLayoutCenter(target).y - getLayoutCenter(item.wrap).y) * pull,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+            invalidateOnRefresh: true
+          }
+        });
+
+        addCleanup(section, () => drift.kill());
+      });
+    }
   });
 }
 
