@@ -46,6 +46,7 @@ function initBeforeEnterFunctions(next) {
   initDynamicCurrentYear();
   initUnselectableText();
   initCTAAnimation();
+  if (has("[data-team-prev], [data-team-next], [data-arrow-button]")) initArrowButtons();
   if (has(".faq_item")) initFAQAnimation();
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
   if (has("[data-highlight-text]")) initHighlightText();
@@ -859,6 +860,73 @@ function initCTAAnimation() {
         duration: 0.2,
         ease: "expo.out"
       });
+    });
+  });
+}
+
+function initArrowButtons() {
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  nextPage.querySelectorAll("[data-team-prev], [data-team-next], [data-arrow-button]").forEach((btn) => {
+    if (btn.dataset.arrowButtonInitialized === "true") return;
+    btn.dataset.arrowButtonInitialized = "true";
+
+    const arrow = btn.querySelector("[data-arrow-icon]") || btn.querySelector("svg, img");
+    if (!arrow) return;
+
+    let dir = 1;
+    if (btn.hasAttribute("data-team-prev") || btn.dataset.arrowDirection === "left") dir = -1;
+
+    let isHovering = false;
+
+    gsap.set(btn, { overflow: "hidden", transformOrigin: "50% 50%" });
+
+    function distance() {
+      return btn.offsetWidth * 0.6;
+    }
+
+    function slideThrough() {
+      if (reducedMotion) return;
+
+      gsap.killTweensOf(arrow);
+
+      gsap.to(arrow, {
+        x: distance() * dir,
+        opacity: 0,
+        duration: 0.18,
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.fromTo(arrow,
+            { x: -distance() * dir, opacity: 0 },
+            { x: 0, opacity: 1, duration: 0.32, ease: "expo.out" }
+          );
+        }
+      });
+    }
+
+    if (canHover) {
+      btn.addEventListener("mouseenter", () => {
+        isHovering = true;
+        gsap.to(btn, { scale: 1.08, duration: 0.4, ease: "expo.out", overwrite: "auto" });
+        slideThrough();
+      });
+
+      btn.addEventListener("mouseleave", () => {
+        isHovering = false;
+        gsap.to(btn, { scale: 1, duration: 0.35, ease: "expo.out", overwrite: "auto" });
+        gsap.to(arrow, { x: 0, opacity: 1, duration: 0.2, ease: "expo.out", overwrite: "auto" });
+      });
+    }
+
+    btn.addEventListener("click", () => {
+      if (reducedMotion) return;
+
+      gsap.fromTo(btn,
+        { scale: 0.9 },
+        { scale: isHovering ? 1.08 : 1, duration: 0.5, ease: "back.out(3)", overwrite: "auto" }
+      );
+
+      slideThrough();
     });
   });
 }
