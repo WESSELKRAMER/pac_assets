@@ -1246,6 +1246,7 @@ function initTeamSlider() {
     let items = [];
     let itemW = 0, itemH = 0, spacing = 0, total = 0, waveLength = 0, amp = 0;
     let textTl = null;
+    let textSplits = [];
     let autoplayCall = null;
     let hovering = false;
 
@@ -1349,33 +1350,76 @@ function initTeamSlider() {
       });
     }
 
+    function revertTextSplits() {
+      textSplits.forEach((split) => split.revert());
+      textSplits = [];
+    }
+
+    function splitTextFields() {
+      textSplits = textFields.map((field) =>
+        SplitText.create(field, {
+          type: "lines",
+          mask: "lines",
+          linesClass: "line"
+        })
+      );
+      return textSplits.flatMap((split) => split.lines);
+    }
+
     function animateText(index, dir) {
       if (!textFields.length) return;
 
       if (textTl) textTl.kill();
+      revertTextSplits();
 
       if (reducedMotion) {
         fillText(index);
-        gsap.set(textFields, { y: 0, autoAlpha: 1 });
         return;
       }
 
-      textTl = gsap.timeline();
+      if (!hasSplitText) {
+        textTl = gsap.timeline();
 
-      textTl.to(textFields, {
-        y: `${-1 * dir}rem`,
-        autoAlpha: 0,
-        duration: 0.3,
-        stagger: 0.04,
-        ease: "power2.in"
+        textTl.to(textFields, {
+          y: `${-1 * dir}rem`,
+          autoAlpha: 0,
+          duration: 0.3,
+          stagger: 0.04,
+          ease: "power2.in"
+        });
+
+        textTl.call(() => fillText(index));
+
+        textTl.fromTo(textFields,
+          { y: `${1 * dir}rem`, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, duration: 0.7, stagger: 0.06, ease: "expo.out" }
+        );
+        return;
+      }
+
+      const outLines = splitTextFields();
+
+      textTl = gsap.to(outLines, {
+        yPercent: -110 * dir,
+        duration: 0.4,
+        stagger: 0.025,
+        ease: "power3.in",
+        onComplete: () => {
+          revertTextSplits();
+          fillText(index);
+
+          const inLines = splitTextFields();
+          gsap.set(inLines, { yPercent: 110 * dir });
+
+          textTl = gsap.to(inLines, {
+            yPercent: 0,
+            duration: 0.8,
+            stagger: 0.06,
+            ease: "expo.out",
+            onComplete: revertTextSplits
+          });
+        }
       });
-
-      textTl.call(() => fillText(index));
-
-      textTl.fromTo(textFields,
-        { y: `${1 * dir}rem`, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: 0.7, stagger: 0.06, ease: "expo.out" }
-      );
     }
 
     function scheduleAutoplay() {
@@ -1485,6 +1529,7 @@ function initTeamSlider() {
       window.removeEventListener("resize", onResize);
       if (autoplayCall) autoplayCall.kill();
       if (textTl) textTl.kill();
+      revertTextSplits();
       gsap.killTweensOf(state);
     });
   });
