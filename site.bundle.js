@@ -1244,11 +1244,13 @@ function initTeamSlider() {
     const activeScale = toNumber(slider.dataset.teamActiveScale, 1.2);
     const autoplay = toNumber(slider.dataset.teamAutoplay, 0);
 
+    const MAX_SETS = 8;
+
     const state = { progress: 0 };
     let targetProgress = 0;
     let active = 0;
     let items = [];
-    let itemW = 0, itemH = 0, spacing = 0, total = 0, waveLength = 0, amp = 0;
+    let itemW = 0, itemH = 0, spacing = 0, total = 0, waveLength = 0, amp = 0, extra = 0;
     let anchorX = 0;
     let textTl = null;
     let textSplits = [];
@@ -1304,8 +1306,6 @@ function initTeamSlider() {
     function measureAnchor() {
       if (useAnchorEl) {
         anchorX = anchorEl.getBoundingClientRect().left - track.getBoundingClientRect().left;
-      } else {
-        anchorX = track.offsetWidth * anchorFraction - itemW / 2;
       }
     }
 
@@ -1314,12 +1314,21 @@ function initTeamSlider() {
       addSet(false);
 
       const first = track.firstElementChild;
-      itemW = first.offsetWidth;
-      itemH = first.offsetHeight;
-      spacing = itemW * spacingFactor;
+      itemW = first ? first.offsetWidth : 0;
+      itemH = first ? first.offsetHeight : 0;
 
-      const reach = slider.offsetWidth * 2 + spacing * 2;
-      const sets = Math.max(1, Math.ceil(reach / (count * spacing)));
+      if (!itemW || !itemH) {
+        console.warn("[team slider] Kan de grootte van de cirkels niet meten. Staat er een width op [data-team-item]?", track);
+        items = [];
+        gsap.set(track, { visibility: "visible" });
+        return;
+      }
+
+      spacing = itemW * spacingFactor;
+      extra = (activeScale - 1) * itemW;
+
+      const reach = slider.offsetWidth * 2 + spacing * 2 + extra;
+      const sets = Math.min(MAX_SETS, Math.max(1, Math.ceil(reach / (count * spacing))));
       for (let i = 1; i < sets; i++) addSet(true);
 
       items = [...track.children];
@@ -1333,7 +1342,7 @@ function initTeamSlider() {
         el.style.position = "absolute";
         el.style.left = "0";
         el.style.top = "0";
-        gsap.set(el, { transformOrigin: useAnchorEl ? "0% 50%" : "50% 50%" });
+        gsap.set(el, { transformOrigin: "50% 50%" });
         el._setX = gsap.quickSetter(el, "x", "px");
         el._setY = gsap.quickSetter(el, "y", "px");
         el._setSX = gsap.quickSetter(el, "scaleX");
@@ -1350,16 +1359,21 @@ function initTeamSlider() {
 
       const centerY = (track.offsetHeight - itemH) / 2;
       const half = total / 2;
+      const baseCenter = useAnchorEl
+        ? anchorX + itemW / 2 + extra / 2
+        : track.offsetWidth * anchorFraction;
 
       items.forEach((el, i) => {
         const offset = gsap.utils.wrap(-half, half, (i - state.progress) * spacing);
-        const x = anchorX + offset;
-        const y = centerY + Math.sin(offset / waveLength * Math.PI * 2) * amp;
-        const closeness = Math.max(0, 1 - Math.abs(offset) / spacing);
+        const t = offset / spacing;
+        const push = Math.abs(t) >= 1 ? Math.sign(t) * 0.5 : t - (t * Math.abs(t)) / 2;
+        const pos = offset + push * extra;
+
+        const closeness = Math.max(0, 1 - Math.abs(t));
         const scale = 1 + (activeScale - 1) * closeness;
 
-        el._setX(x);
-        el._setY(y);
+        el._setX(baseCenter + pos - itemW / 2);
+        el._setY(centerY + Math.sin(pos / waveLength * Math.PI * 2) * amp);
         el._setSX(scale);
         el._setSY(scale);
         el.style.zIndex = closeness > 0.5 ? "2" : "1";
@@ -1649,7 +1663,7 @@ function initLogoMarquee() {
       setWidth = children[originals.length].offsetLeft - children[0].offsetLeft;
       if (!setWidth) return;
 
-      const needed = Math.ceil(wrapper.offsetWidth / setWidth) + 1;
+      const needed = Math.min(20, Math.ceil(wrapper.offsetWidth / setWidth) + 1);
       for (let i = 2; i <= needed; i++) addSet(true);
 
       render();
