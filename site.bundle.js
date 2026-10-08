@@ -46,6 +46,7 @@ function initBeforeEnterFunctions(next) {
   initDynamicCurrentYear();
   initUnselectableText();
   initCTAAnimation();
+  if (has("[data-submit-trigger]")) initSubmitTriggers();
   if (has("[data-team-prev], [data-team-next], [data-arrow-button]")) initArrowButtons();
   if (has(".faq_item")) initFAQAnimation();
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
@@ -861,6 +862,81 @@ function initCTAAnimation() {
         ease: "expo.out"
       });
     });
+  });
+}
+
+function initSubmitTriggers() {
+  nextPage.querySelectorAll("[data-submit-trigger]").forEach((trigger) => {
+    if (trigger.dataset.submitInitialized === "true") return;
+    trigger.dataset.submitInitialized = "true";
+
+    const wfWrapper = trigger.closest(".w-form");
+    const form = trigger.closest("form") || (wfWrapper && wfWrapper.querySelector("form"));
+
+    if (!form) {
+      console.warn("[submit trigger] Geen formulier gevonden rond dit element.", trigger);
+      return;
+    }
+
+    const submitBtn = form.querySelector('input[type="submit"], button[type="submit"]:not([data-submit-trigger])');
+
+    if (trigger.matches("button") && trigger.getAttribute("type") !== "button") {
+      trigger.setAttribute("type", "button");
+    }
+
+    if (!trigger.matches("a, button")) {
+      trigger.setAttribute("role", "button");
+      trigger.setAttribute("tabindex", "0");
+    }
+
+    function submitForm(e) {
+      e.preventDefault();
+
+      if (trigger.getAttribute("data-submitting") === "true") return;
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      trigger.setAttribute("data-submitting", "true");
+
+      if (submitBtn) {
+        submitBtn.click();
+      } else if (typeof form.requestSubmit === "function") {
+        form.requestSubmit();
+      } else {
+        form.submit();
+      }
+    }
+
+    trigger.addEventListener("click", submitForm);
+
+    trigger.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") submitForm(e);
+    });
+
+    const wrapper = form.closest(".w-form");
+    if (!wrapper) return;
+
+    const done = wrapper.querySelector(".w-form-done");
+    const fail = wrapper.querySelector(".w-form-fail");
+    const watched = [done, fail].filter(Boolean);
+    if (!watched.length) return;
+
+    const isVisible = (el) => el && getComputedStyle(el).display !== "none";
+
+    const observer = new MutationObserver(() => {
+      if (isVisible(done) || isVisible(fail)) {
+        trigger.removeAttribute("data-submitting");
+      }
+    });
+
+    watched.forEach((el) => {
+      observer.observe(el, { attributes: true, attributeFilter: ["style", "class"] });
+    });
+
+    addCleanup(trigger, () => observer.disconnect());
   });
 }
 
