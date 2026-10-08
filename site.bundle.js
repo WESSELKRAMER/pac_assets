@@ -10,9 +10,11 @@ let isTransitioning = false;
 const hasLenis = typeof window.Lenis !== "undefined";
 const hasScrollTrigger = typeof window.ScrollTrigger !== "undefined";
 const hasSplitText = typeof window.SplitText !== "undefined";
+const hasObserver = typeof window.Observer !== "undefined";
 
 if (hasScrollTrigger) gsap.registerPlugin(ScrollTrigger);
 if (hasSplitText) gsap.registerPlugin(SplitText);
+if (hasObserver) gsap.registerPlugin(Observer);
 
 const rmMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
 let reducedMotion = rmMQ.matches;
@@ -50,8 +52,9 @@ function initBeforeEnterFunctions(next) {
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
   if (has("[data-highlight-text]")) initHighlightText();
   if (has(".floating_img_wrap")) initFloatingImages();
+  if (has("[data-wavy-marquee-init]")) initTeamMarquee();
   if (has(".big_logo")) initBigLogoReveal();
-  if (has(".logo-marquee_track")) initLogoMarquee();
+  if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
   if (has(".footer_link")) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
   if (has(".stories-swiper")) initStoriesSwiper();
@@ -1209,6 +1212,373 @@ function initFloatingImages() {
   });
 }
 
+function setupTeamDrawer(scope, onOpen, onClose) {
+  const drawer = scope.querySelector("[data-team-drawer]");
+  if (!drawer) return null;
+
+  const overlay = drawer.querySelector("[data-team-drawer-overlay]");
+  const panel = drawer.querySelector("[data-team-drawer-panel]");
+  const closeBtn = drawer.querySelector("[data-team-drawer-close]");
+  const nameEl = drawer.querySelector("[data-team-drawer-name]");
+  const roleEl = drawer.querySelector("[data-team-drawer-role]");
+  const bioEl = drawer.querySelector("[data-team-drawer-bio]");
+  const imgEl = drawer.querySelector("[data-team-drawer-img]");
+
+  if (!panel) return null;
+
+  panel.setAttribute("data-lenis-prevent", "");
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+
+  let isOpen = false;
+  let lastFocus = null;
+
+  function open(item) {
+    const name = item.querySelector("[data-team-name]");
+    const role = item.querySelector("[data-team-role]");
+    const bio = item.querySelector("[data-team-bio]");
+    const img = item.querySelector("img");
+
+    if (nameEl) nameEl.textContent = name ? name.textContent : "";
+    if (roleEl) roleEl.textContent = role ? role.textContent : "";
+    if (bioEl) bioEl.innerHTML = bio ? bio.innerHTML : "";
+
+    if (imgEl && img) {
+      imgEl.removeAttribute("srcset");
+      imgEl.removeAttribute("sizes");
+      imgEl.src = img.currentSrc || img.src;
+      imgEl.alt = img.alt || (name ? name.textContent : "");
+    }
+
+    isOpen = true;
+    lastFocus = document.activeElement;
+    if (lenis) lenis.stop();
+    onOpen();
+
+    gsap.killTweensOf([panel, overlay, panel.children]);
+    gsap.set(drawer, { display: "block", visibility: "visible" });
+    panel.scrollTop = 0;
+
+    if (overlay) {
+      gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" });
+    }
+
+    gsap.fromTo(panel, { xPercent: 110 }, { xPercent: 0, duration: 0.8, ease: "expo.out" });
+
+    gsap.fromTo(panel.children,
+      { y: "1rem", autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.05, delay: 0.15, ease: "expo.out" }
+    );
+
+    if (closeBtn) closeBtn.focus({ preventScroll: true });
+  }
+
+  function close() {
+    if (!isOpen) return;
+    isOpen = false;
+    if (lenis) lenis.start();
+    onClose();
+
+    gsap.killTweensOf([panel, overlay, panel.children]);
+
+    gsap.to(panel, { xPercent: 110, duration: 0.6, ease: "expo.inOut" });
+
+    if (overlay) {
+      gsap.to(overlay, { opacity: 0, duration: 0.5, delay: 0.1, ease: "power2.out" });
+    }
+
+    gsap.delayedCall(0.65, () => {
+      if (!isOpen) gsap.set(drawer, { display: "none" });
+    });
+
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  }
+
+  if (overlay) overlay.addEventListener("click", close);
+  if (closeBtn) closeBtn.addEventListener("click", close);
+
+  function onKey(e) {
+    if (e.key === "Escape" && isOpen) close();
+  }
+
+  document.addEventListener("keydown", onKey);
+
+  addCleanup(drawer, () => {
+    document.removeEventListener("keydown", onKey);
+    if (isOpen && lenis) lenis.start();
+  });
+
+  return { open, close };
+}
+
+function initTeamMarquee() {
+  if (!hasScrollTrigger) return;
+
+  nextPage.querySelectorAll("[data-wavy-marquee-init]").forEach((container) => {
+    if (container.dataset.wavyInitialized === "true") return;
+    container.dataset.wavyInitialized = "true";
+
+    const list = container.querySelector("[data-wavy-marquee-list]");
+    if (!list) return;
+
+    const originals = [...list.querySelectorAll("[data-wavy-marquee-item]")].map((item) => item.cloneNode(true));
+    if (!originals.length) return;
+
+    const autoSpeed = toNumber(container.dataset.wavySpeed, 60);
+    const waveY = toNumber(container.dataset.wavyHeight, 0.12);
+    const tilt = toNumber(container.dataset.wavyTilt, 0.6);
+    const viewport = [
+      [992, 1, 1],
+      [768, 0.75, 1],
+      [480, 0.6, 0.75],
+      [0, 0.5, 0.75]
+    ];
+    const scrollSpeed = 0.0075;
+    const dragSpeed = 0.5;
+    const maxDragSpeed = 75;
+    const dragEase = 0.1;
+    const waveBoost = 0.01;
+    const itemsPerWave = 10;
+    const waveTravel = 0.25;
+
+    const getViewport = () => viewport.find(([min]) => innerWidth >= min).slice(1);
+
+    const baseDirection = container.dataset.wavyMarqueeDirection === "flipped" ? 1 : -1;
+    const setX = gsap.quickSetter(list, "x", "px");
+    const fullCircle = Math.PI * 2;
+    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+    let items = [];
+    let loopWidth = 0, waveLength = 0, averageWidth = 1, travel = 0, pausePadding = 0;
+    let speed = 1, targetSpeed = 1, direction = baseDirection;
+    let isActive = false, isDragging = false;
+    let pause = 1;
+    let hoverItem = null;
+    let drawerOpen = false;
+    let dragDistance = 0;
+    let [speedScale, waveScale] = getViewport();
+
+    const drawer = setupTeamDrawer(
+      container.closest("section") || nextPage,
+      () => { drawerOpen = true; },
+      () => { drawerOpen = false; }
+    ) || setupTeamDrawer(nextPage, () => { drawerOpen = true; }, () => { drawerOpen = false; });
+
+    function prepareItem(item, isClone) {
+      item.querySelectorAll("img").forEach((img) => img.setAttribute("draggable", "false"));
+
+      if (isClone) {
+        item.setAttribute("aria-hidden", "true");
+        item.removeAttribute("tabindex");
+      } else {
+        item.setAttribute("role", "button");
+        item.setAttribute("tabindex", "0");
+      }
+    }
+
+    function addBatch(isClone) {
+      const fragment = document.createDocumentFragment();
+      originals.forEach((item) => {
+        const clone = item.cloneNode(true);
+        prepareItem(clone, isClone);
+        fragment.appendChild(clone);
+      });
+      list.appendChild(fragment);
+    }
+
+    if (reducedMotion) {
+      list.innerHTML = "";
+      addBatch(false);
+      container.style.overflowX = "auto";
+    } else {
+      buildLoop();
+    }
+
+    function buildLoop() {
+      list.innerHTML = "";
+
+      addBatch(false);
+      addBatch(true);
+
+      const firstItems = [...list.querySelectorAll("[data-wavy-marquee-item]")];
+      loopWidth = firstItems[originals.length].offsetLeft - firstItems[0].offsetLeft;
+
+      for (let i = 2; i < Math.max(2, Math.ceil(container.offsetWidth / loopWidth) + 1); i++) {
+        addBatch(true);
+      }
+
+      items = [...list.querySelectorAll("[data-wavy-marquee-item]")];
+
+      const originalItems = firstItems.slice(0, originals.length);
+      averageWidth = originalItems.reduce((sum, item) => sum + item.offsetWidth, 0) / originals.length;
+      waveLength = Math.max(container.offsetWidth, averageWidth * itemsPerWave) * waveScale;
+
+      let maxHeight = 0;
+
+      for (const item of items) {
+        item._x = item.offsetLeft;
+        item._width = item.offsetWidth;
+        item._height = item.offsetHeight;
+        item._settle = 0;
+        item._setY = gsap.quickSetter(item, "y", "px");
+        item._setR = gsap.quickSetter(item, "rotate", "deg");
+        maxHeight = Math.max(maxHeight, item._height);
+      }
+
+      pausePadding = maxHeight * (Math.abs(waveY) + 1);
+      render();
+    }
+
+    function render() {
+      if (!loopWidth || !waveLength) return;
+
+      const x = gsap.utils.wrap(-loopWidth, 0, travel);
+      const dynamicWaveY = waveY + (speed - 1) * waveBoost;
+      const phaseTravel = travel / waveLength * fullCircle * waveTravel;
+      const containerWidth = container.offsetWidth;
+
+      setX(x);
+
+      for (const item of items) {
+        const itemX = item._x + x;
+        if (itemX + item._width < 0 || itemX > containerWidth) continue;
+
+        item._settle += ((item === hoverItem ? 1 : 0) - item._settle) * 0.1;
+
+        const amp = item._height * dynamicWaveY;
+        const phase = itemX / waveLength * fullCircle + phaseTravel;
+        const y = Math.sin(phase) * amp;
+        const slope = Math.cos(phase) * amp * fullCircle / waveLength;
+        const rotation = Math.atan(slope) * (180 / Math.PI) * tilt;
+        const free = 1 - item._settle;
+
+        item._setY(y * free);
+        item._setR(rotation * free);
+      }
+    }
+
+    function tick(_, deltaTime) {
+      if (!isActive || !loopWidth) return;
+
+      const shouldPause = drawerOpen || (hoverItem && !isDragging);
+      pause += ((shouldPause ? 0 : 1) - pause) * 0.08;
+
+      speed += ((targetSpeed !== 1 ? targetSpeed : 1) - speed) * dragEase;
+      if (targetSpeed !== 1) targetSpeed += (1 - targetSpeed) * dragEase;
+
+      const dragBoost = isDragging || targetSpeed > 1.01;
+      travel += autoSpeed * speedScale * speed * direction * deltaTime / 1000 * (dragBoost ? 1 : pause);
+      render();
+    }
+
+    function setHover(item) {
+      if (item === hoverItem) return;
+
+      if (hoverItem) {
+        const prevImg = hoverItem.querySelector("img");
+        if (prevImg) gsap.to(prevImg, { scale: 1, duration: 0.6, ease: "expo.out", overwrite: "auto" });
+      }
+
+      hoverItem = item;
+
+      if (item) {
+        const img = item.querySelector("img");
+        if (img) gsap.to(img, { scale: 1.06, duration: 0.6, ease: "expo.out", overwrite: "auto" });
+      }
+    }
+
+    if (canHover && !reducedMotion) {
+      list.addEventListener("pointerover", (e) => {
+        if (isDragging) return;
+        setHover(e.target.closest("[data-wavy-marquee-item]"));
+      });
+
+      list.addEventListener("pointerleave", () => setHover(null));
+    }
+
+    list.addEventListener("click", (e) => {
+      const item = e.target.closest("[data-wavy-marquee-item]");
+      if (!item || !drawer) return;
+      if (dragDistance > 6) return;
+      drawer.open(item);
+    });
+
+    list.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const item = e.target.closest("[data-wavy-marquee-item]");
+      if (!item || !drawer) return;
+      e.preventDefault();
+      drawer.open(item);
+    });
+
+    if (reducedMotion) return;
+
+    let observer = null;
+
+    if (hasObserver) {
+      observer = Observer.create({
+        target: container,
+        type: "touch,pointer",
+        lockAxis: true,
+        onPress: () => {
+          dragDistance = 0;
+        },
+        onChangeX: (self) => {
+          if (!isActive || !self.deltaX) return;
+
+          dragDistance += Math.abs(self.deltaX);
+          if (dragDistance < 6) return;
+
+          isDragging = true;
+          setHover(null);
+          container.style.cursor = "grabbing";
+          direction = self.deltaX > 0 ? 1 : -1;
+
+          const dragAmount = Math.abs(self.deltaX) / averageWidth * 100 * dragSpeed;
+          targetSpeed = Math.min(1 + dragAmount, maxDragSpeed);
+        },
+        onRelease: () => {
+          isDragging = false;
+          container.style.cursor = "grab";
+        }
+      });
+    }
+
+    const trigger = ScrollTrigger.create({
+      trigger: container,
+      start: () => `top-=${pausePadding}px bottom`,
+      end: () => `bottom+=${pausePadding}px top`,
+      invalidateOnRefresh: true,
+      onToggle: (self) => isActive = self.isActive,
+      onUpdate: (self) => {
+        if (isDragging) return;
+
+        direction = self.direction === 1 ? -baseDirection : baseDirection;
+        speed = 1 + Math.abs(self.getVelocity()) * scrollSpeed;
+      }
+    });
+
+    isActive = ScrollTrigger.isInViewport(container);
+    gsap.ticker.add(tick);
+
+    const onResize = debounceOnWidthChange(() => {
+      [speedScale, waveScale] = getViewport();
+      hoverItem = null;
+      buildLoop();
+      ScrollTrigger.refresh();
+    }, 150);
+
+    window.addEventListener("resize", onResize);
+
+    addCleanup(container, () => {
+      if (observer) observer.kill();
+      trigger.kill();
+      gsap.ticker.remove(tick);
+      window.removeEventListener("resize", onResize);
+    });
+  });
+}
+
 function initBigLogoReveal() {
   const logos = nextPage.querySelectorAll(".big_logo");
   if (!logos.length) return;
@@ -1252,19 +1622,139 @@ function initBigLogoReveal() {
 }
 
 function initLogoMarquee() {
-  const track = nextPage.querySelector(".logo-marquee_track");
-  if (!track) return;
-  if (track.dataset.marqueeInitialized === "true") return;
-  track.dataset.marqueeInitialized = "true";
+  nextPage.querySelectorAll(".logo-marquee_track, [data-marquee-track]").forEach((track) => {
+    if (track.dataset.marqueeInitialized === "true") return;
+    track.dataset.marqueeInitialized = "true";
 
-  const tween = gsap.to(track, {
-    xPercent: -50,
-    ease: "none",
-    duration: 50,
-    repeat: -1
+    const wrapper = track.parentElement;
+    if (!wrapper) return;
+
+    const originals = [...track.children].map((child) => child.cloneNode(true));
+    if (!originals.length) return;
+    if (reducedMotion) return;
+
+    const speedPx = toNumber(track.dataset.marqueeSpeed, 60);
+    const baseDirection = track.dataset.marqueeDirection === "right" ? 1 : -1;
+    const pauseOnHover = track.dataset.marqueePauseHover === "true";
+    const scrollBoost = track.dataset.marqueeScroll === "true";
+    const scrollReverse = track.dataset.marqueeScrollReverse === "true";
+
+    const setX = gsap.quickSetter(track, "x", "px");
+
+    let setWidth = 0;
+    let travel = 0;
+    let speed = 1;
+    let pause = 1;
+    let hovering = false;
+    let isActive = true;
+    let direction = baseDirection;
+    let started = false;
+
+    function addSet(isClone) {
+      const fragment = document.createDocumentFragment();
+
+      originals.forEach((original) => {
+        const clone = original.cloneNode(true);
+
+        if (isClone) {
+          clone.setAttribute("aria-hidden", "true");
+          clone.querySelectorAll("a, button").forEach((el) => el.setAttribute("tabindex", "-1"));
+          if (clone.matches("a, button")) clone.setAttribute("tabindex", "-1");
+        }
+
+        fragment.appendChild(clone);
+      });
+
+      track.appendChild(fragment);
+    }
+
+    function build() {
+      track.innerHTML = "";
+      addSet(false);
+      addSet(true);
+
+      const children = track.children;
+      setWidth = children[originals.length].offsetLeft - children[0].offsetLeft;
+      if (!setWidth) return;
+
+      const needed = Math.ceil(wrapper.offsetWidth / setWidth) + 1;
+      for (let i = 2; i <= needed; i++) addSet(true);
+
+      render();
+    }
+
+    function render() {
+      if (!setWidth) return;
+      setX(gsap.utils.wrap(-setWidth, 0, travel));
+    }
+
+    function tick(_, deltaTime) {
+      if (!isActive || !setWidth) return;
+
+      pause += ((pauseOnHover && hovering ? 0 : 1) - pause) * 0.06;
+      speed += (1 - speed) * 0.05;
+
+      travel += speedPx * speed * pause * direction * deltaTime / 1000;
+      render();
+    }
+
+    function waitForImages() {
+      const imgs = [...track.querySelectorAll("img")];
+      imgs.forEach((img) => { img.loading = "eager"; });
+
+      return Promise.all(imgs.map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.addEventListener("load", resolve, { once: true });
+          img.addEventListener("error", resolve, { once: true });
+        });
+      }));
+    }
+
+    if (pauseOnHover && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      wrapper.addEventListener("pointerenter", () => { hovering = true; });
+      wrapper.addEventListener("pointerleave", () => { hovering = false; });
+    }
+
+    let trigger = null;
+
+    if (hasScrollTrigger) {
+      trigger = ScrollTrigger.create({
+        trigger: wrapper,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => { isActive = self.isActive; },
+        onUpdate: (self) => {
+          if (scrollBoost) {
+            speed = 1 + Math.abs(self.getVelocity()) * 0.004;
+          }
+          if (scrollReverse) {
+            direction = self.direction === 1 ? baseDirection : -baseDirection;
+          }
+        }
+      });
+
+      isActive = ScrollTrigger.isInViewport(wrapper);
+    }
+
+    const onResize = debounceOnWidthChange(() => {
+      build();
+    }, 150);
+
+    waitForImages().then(() => {
+      if (!track.isConnected) return;
+      build();
+      gsap.ticker.add(tick);
+      started = true;
+      window.addEventListener("resize", onResize);
+    });
+
+    addCleanup(track, () => {
+      if (trigger) trigger.kill();
+      if (started) gsap.ticker.remove(tick);
+      window.removeEventListener("resize", onResize);
+    });
   });
-
-  addCleanup(track, () => tween.kill());
 }
 
 function initFooterLinkHover() {
