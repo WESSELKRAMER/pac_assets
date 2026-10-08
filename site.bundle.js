@@ -1232,12 +1232,16 @@ function initTeamSlider() {
     const prevBtn = slider.querySelector("[data-team-prev]");
     const nextBtn = slider.querySelector("[data-team-next]");
 
+    const anchorEl = slider.querySelector("[data-team-anchor-el]") || textWrap;
+    const anchorAttr = slider.dataset.teamAnchor;
+    const useAnchorEl = anchorAttr === undefined && !!anchorEl;
+    const anchorFraction = toNumber(anchorAttr, 0.5);
+
     const duration = reducedMotion ? 0 : toNumber(slider.dataset.teamDuration, 1);
     const waveHeight = toNumber(slider.dataset.teamWaveHeight, 0.35);
     const waveItems = toNumber(slider.dataset.teamWaveLength, 6);
     const spacingFactor = toNumber(slider.dataset.teamSpacing, 1.5);
     const activeScale = toNumber(slider.dataset.teamActiveScale, 1.2);
-    const anchor = toNumber(slider.dataset.teamAnchor, 0.5);
     const autoplay = toNumber(slider.dataset.teamAutoplay, 0);
 
     const state = { progress: 0 };
@@ -1245,6 +1249,7 @@ function initTeamSlider() {
     let active = 0;
     let items = [];
     let itemW = 0, itemH = 0, spacing = 0, total = 0, waveLength = 0, amp = 0;
+    let anchorX = 0;
     let textTl = null;
     let textSplits = [];
     let autoplayCall = null;
@@ -1296,6 +1301,14 @@ function initTeamSlider() {
       track.appendChild(fragment);
     }
 
+    function measureAnchor() {
+      if (useAnchorEl) {
+        anchorX = anchorEl.getBoundingClientRect().left - track.getBoundingClientRect().left;
+      } else {
+        anchorX = track.offsetWidth * anchorFraction - itemW / 2;
+      }
+    }
+
     function build() {
       track.innerHTML = "";
       addSet(false);
@@ -1305,7 +1318,7 @@ function initTeamSlider() {
       itemH = first.offsetHeight;
       spacing = itemW * spacingFactor;
 
-      const reach = Math.max(anchor, 1 - anchor) * slider.offsetWidth * 2 + spacing * 2;
+      const reach = slider.offsetWidth * 2 + spacing * 2;
       const sets = Math.max(1, Math.ceil(reach / (count * spacing)));
       for (let i = 1; i < sets; i++) addSet(true);
 
@@ -1320,11 +1333,14 @@ function initTeamSlider() {
         el.style.position = "absolute";
         el.style.left = "0";
         el.style.top = "0";
+        gsap.set(el, { transformOrigin: useAnchorEl ? "0% 50%" : "50% 50%" });
         el._setX = gsap.quickSetter(el, "x", "px");
         el._setY = gsap.quickSetter(el, "y", "px");
-        el._setS = gsap.quickSetter(el, "scale");
+        el._setSX = gsap.quickSetter(el, "scaleX");
+        el._setSY = gsap.quickSetter(el, "scaleY");
       });
 
+      measureAnchor();
       render();
       gsap.set(track, { visibility: "visible" });
     }
@@ -1332,20 +1348,20 @@ function initTeamSlider() {
     function render() {
       if (!items.length) return;
 
-      const centerX = track.offsetWidth * anchor;
       const centerY = (track.offsetHeight - itemH) / 2;
       const half = total / 2;
 
       items.forEach((el, i) => {
         const offset = gsap.utils.wrap(-half, half, (i - state.progress) * spacing);
-        const x = centerX + offset - itemW / 2;
+        const x = anchorX + offset;
         const y = centerY + Math.sin(offset / waveLength * Math.PI * 2) * amp;
         const closeness = Math.max(0, 1 - Math.abs(offset) / spacing);
         const scale = 1 + (activeScale - 1) * closeness;
 
         el._setX(x);
         el._setY(y);
-        el._setS(scale);
+        el._setSX(scale);
+        el._setSY(scale);
         el.style.zIndex = closeness > 0.5 ? "2" : "1";
       });
     }
