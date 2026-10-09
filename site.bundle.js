@@ -46,6 +46,7 @@ function initBeforeEnterFunctions(next) {
   initDynamicCurrentYear();
   initUnselectableText();
   if (has(".home_grid_card, [data-load-fade]")) initLoadFade();
+  if (has("[data-animate-line]")) initAnimateLines();
   initCTAAnimation();
   if (has("[data-submit-trigger]")) initSubmitTriggers();
   if (has("[data-team-prev], [data-team-next], [data-arrow-button]")) initArrowButtons();
@@ -751,6 +752,77 @@ function initLoadFade() {
         clearProps: "transform"
       }
     );
+  });
+}
+
+function initAnimateLines() {
+  const lines = nextPage.querySelectorAll("[data-animate-line]");
+  if (!lines.length) return;
+
+  if (reducedMotion) {
+    gsap.set(lines, { visibility: "visible" });
+    return;
+  }
+
+  const origins = {
+    left: "0% 50%",
+    right: "100% 50%",
+    top: "50% 0%",
+    bottom: "50% 100%",
+    center: "50% 50%"
+  };
+
+  lines.forEach((line) => {
+    if (line.dataset.lineInitialized === "true") return;
+    line.dataset.lineInitialized = "true";
+
+    const type = (line.dataset.animateLine || "width").toLowerCase();
+    const isVertical = ["height", "y", "vertical"].includes(type);
+    const prop = isVertical ? "scaleY" : "scaleX";
+
+    const originKey = (line.dataset.lineOrigin || (isVertical ? "top" : "left")).toLowerCase();
+    const origin = origins[originKey] || origins.center;
+
+    const duration = toNumber(line.dataset.lineDuration, 1.2);
+    const delay = toNumber(line.dataset.lineDelay, 0);
+    const ease = line.dataset.lineEase || "expo.out";
+    const start = line.dataset.lineStart || "top 85%";
+    const end = line.dataset.lineEnd || "bottom 60%";
+    const immediate = line.dataset.lineImmediate === "true";
+    const scrub = line.dataset.lineScrub === "true";
+
+    gsap.set(line, { transformOrigin: origin, [prop]: 0, visibility: "visible" });
+
+    if (immediate || !hasScrollTrigger) {
+      gsap.to(line, { [prop]: 1, duration, delay, ease });
+      return;
+    }
+
+    if (scrub) {
+      gsap.to(line, {
+        [prop]: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: line,
+          start: `clamp(${start})`,
+          end: `clamp(${end})`,
+          scrub: true
+        }
+      });
+      return;
+    }
+
+    gsap.to(line, {
+      [prop]: 1,
+      duration,
+      delay,
+      ease,
+      scrollTrigger: {
+        trigger: line,
+        start: `clamp(${start})`,
+        once: true
+      }
+    });
   });
 }
 
