@@ -1852,6 +1852,36 @@ function initDomainTabs() {
     const cardStagger = num(module.dataset.domainsCardStagger, 0.1);
     const cardDelay = num(module.dataset.domainsCardDelay, 0.2);
     const CARD_SELECTOR = "[data-domain-card], .project_grid_card";
+    const blobDuration = num(module.dataset.domainsBlobDuration, 1.2);
+
+    const blobSection = module.closest("[data-blob-section], .section_domains");
+    const blob = blobSection ? blobSection.querySelector("[data-domain-blob], .blob") : null;
+
+    const isUsableColor = (c) =>
+      !!c && c !== "transparent" && !/^rgba\([^)]*,\s*0\)$/.test(c.replace(/\s+/g, " "));
+
+    const getColor = (i) => {
+      const el =
+        tabs[i].querySelector("[data-domain-color]") ||
+        panels[i].querySelector("[data-domain-color]");
+      if (!el) return null;
+      const attr = (el.dataset.domainColor || "").trim();
+      if (attr && (attr.startsWith("#") || attr.startsWith("rgb") || attr.startsWith("hsl"))) return attr;
+      const bg = getComputedStyle(el).backgroundColor;
+      return isUsableColor(bg) ? bg : null;
+    };
+
+    const updateBlob = (index, animate) => {
+      if (!blob) return;
+      const color = getColor(index);
+      if (!color) return;
+      gsap.to(blob, {
+        "--blob-color": color,
+        duration: animate && !reducedMotion ? blobDuration : 0,
+        ease: "power2.out",
+        overwrite: "auto"
+      });
+    };
     const useHash = module.dataset.domainsHash !== "false";
 
     const uid = "domain-" + Math.random().toString(36).slice(2, 7);
@@ -1987,6 +2017,7 @@ function initDomainTabs() {
 
       updateTabs(index, animate);
       updatePanelsA11y(index);
+      updateBlob(index, animate && prev >= 0);
       scrollTabIntoView(tabs[index]);
       if (prev >= 0) updateHash(index);
 
