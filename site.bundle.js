@@ -45,6 +45,7 @@ function initBeforeEnterFunctions(next) {
   applyNavbarPageConfig(nextPage);
   initDynamicCurrentYear();
   initUnselectableText();
+  if (has(".home_grid_card, [data-load-fade]")) initLoadFade();
   initCTAAnimation();
   if (has("[data-submit-trigger]")) initSubmitTriggers();
   if (has("[data-team-prev], [data-team-next], [data-arrow-button]")) initArrowButtons();
@@ -709,6 +710,47 @@ function initUnselectableText() {
     el.addEventListener("selectstart", (e) => e.preventDefault());
     el.addEventListener("copy", (e) => e.preventDefault());
     el.addEventListener("dragstart", (e) => e.preventDefault());
+  });
+}
+
+function initLoadFade() {
+  const elements = nextPage.querySelectorAll(".home_grid_card, [data-load-fade]");
+  if (!elements.length) return;
+
+  if (reducedMotion) {
+    gsap.set(elements, { autoAlpha: 1 });
+    return;
+  }
+
+  const isFirstLoad = nextPage === document;
+  const groups = new Map();
+
+  elements.forEach((el) => {
+    if (el.dataset.loadFadeInitialized === "true") return;
+    el.dataset.loadFadeInitialized = "true";
+
+    const parent = el.parentElement;
+    if (!groups.has(parent)) groups.set(parent, []);
+    groups.get(parent).push(el);
+  });
+
+  groups.forEach((list, parent) => {
+    const delay = toNumber(parent.dataset.loadDelay, isFirstLoad ? 0.1 : 0.35);
+    const stagger = toNumber(parent.dataset.loadStagger, 0.12);
+    const duration = toNumber(parent.dataset.loadDuration, 1);
+
+    gsap.fromTo(list,
+      { autoAlpha: 0, y: "2rem" },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration,
+        stagger,
+        delay,
+        ease: "expo.out",
+        clearProps: "transform"
+      }
+    );
   });
 }
 
