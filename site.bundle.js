@@ -1500,6 +1500,7 @@ function initTeamSlider() {
     const waveItems = toNumber(slider.dataset.teamWaveLength, 6);
     const spacingFactor = toNumber(slider.dataset.teamSpacing, 1.5);
     const activeScale = toNumber(slider.dataset.teamActiveScale, 1.2);
+    const inactiveOpacity = gsap.utils.clamp(0, 1, toNumber(slider.dataset.teamInactiveOpacity, 0.5));
     const autoplay = toNumber(slider.dataset.teamAutoplay, 0);
 
     const MAX_SETS = 8;
@@ -1605,6 +1606,7 @@ function initTeamSlider() {
         el._setY = gsap.quickSetter(el, "y", "px");
         el._setSX = gsap.quickSetter(el, "scaleX");
         el._setSY = gsap.quickSetter(el, "scaleY");
+        el._setO = gsap.quickSetter(el, "opacity");
       });
 
       measureAnchor();
@@ -1629,11 +1631,13 @@ function initTeamSlider() {
 
         const closeness = Math.max(0, 1 - Math.abs(t));
         const scale = 1 + (activeScale - 1) * closeness;
+        const opacity = inactiveOpacity + (1 - inactiveOpacity) * closeness;
 
         el._setX(baseCenter + pos - itemW / 2);
         el._setY(centerY + Math.sin(pos / waveLength * Math.PI * 2) * amp);
         el._setSX(scale);
         el._setSY(scale);
+        el._setO(opacity);
         el.style.zIndex = closeness > 0.5 ? "2" : "1";
       });
     }
