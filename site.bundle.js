@@ -200,7 +200,7 @@ barba.hooks.afterEnter(data => {
 });
 
 barba.init({
-  debug: true,
+  debug: false,
   timeout: 7000,
   preventRunning: true,
   transitions: [
