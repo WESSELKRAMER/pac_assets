@@ -55,6 +55,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-highlight-text]")) initHighlightText();
   if (has(".floating_img_wrap")) initFloatingImages();
   if (has("[data-team-slider]")) initTeamSlider();
+  if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
   if (has(".footer_link")) initFooterLinkHover();
@@ -1823,6 +1824,268 @@ function initTeamSlider() {
       if (textTl) textTl.kill();
       revertTextSplits();
       gsap.killTweensOf(state);
+    });
+  });
+}
+
+function initDomainTabs() {
+  nextPage.querySelectorAll("[data-domains], .domains_module").forEach((module) => {
+    if (module.dataset.domainsInitialized === "true") return;
+
+    const tabs = Array.from(module.querySelectorAll("[data-domain-tab], .domains_collection_item"));
+    const panels = Array.from(module.querySelectorAll("[data-domain-panel], .domain_contents_item"));
+    const count = Math.min(tabs.length, panels.length);
+    if (!count) return;
+    tabs.length = count;
+    panels.length = count;
+
+    module.dataset.domainsInitialized = "true";
+
+    const num = (v, d) => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : d;
+    };
+    const duration = num(module.dataset.domainsDuration, 0.8);
+    const stagger = num(module.dataset.domainsStagger, 0.08);
+    const inactiveOpacity = num(module.dataset.domainsInactiveOpacity, 0.4);
+    const hoverOpacity = num(module.dataset.domainsHoverOpacity, 0.7);
+    const useHash = module.dataset.domainsHash !== "false";
+
+    const uid = "domain-" + Math.random().toString(36).slice(2, 7);
+    const tabList = tabs[0].parentElement;
+    tabList.setAttribute("role", "tablist");
+    tabList.setAttribute("aria-orientation", "vertical");
+
+    const getSlug = (i) => tabs[i].dataset.domainSlug || panels[i].dataset.domainSlug || "";
+
+    const getIndicator = (tab) => tab.querySelector("[data-domain-indicator], .domain_indicator");
+
+    const getTabFades = (tab) => {
+      const marked = tab.querySelectorAll("[data-domain-tab-fade]");
+      if (marked.length) return Array.from(marked);
+      const inner = tab.querySelector(".domains_collection_item_inner") || tab;
+      return Array.from(inner.children).filter(
+        (el) => !el.matches("[data-domain-indicator], .domain_indicator, .u-domain-line, [data-domain-line]")
+      );
+    };
+
+    const getPanelHeading = (panel) =>
+      panel.querySelector("[data-domain-heading]") || panel.querySelector("h1, h2, h3");
+
+    const getPanelFades = (panel, heading) => {
+      const marked = panel.querySelectorAll("[data-domain-fade]");
+      if (marked.length) return Array.from(marked);
+      if (!heading || !heading.parentElement) return [];
+      return Array.from(heading.parentElement.children).filter((el) => el !== heading);
+    };
+
+    tabs.forEach((tab, i) => {
+      const panel = panels[i];
+      tab.id = tab.id || uid + "-tab-" + i;
+      panel.id = panel.id || uid + "-panel-" + i;
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-controls", panel.id);
+      panel.setAttribute("role", "tabpanel");
+      panel.setAttribute("aria-labelledby", tab.id);
+      tab.style.cursor = "pointer";
+    });
+
+    let current = -1;
+    let tl = null;
+    let split = null;
+
+    const finishRunning = () => {
+      if (tl) {
+        const running = tl;
+        tl = null;
+        running.progress(1);
+        running.kill();
+      }
+      if (split) {
+        split.revert();
+        split = null;
+      }
+    };
+
+    const updateTabs = (index, animate) => {
+      tabs.forEach((tab, j) => {
+        const on = j === index;
+        tab.classList.toggle("is-active", on);
+        tab.setAttribute("aria-selected", on ? "true" : "false");
+        tab.tabIndex = on ? 0 : -1;
+
+        const fades = getTabFades(tab);
+        if (fades.length) {
+          gsap.to(fades, {
+            opacity: on ? 1 : inactiveOpacity,
+            duration: animate ? 0.4 : 0,
+            ease: "power2.out",
+            overwrite: true
+          });
+        }
+
+        const indicator = getIndicator(tab);
+        if (indicator) {
+          gsap.to(indicator, {
+            scale: on ? 1 : 0,
+            duration: animate ? (on ? 0.5 : 0.3) : 0,
+            ease: on ? "back.out(2)" : "power2.out",
+            overwrite: true
+          });
+        }
+      });
+    };
+
+    const updatePanelsA11y = (index) => {
+      panels.forEach((panel, j) => {
+        const on = j === index;
+        panel.classList.toggle("is-active", on);
+        panel.setAttribute("aria-hidden", on ? "false" : "true");
+        if (on) panel.removeAttribute("inert");
+        else panel.setAttribute("inert", "");
+      });
+    };
+
+    const scrollTabIntoView = (tab) => {
+      let el = tab.parentElement;
+      while (el && el !== module.parentElement) {
+        const ox = getComputedStyle(el).overflowX;
+        if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth) {
+          const elRect = el.getBoundingClientRect();
+          const tabRect = tab.getBoundingClientRect();
+          const left = el.scrollLeft + (tabRect.left - elRect.left) - (elRect.width - tabRect.width) / 2;
+          el.scrollTo({ left: Math.max(0, left), behavior: reducedMotion ? "auto" : "smooth" });
+          return;
+        }
+        el = el.parentElement;
+      }
+    };
+
+    const updateHash = (index) => {
+      if (!useHash) return;
+      const slug = getSlug(index);
+      if (!slug) return;
+      try {
+        history.replaceState(history.state, "", "#" + slug);
+      } catch (e) {}
+    };
+
+    const go = (index, animate = true) => {
+      if (index < 0 || index >= count || index === current) return;
+
+      finishRunning();
+
+      const prev = current;
+      current = index;
+
+      updateTabs(index, animate);
+      updatePanelsA11y(index);
+      scrollTabIntoView(tabs[index]);
+      if (prev >= 0) updateHash(index);
+
+      if (!animate || reducedMotion || prev < 0) {
+        panels.forEach((panel, j) => gsap.set(panel, { autoAlpha: j === index ? 1 : 0, y: 0 }));
+        return;
+      }
+
+      const oldPanel = panels[prev];
+      const newPanel = panels[index];
+      const heading = getPanelHeading(newPanel);
+      const fades = getPanelFades(newPanel, heading);
+
+      tl = gsap.timeline({
+        defaults: { ease: "osmo" },
+        onComplete: () => {
+          if (split) {
+            split.revert();
+            split = null;
+          }
+          if (fades.length) gsap.set(fades, { clearProps: "opacity,visibility,transform" });
+          tl = null;
+        }
+      });
+
+      tl.to(oldPanel, { autoAlpha: 0, y: -12, duration: 0.3, ease: "power2.in" })
+        .set(oldPanel, { y: 0 })
+        .set(newPanel, { autoAlpha: 1, y: 0 });
+
+      if (heading && hasSplitText) {
+        split = SplitText.create(heading, { type: "lines", mask: "lines", linesClass: "line" });
+        tl.from(split.lines, { yPercent: 110, duration, stagger }, ">");
+      }
+
+      if (fades.length) {
+        tl.from(
+          fades,
+          { autoAlpha: 0, y: 16, duration, stagger },
+          heading && hasSplitText ? "<0.15" : ">"
+        );
+      }
+    };
+
+    const onClick = (e) => {
+      const tab = e.target.closest("[role='tab']");
+      const i = tabs.indexOf(tab);
+      if (i === -1) return;
+      if (e.target.closest("a")) e.preventDefault();
+      go(i);
+    };
+
+    const onKeydown = (e) => {
+      const i = tabs.indexOf(document.activeElement);
+      if (i === -1) return;
+      let next = null;
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") next = (i + 1) % count;
+      else if (e.key === "ArrowUp" || e.key === "ArrowLeft") next = (i - 1 + count) % count;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = count - 1;
+      else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        go(i);
+        return;
+      }
+      if (next === null) return;
+      e.preventDefault();
+      tabs[next].focus();
+      go(next);
+    };
+
+    const onEnter = (e) => {
+      const i = tabs.indexOf(e.currentTarget);
+      if (i === -1 || i === current) return;
+      gsap.to(getTabFades(tabs[i]), { opacity: hoverOpacity, duration: 0.3, ease: "power2.out", overwrite: true });
+    };
+
+    const onLeave = (e) => {
+      const i = tabs.indexOf(e.currentTarget);
+      if (i === -1 || i === current) return;
+      gsap.to(getTabFades(tabs[i]), { opacity: inactiveOpacity, duration: 0.3, ease: "power2.out", overwrite: true });
+    };
+
+    tabList.addEventListener("click", onClick);
+    tabList.addEventListener("keydown", onKeydown);
+    tabs.forEach((tab) => {
+      tab.addEventListener("mouseenter", onEnter);
+      tab.addEventListener("mouseleave", onLeave);
+    });
+
+    let startIndex = Math.min(Math.max(0, Math.round(num(module.dataset.domainsStart, 0))), count - 1);
+    const hash = decodeURIComponent((location.hash || "").replace("#", ""));
+    if (hash) {
+      const fromHash = tabs.findIndex((_, i) => getSlug(i) === hash);
+      if (fromHash !== -1) startIndex = fromHash;
+    }
+    go(startIndex, false);
+
+    addCleanup(module, () => {
+      finishRunning();
+      tabList.removeEventListener("click", onClick);
+      tabList.removeEventListener("keydown", onKeydown);
+      tabs.forEach((tab) => {
+        tab.removeEventListener("mouseenter", onEnter);
+        tab.removeEventListener("mouseleave", onLeave);
+      });
+      delete module.dataset.domainsInitialized;
     });
   });
 }
