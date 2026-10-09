@@ -1849,6 +1849,9 @@ function initDomainTabs() {
     const stagger = num(module.dataset.domainsStagger, 0.08);
     const inactiveOpacity = num(module.dataset.domainsInactiveOpacity, 0.4);
     const hoverOpacity = num(module.dataset.domainsHoverOpacity, 0.7);
+    const cardStagger = num(module.dataset.domainsCardStagger, 0.1);
+    const cardDelay = num(module.dataset.domainsCardDelay, 0.2);
+    const CARD_SELECTOR = "[data-domain-card], .project_grid_card";
     const useHash = module.dataset.domainsHash !== "false";
 
     const uid = "domain-" + Math.random().toString(36).slice(2, 7);
@@ -1876,8 +1879,12 @@ function initDomainTabs() {
       const marked = panel.querySelectorAll("[data-domain-fade]");
       if (marked.length) return Array.from(marked);
       if (!heading || !heading.parentElement) return [];
-      return Array.from(heading.parentElement.children).filter((el) => el !== heading);
+      return Array.from(heading.parentElement.children).filter(
+        (el) => el !== heading && !el.matches(CARD_SELECTOR) && !el.querySelector(CARD_SELECTOR)
+      );
     };
+
+    const getPanelCards = (panel) => Array.from(panel.querySelectorAll(CARD_SELECTOR));
 
     tabs.forEach((tab, i) => {
       const panel = panels[i];
@@ -1992,6 +1999,7 @@ function initDomainTabs() {
       const newPanel = panels[index];
       const heading = getPanelHeading(newPanel);
       const fades = getPanelFades(newPanel, heading);
+      const cards = getPanelCards(newPanel);
 
       tl = gsap.timeline({
         defaults: { ease: "osmo" },
@@ -2001,6 +2009,7 @@ function initDomainTabs() {
             split = null;
           }
           if (fades.length) gsap.set(fades, { clearProps: "opacity,visibility,transform" });
+          if (cards.length) gsap.set(cards, { clearProps: "opacity,visibility,transform" });
           tl = null;
         }
       });
@@ -2019,6 +2028,14 @@ function initDomainTabs() {
           fades,
           { autoAlpha: 0, y: 16, duration, stagger },
           heading && hasSplitText ? "<0.15" : ">"
+        );
+      }
+
+      if (cards.length) {
+        tl.from(
+          cards,
+          { autoAlpha: 0, y: 32, duration, stagger: cardStagger },
+          fades.length || (heading && hasSplitText) ? "<" + cardDelay : ">"
         );
       }
     };
