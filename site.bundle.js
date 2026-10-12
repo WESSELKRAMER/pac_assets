@@ -1958,20 +1958,26 @@ function initDomainTabs() {
 
     distributeProjects();
 
-    const getTextColor = (i) => {
-      const el =
-        tabs[i].querySelector("[data-domain-text-color]") ||
-        panels[i].querySelector("[data-domain-text-color]");
+    const readColorEl = (i, selector) => {
+      const el = tabs[i].querySelector(selector) || panels[i].querySelector(selector);
       if (!el) return null;
       const bg = getComputedStyle(el).backgroundColor;
       return isUsableColor(bg) ? bg : null;
     };
 
+    const colorVars = [
+      ["[data-domain-text-color]", "--domain-text"],
+      ["[data-domain-tag-color]", "--domain-tag-bg"],
+      ["[data-domain-tag-text-color]", "--domain-tag-text"]
+    ];
+
     panels.forEach((panel, i) => {
       const color = getColor(i);
       if (color) panel.style.setProperty("--domain-color", color);
-      const text = getTextColor(i);
-      if (text) panel.style.setProperty("--domain-text", text);
+      colorVars.forEach(([selector, prop]) => {
+        const value = readColorEl(i, selector);
+        if (value) panel.style.setProperty(prop, value);
+      });
     });
 
     const getIndicator = (tab) => tab.querySelector("[data-domain-indicator], .domain_indicator");
