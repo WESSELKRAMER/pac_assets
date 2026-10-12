@@ -1886,16 +1886,34 @@ function initDomainTabs() {
       return isUsableColor(bg) ? bg : null;
     };
 
+    const readBlobOpacity = (i) => {
+      const colorEl =
+        tabs[i].querySelector("[data-domain-color]") ||
+        panels[i].querySelector("[data-domain-color]");
+      const sources = [tabs[i], panels[i], colorEl].filter(Boolean);
+      for (const el of sources) {
+        const v = parseFloat(el.dataset.domainBlobOpacity);
+        if (Number.isFinite(v)) return gsap.utils.clamp(0, 1, v);
+      }
+      const fallback = parseFloat(module.dataset.domainsBlobOpacity);
+      return Number.isFinite(fallback) ? gsap.utils.clamp(0, 1, fallback) : null;
+    };
+
     const updateBlob = (index, animate) => {
       if (!blob) return;
       const color = getColor(index);
-      if (!color) return;
-      gsap.to(blob, {
-        "--blob-color": color,
+      const opacity = readBlobOpacity(index);
+      if (!color && opacity === null) return;
+
+      const vars = {
         duration: animate && !reducedMotion ? blobDuration : 0,
         ease: "power2.out",
         overwrite: "auto"
-      });
+      };
+      if (color) vars["--blob-color"] = color;
+      if (opacity !== null) vars.opacity = opacity;
+
+      gsap.to(blob, vars);
     };
     const useHash = module.dataset.domainsHash !== "false";
 
