@@ -1848,7 +1848,7 @@ function initDomainTabs() {
     if (module.dataset.domainsInitialized === "true") return;
 
     const tabs = Array.from(module.querySelectorAll("[data-domain-tab], .domains_collection_item"));
-    const panels = Array.from(module.querySelectorAll("[data-domain-panel], .domain_contents_item"));
+    const panels = Array.from(module.querySelectorAll("[data-domain-panel], .domains_contents_item, .domain_contents_item"));
     const count = Math.min(tabs.length, panels.length);
     if (!count) return;
     tabs.length = count;
@@ -1923,6 +1923,45 @@ function initDomainTabs() {
     tabList.setAttribute("aria-orientation", "vertical");
 
     const getSlug = (i) => tabs[i].dataset.domainSlug || panels[i].dataset.domainSlug || "";
+
+    const distributeProjects = () => {
+      const scope = module.closest("[data-barba='container']") || nextPage;
+      const source =
+        module.querySelector("[data-domain-projects-source]") ||
+        scope.querySelector("[data-domain-projects-source]");
+      if (!source) return;
+
+      const limit = Math.max(0, Math.round(num(module.dataset.domainsProjectLimit, 3)));
+      const cards = Array.from(source.querySelectorAll("[data-project-domain]"));
+
+      panels.forEach((panel, i) => {
+        const target = panel.querySelector("[data-domain-projects], .domains_projects_wrap");
+        if (!target) return;
+
+        const slug = getSlug(i);
+        target.innerHTML = "";
+
+        const matches = slug
+          ? cards.filter((card) => (card.dataset.projectDomain || "").trim() === slug).slice(0, limit)
+          : [];
+
+        matches.forEach((card) => target.appendChild(card));
+
+        const empty = panel.querySelector("[data-domain-projects-empty]");
+        target.classList.toggle("is-empty", matches.length === 0);
+        if (empty) empty.style.display = matches.length ? "none" : "";
+        if (!slug) console.warn("[domains] Geen data-domain-slug gevonden voor domein", i + 1, tabs[i]);
+      });
+
+      source.remove();
+    };
+
+    distributeProjects();
+
+    panels.forEach((panel, i) => {
+      const color = getColor(i);
+      if (color) panel.style.setProperty("--domain-color", color);
+    });
 
     const getIndicator = (tab) => tab.querySelector("[data-domain-indicator], .domain_indicator");
 
