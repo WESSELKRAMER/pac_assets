@@ -257,9 +257,14 @@ function initLenis() {
   if (lenis) return;
   if (!hasLenis) return;
 
+  const cfg = document.body.dataset;
+
   lenis = new Lenis({
-    lerp: 0.165,
-    wheelMultiplier: 1.25,
+    lerp: toNumber(cfg.lenisLerp, 0.08),
+    wheelMultiplier: toNumber(cfg.lenisWheel, 0.9),
+    touchMultiplier: toNumber(cfg.lenisTouch, 1),
+    smoothWheel: true,
+    syncTouch: false
   });
 
   if (hasScrollTrigger) {
@@ -274,7 +279,11 @@ function initLenis() {
 }
 
 function resetPage(container) {
-  window.scrollTo(0, 0);
+  if (lenis) {
+    lenis.scrollTo(0, { immediate: true, force: true });
+  } else {
+    window.scrollTo(0, 0);
+  }
   gsap.set(container, { clearProps: "position,top,left,right" });
 
   if (hasLenis) {
@@ -368,11 +377,17 @@ function initAutoRefresh() {
     lastHeight = height;
 
     clearTimeout(timer);
-    timer = setTimeout(() => {
+    const tryRefresh = () => {
       if (isTransitioning) return;
+      if (lenis && lenis.isScrolling) {
+        timer = setTimeout(tryRefresh, 150);
+        return;
+      }
       if (lenis) lenis.resize();
       ScrollTrigger.refresh();
-    }, 200);
+    };
+
+    timer = setTimeout(tryRefresh, 200);
   });
 
   observer.observe(document.body);
