@@ -55,6 +55,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-highlight-text]")) initHighlightText();
   if (has(".floating_img_wrap")) initFloatingImages();
   if (has("[data-image-reveal]")) initImageReveal();
+  if (has("[data-wipe-reveal]")) initWipeReveal();
   if (has("[data-team-slider]")) initTeamSlider();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
@@ -1701,6 +1702,92 @@ function initImageReveal() {
     }
 
     addCleanup(source, () => master.kill());
+  });
+}
+
+function initWipeReveal() {
+  const elements = Array.from(nextPage.querySelectorAll("[data-wipe-reveal]")).filter(
+    (el) => el.dataset.wipeInitialized !== "true"
+  );
+  if (!elements.length) return;
+
+  const wipeVars = (direction) => {
+    switch ((direction || "left").toLowerCase()) {
+      case "right":
+        return { from: { xPercent: 0 }, to: { xPercent: 100 } };
+      case "top":
+        return { from: { yPercent: 0 }, to: { yPercent: -100 } };
+      case "bottom":
+        return { from: { yPercent: 0 }, to: { yPercent: 100 } };
+      default:
+        return { from: { xPercent: 0 }, to: { xPercent: -100 } };
+    }
+  };
+
+  elements.forEach((el) => {
+    el.dataset.wipeInitialized = "true";
+
+    if (reducedMotion || !hasScrollTrigger) {
+      gsap.set(el, { visibility: "visible" });
+      return;
+    }
+
+    const style = getComputedStyle(el);
+    if (style.position === "static") el.style.position = "relative";
+    if (style.overflow === "visible") el.style.overflow = "hidden";
+
+    let overlay = el.querySelector(":scope > .wipe_overlay");
+    const isNew = !overlay;
+
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.className = "wipe_overlay";
+      overlay.setAttribute("aria-hidden", "true");
+      Object.assign(overlay.style, {
+        position: "absolute",
+        inset: "0",
+        zIndex: "2",
+        pointerEvents: "none"
+      });
+      el.appendChild(overlay);
+    }
+
+    overlay.style.background =
+      style.getPropertyValue("--wipe-color").trim() || "var(--pac-dark--900, #141414)";
+
+    const { from, to } = wipeVars(el.getAttribute("data-wipe-reveal"));
+    const duration = toNumber(el.dataset.wipeDuration, 1.1);
+    const delay = toNumber(el.dataset.wipeDelay, 0);
+    const ease = el.dataset.wipeEase || "power2.out";
+    const start = el.dataset.wipeStart || "top 80%";
+
+    gsap.set(overlay, from);
+    gsap.set(el, { visibility: "visible" });
+
+    let played = false;
+    let tween = null;
+
+    const play = () => {
+      if (played) return;
+      played = true;
+      tween = gsap.to(overlay, { ...to, duration, delay, ease, overwrite: "auto" });
+    };
+
+    const st = ScrollTrigger.create({
+      trigger: el,
+      start,
+      once: true,
+      onEnter: play,
+      onRefresh: (self) => {
+        if (!played && self.isActive) play();
+      }
+    });
+
+    addCleanup(el, () => {
+      if (tween) tween.kill();
+      st.kill();
+      if (isNew) overlay.remove();
+    });
   });
 }
 
