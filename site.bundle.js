@@ -1279,6 +1279,30 @@ function initMaskTextScrollReveal() {
           ? ["lines", "words"]
           : ["lines", "words", "chars"];
 
+      let played = false;
+      let checks = 0;
+      let checkTimer = null;
+
+      const linesAreBroken = (inst) => {
+        const lines = inst.lines || [];
+        if (lines.length < 2) return false;
+        const heights = lines.map((l) => l.offsetHeight).filter((h) => h > 0);
+        if (!heights.length) return false;
+        const single = Math.min(...heights);
+        return heights.some((h) => h > single * 1.5);
+      };
+
+      const scheduleCheck = (inst) => {
+        clearTimeout(checkTimer);
+        checkTimer = setTimeout(() => {
+          if (!heading.isConnected || checks >= 6) return;
+          if (linesAreBroken(inst)) {
+            checks++;
+            if (typeof inst.split === "function") inst.split();
+          }
+        }, 150);
+      };
+
       const instance = SplitText.create(heading, {
         type: typesToSplit.join(", "),
         mask: "lines",
@@ -1287,23 +1311,25 @@ function initMaskTextScrollReveal() {
         wordsClass: "word",
         charsClass: "letter",
 
-        onSplit(instance) {
-          const targets = instance[type];
+        onSplit(inst) {
+          const targets = inst[type];
+          gsap.set(heading, { autoAlpha: 1 });
+          scheduleCheck(inst);
 
-          if (!targets || !targets.length) {
-            gsap.set(heading, { autoAlpha: 1 });
-            return;
-          }
+          if (!targets || !targets.length || played) return;
 
           const animation = {
             yPercent: 110,
             duration,
             stagger,
             delay,
-            ease
+            ease,
+            onComplete: () => {
+              played = true;
+            }
           };
 
-          const tween = isImmediate
+          return isImmediate
             ? gsap.from(targets, animation)
             : gsap.from(targets, {
                 ...animation,
@@ -1313,14 +1339,19 @@ function initMaskTextScrollReveal() {
                   once: true
                 }
               });
-
-          gsap.set(heading, { autoAlpha: 1 });
-
-          return tween;
         }
       });
 
-      addCleanup(heading, () => instance.revert());
+      const recheck = () => scheduleCheck(instance);
+      if (document.readyState !== "complete") window.addEventListener("load", recheck, { once: true });
+      document.fonts.addEventListener?.("loadingdone", recheck);
+
+      addCleanup(heading, () => {
+        clearTimeout(checkTimer);
+        window.removeEventListener("load", recheck);
+        document.fonts.removeEventListener?.("loadingdone", recheck);
+        instance.revert();
+      });
     });
   });
 }
