@@ -1994,10 +1994,13 @@ function initDomainTabs() {
         panels[i].querySelector("[data-domain-color]");
       const override = [tabs[i], panels[i], colorEl]
         .filter(Boolean)
-        .map((el) => (el.dataset.domainText || "").trim().toLowerCase())
+        .map((el) => (el.dataset.domainText || "").trim())
         .find((v) => v);
-      if (override === "light" || override === "wit" || override === "white") return TEXT_LIGHT;
-      if (override === "dark" || override === "zwart" || override === "black") return TEXT_DARK;
+      if (override && /^(#|rgb|hsl)/i.test(override)) return override;
+      const key = (override || "").toLowerCase();
+      if (key === "light" || key === "wit" || key === "white") return TEXT_LIGHT;
+      if (key === "dark" || key === "zwart" || key === "black") return TEXT_DARK;
+      if (module.dataset.domainsTextAuto !== "true") return null;
 
       const bgRGB = parseRGB(bg);
       const lightRGB = parseRGB(TEXT_LIGHT);
@@ -2011,8 +2014,10 @@ function initDomainTabs() {
       if (!color) return;
       const text = getTextColor(i, color);
       panel.style.setProperty("--domain-color", color);
+      if (!text) return;
       panel.style.setProperty("--domain-text", text);
-      panel.dataset.domainTheme = text === TEXT_LIGHT ? "dark" : "light";
+      const textRGB = parseRGB(text);
+      panel.dataset.domainTheme = textRGB && luminance(textRGB) > 0.5 ? "dark" : "light";
     });
 
     const getIndicator = (tab) => tab.querySelector("[data-domain-indicator], .domain_indicator");
