@@ -1958,9 +1958,61 @@ function initDomainTabs() {
 
     distributeProjects();
 
+    const TEXT_LIGHT = module.dataset.domainsTextLight || "#ffffff";
+    const TEXT_DARK = module.dataset.domainsTextDark || "#0e0e0e";
+
+    const parseRGB = (c) => {
+      if (!c) return null;
+      c = c.trim();
+      if (c.startsWith("#")) {
+        let h = c.slice(1);
+        if (h.length === 3) h = h.split("").map((x) => x + x).join("");
+        if (h.length < 6) return null;
+        return [0, 2, 4].map((o) => parseInt(h.slice(o, o + 2), 16));
+      }
+      const m = c.match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      return m[1].split(/[\s,\/]+/).slice(0, 3).map(Number);
+    };
+
+    const luminance = (rgb) => {
+      const [r, g, b] = rgb.map((v) => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+
+    const contrast = (a, b) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+
+    const getTextColor = (i, bg) => {
+      const colorEl =
+        tabs[i].querySelector("[data-domain-color]") ||
+        panels[i].querySelector("[data-domain-color]");
+      const override = [tabs[i], panels[i], colorEl]
+        .filter(Boolean)
+        .map((el) => (el.dataset.domainText || "").trim().toLowerCase())
+        .find((v) => v);
+      if (override === "light" || override === "wit" || override === "white") return TEXT_LIGHT;
+      if (override === "dark" || override === "zwart" || override === "black") return TEXT_DARK;
+
+      const bgRGB = parseRGB(bg);
+      const lightRGB = parseRGB(TEXT_LIGHT);
+      const darkRGB = parseRGB(TEXT_DARK);
+      if (!bgRGB || !lightRGB || !darkRGB) return TEXT_DARK;
+      return contrast(bgRGB, lightRGB) > contrast(bgRGB, darkRGB) ? TEXT_LIGHT : TEXT_DARK;
+    };
+
     panels.forEach((panel, i) => {
       const color = getColor(i);
-      if (color) panel.style.setProperty("--domain-color", color);
+      if (!color) return;
+      const text = getTextColor(i, color);
+      panel.style.setProperty("--domain-color", color);
+      panel.style.setProperty("--domain-text", text);
+      panel.dataset.domainTheme = text === TEXT_LIGHT ? "dark" : "light";
     });
 
     const getIndicator = (tab) => tab.querySelector("[data-domain-indicator], .domain_indicator");
