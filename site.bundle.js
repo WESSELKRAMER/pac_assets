@@ -1911,12 +1911,52 @@ function initVideoPopup() {
     });
   };
 
+  const withAutoplay = (src) => {
+    try {
+      const url = new URL(src, window.location.href);
+
+      if (url.hostname.includes("embedly.com")) {
+        const inner = url.searchParams.get("src");
+        if (inner) url.searchParams.set("src", withAutoplay(inner));
+        return url.toString();
+      }
+
+      if (/youtube(-nocookie)?\.com|youtu\.be/.test(url.hostname)) {
+        url.searchParams.set("autoplay", "1");
+        url.searchParams.set("playsinline", "1");
+        return url.toString();
+      }
+
+      if (url.hostname.includes("vimeo.com")) {
+        url.searchParams.set("autoplay", "1");
+        return url.toString();
+      }
+
+      return src;
+    } catch (e) {
+      return src;
+    }
+  };
+
   const playMedia = (popup) => {
+    if (popup.dataset.videoAutoplay === "false") return;
+
     const video = popup.querySelector("video");
     if (video) {
       const p = video.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
+
+    popup.querySelectorAll("iframe").forEach((iframe) => {
+      const original = iframe.dataset.videoSrc;
+      if (!original) return;
+      const allow = iframe.getAttribute("allow") || "";
+      if (!/autoplay/.test(allow)) {
+        iframe.setAttribute("allow", (allow ? allow + "; " : "") + "autoplay; fullscreen; encrypted-media; picture-in-picture");
+      }
+      const next = withAutoplay(original);
+      if (next !== iframe.src) iframe.src = next;
+    });
   };
 
   const setupPopup = (popup) => {
