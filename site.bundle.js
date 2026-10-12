@@ -1517,6 +1517,8 @@ function initFloatingImages() {
   });
 }
 
+const CLIP_OVERFLOW = typeof CSS !== "undefined" && CSS.supports && CSS.supports("overflow", "clip") ? "clip" : "hidden";
+
 function initImageReveal() {
   const elements = Array.from(nextPage.querySelectorAll("[data-image-reveal]")).filter(
     (el) => el.dataset.imageRevealInitialized !== "true"
@@ -1564,7 +1566,7 @@ function initImageReveal() {
     const endScale = parallax > 0 ? 1 + parallax * 2 : 1;
 
     if (getComputedStyle(wrap).position === "static") wrap.style.position = "relative";
-    wrap.style.overflow = "hidden";
+    wrap.style.overflow = CLIP_OVERFLOW;
 
     if (img) {
       gsap.set(img, {
@@ -1765,7 +1767,7 @@ function initWipeReveal() {
 
     const style = getComputedStyle(el);
     if (style.position === "static") el.style.position = "relative";
-    if (style.overflow === "visible") el.style.overflow = "hidden";
+    if (style.overflow === "visible") el.style.overflow = CLIP_OVERFLOW;
 
     let overlay = el.querySelector(":scope > .wipe_overlay");
     const isNew = !overlay;
