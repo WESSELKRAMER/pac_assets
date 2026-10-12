@@ -54,6 +54,7 @@ function initBeforeEnterFunctions(next) {
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
   if (has("[data-highlight-text]")) initHighlightText();
   if (has(".floating_img_wrap")) initFloatingImages();
+  if (has("[data-image-reveal]")) initImageReveal();
   if (has("[data-team-slider]")) initTeamSlider();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
@@ -1481,6 +1482,225 @@ function initFloatingImages() {
         addCleanup(section, () => drift.kill());
       });
     }
+  });
+}
+
+function initImageReveal() {
+  const elements = Array.from(nextPage.querySelectorAll("[data-image-reveal]")).filter(
+    (el) => el.dataset.imageRevealInitialized !== "true"
+  );
+  if (!elements.length) return;
+
+  if (reducedMotion || !hasScrollTrigger) {
+    elements.forEach((el) => {
+      el.dataset.imageRevealInitialized = "true";
+      gsap.set(el, { visibility: "visible" });
+    });
+    return;
+  }
+
+  const isFirstLoad = nextPage === document;
+  const CURTAIN_COLOR = "var(--pac-dark--900, #141414)";
+
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  function getRadius(wrap, img) {
+    let radius = parseFloat(getComputedStyle(wrap).borderTopLeftRadius) || 0;
+    if (!radius && img) radius = parseFloat(getComputedStyle(img).borderTopLeftRadius) || 0;
+    return radius;
+  }
+
+  function buildReveal(wrap) {
+    wrap.dataset.imageRevealInitialized = "true";
+
+    const type = (wrap.dataset.imageReveal || "clip").toLowerCase();
+    const img = wrap.querySelector("[data-reveal-img]") || wrap.querySelector("img");
+    const radius = getRadius(wrap, img);
+
+    const defaults = {
+      clip: { direction: "up", duration: 1.2, ease: "expo.out", zoom: 1.2 },
+      circle: { direction: "center", duration: 1.4, ease: "expo.inOut", zoom: 1.3 },
+      curtain: { direction: "right", duration: 1.4, ease: "power3.inOut", zoom: 1.15 }
+    };
+    const d = defaults[type] || defaults.clip;
+
+    const direction = (wrap.dataset.revealDirection || d.direction).toLowerCase();
+    const duration = toNumber(wrap.dataset.revealDuration, d.duration);
+    const ease = wrap.dataset.revealEase || d.ease;
+    const zoom = toNumber(wrap.dataset.revealZoom, d.zoom);
+    const parallax = Math.max(0, toNumber(wrap.dataset.revealParallax, 0));
+    const endScale = parallax > 0 ? 1 + parallax * 2 : 1;
+
+    if (getComputedStyle(wrap).position === "static") wrap.style.position = "relative";
+    wrap.style.overflow = "hidden";
+
+    if (img) {
+      gsap.set(img, {
+        scale: Math.max(zoom, endScale),
+        transformOrigin: "50% 50%",
+        willChange: "transform"
+      });
+    }
+
+    const tl = gsap.timeline({ paused: true });
+    const state = { p: 0 };
+    let curtain = null;
+
+    if (type === "circle") {
+      const startSize = toNumber(wrap.dataset.revealCircleSize, 0.2);
+
+      const applyCircle = () => {
+        const w = wrap.offsetWidth;
+        const h = wrap.offsetHeight;
+        const s = Math.min(w, h) * startSize;
+        const insetX = ((w - s) / 2) * (1 - state.p);
+        const insetY = ((h - s) / 2) * (1 - state.p);
+        const r = lerp(s / 2, radius, state.p);
+        wrap.style.clipPath = `inset(${insetY}px ${insetX}px ${insetY}px ${insetX}px round ${r}px)`;
+      };
+
+      applyCircle();
+
+      tl.to(state, {
+        p: 1,
+        duration,
+        ease,
+        onStart: applyCircle,
+        onUpdate: applyCircle,
+        onComplete: () => {
+          wrap.style.clipPath = "";
+        }
+      }, 0);
+    } else if (type === "curtain") {
+      const horizontal = direction === "left" || direction === "right";
+      const from = { right: "0% 50%", left: "100% 50%", down: "50% 0%", up: "50% 100%" };
+      const to = { right: "100% 50%", left: "0% 50%", down: "50% 100%", up: "50% 0%" };
+      const prop = horizontal ? "scaleX" : "scaleY";
+
+      curtain = document.createElement("div");
+      curtain.setAttribute("aria-hidden", "true");
+      curtain.className = "image-reveal_curtain";
+      Object.assign(curtain.style, {
+        position: "absolute",
+        inset: "0",
+        background: CURTAIN_COLOR,
+        zIndex: "2",
+        pointerEvents: "none",
+        borderRadius: "inherit"
+      });
+      wrap.appendChild(curtain);
+
+      const content = Array.from(wrap.children).filter((el) => el !== curtain);
+      gsap.set(content, { autoAlpha: 0 });
+      gsap.set(curtain, { [prop]: 0, transformOrigin: from[direction] || from.right });
+
+      tl.to(curtain, { [prop]: 1, duration: duration * 0.5, ease: "power3.in" }, 0)
+        .set(content, { autoAlpha: 1 })
+        .set(curtain, { transformOrigin: to[direction] || to.right })
+        .to(curtain, { [prop]: 0, duration: duration * 0.6, ease: "power3.out" });
+    } else {
+      const insets = {
+        up: (v) => `inset(${v}% 0% 0% 0% round ${radius}px)`,
+        down: (v) => `inset(0% 0% ${v}% 0% round ${radius}px)`,
+        left: (v) => `inset(0% 0% 0% ${v}% round ${radius}px)`,
+        right: (v) => `inset(0% ${v}% 0% 0% round ${radius}px)`,
+        center: (v) => `inset(${v / 2}% ${v / 2}% ${v / 2}% ${v / 2}% round ${radius}px)`
+      };
+      const build = insets[direction] || insets.up;
+
+      const applyClip = () => {
+        wrap.style.clipPath = build(100 - state.p * 100);
+      };
+      applyClip();
+
+      tl.to(state, {
+        p: 1,
+        duration,
+        ease,
+        onUpdate: applyClip,
+        onComplete: () => {
+          wrap.style.clipPath = "";
+        }
+      }, 0);
+    }
+
+    if (img) {
+      const imgStart = type === "curtain" ? duration * 0.5 : 0;
+      tl.to(img, {
+        scale: endScale,
+        duration: duration * 1.3,
+        ease: "expo.out"
+      }, imgStart);
+    }
+
+    gsap.set(wrap, { visibility: "visible" });
+
+    let parallaxTween = null;
+    if (img && parallax > 0) {
+      parallaxTween = gsap.fromTo(
+        img,
+        { yPercent: -parallax * 100 },
+        {
+          yPercent: parallax * 100,
+          ease: "none",
+          scrollTrigger: {
+            trigger: wrap,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true
+          }
+        }
+      );
+    }
+
+    addCleanup(wrap, () => {
+      tl.kill();
+      if (parallaxTween) parallaxTween.kill();
+      if (curtain) curtain.remove();
+    });
+
+    return tl;
+  }
+
+  const groups = new Map();
+  elements.forEach((el) => {
+    const group = el.closest("[data-reveal-stagger]");
+    const key = group || el;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(el);
+  });
+
+  groups.forEach((list, trigger) => {
+    const isGroup = trigger.hasAttribute("data-reveal-stagger");
+    const stagger = isGroup ? toNumber(trigger.dataset.revealStagger, 0.12) : 0;
+    const source = isGroup ? trigger : list[0];
+
+    const immediate = (source.dataset.revealImmediate || list[0].dataset.revealImmediate) === "true";
+    const baseDelay = toNumber(
+      source.dataset.revealDelay ?? list[0].dataset.revealDelay,
+      immediate ? (isFirstLoad ? 0.2 : 0.5) : 0
+    );
+    const start = source.dataset.revealStart || list[0].dataset.revealStart || "top 85%";
+
+    const master = gsap.timeline({ paused: true });
+    list.forEach((wrap, i) => {
+      const tl = buildReveal(wrap);
+      tl.paused(false);
+      master.add(tl, baseDelay + i * stagger);
+    });
+
+    if (immediate) {
+      master.play();
+    } else {
+      ScrollTrigger.create({
+        trigger: source,
+        start: `clamp(${start})`,
+        once: true,
+        onEnter: () => master.play()
+      });
+    }
+
+    addCleanup(source, () => master.kill());
   });
 }
 
