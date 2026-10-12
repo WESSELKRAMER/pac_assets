@@ -1992,9 +1992,13 @@ function initDomainTabs() {
       const colorEl =
         tabs[i].querySelector("[data-domain-color]") ||
         panels[i].querySelector("[data-domain-color]");
-      const override = [tabs[i], panels[i], colorEl]
+      const textEls = [
+        tabs[i].querySelector("[data-domain-text]"),
+        panels[i].querySelector("[data-domain-text]")
+      ];
+      const override = [tabs[i], panels[i], colorEl, ...textEls]
         .filter(Boolean)
-        .map((el) => (el.dataset.domainText || "").trim())
+        .map((el) => (el.dataset.domainText || "").trim() || (el.matches("[data-domain-text]") && el.children.length === 0 ? el.textContent.trim() : ""))
         .find((v) => v);
       if (override && /^(#|rgb|hsl)/i.test(override)) return override;
       const key = (override || "").toLowerCase();
