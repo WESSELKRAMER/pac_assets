@@ -37,6 +37,7 @@ function initOnceFunctions() {
   initMobileMenu();
   initLogoHover();
   initNavCurrentUnderline();
+  initDynamicTextCursor();
 }
 
 function initBeforeEnterFunctions(next) {
@@ -56,6 +57,7 @@ function initBeforeEnterFunctions(next) {
   if (has(".floating_img_wrap")) initFloatingImages();
   if (has("[data-image-reveal]")) initImageReveal();
   if (has("[data-wipe-reveal]")) initWipeReveal();
+  if (has("[data-open-video]")) initVideoPopup();
   if (has("[data-team-slider]")) initTeamSlider();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
@@ -164,6 +166,8 @@ barba.hooks.beforeEnter(data => {
 });
 
 barba.hooks.afterLeave(data => {
+  resetDynamicTextCursor();
+
   if (hasScrollTrigger) {
     ScrollTrigger.getAll().forEach(trigger => {
       if (trigger.trigger && data.current.container.contains(trigger.trigger)) {
@@ -652,6 +656,60 @@ function initMobileMenu() {
   applyMode();
   menuMQ.addEventListener?.("change", applyMode);
   menuMQ.addListener?.(applyMode);
+}
+
+let cursorEl = null;
+
+function initDynamicTextCursor() {
+  const cursor = document.querySelector("[data-cursor]");
+  const cursorTextTarget = document.querySelector("[data-cursor-text-target]");
+
+  if (!cursor || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  if (cursor.dataset.cursorInitialized === "true") return;
+  cursor.dataset.cursorInitialized = "true";
+  cursorEl = cursor;
+
+  let mouseX = 0;
+  let mouseY = 0;
+  let hasMouseMoved = false;
+
+  const xTo = gsap.quickTo(cursor, "x", { duration: 0.4, ease: "power3.out" });
+  const yTo = gsap.quickTo(cursor, "y", { duration: 0.4, ease: "power3.out" });
+
+  function updateCursor() {
+    const hoverItem = document.elementFromPoint(mouseX, mouseY)?.closest("[data-cursor-hover]");
+    const rect = cursor.getBoundingClientRect();
+
+    const isHovering = !!hoverItem;
+    const isEdge = rect.right >= window.innerWidth;
+
+    cursor.setAttribute("data-cursor", isHovering ? (isEdge ? "active-edge" : "active") : "");
+
+    if (hoverItem && cursorTextTarget) {
+      const text = hoverItem.getAttribute("data-cursor-text");
+      if (text) cursorTextTarget.textContent = text;
+    }
+  }
+
+  window.addEventListener("mousemove", (event) => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    hasMouseMoved = true;
+
+    xTo(mouseX);
+    yTo(mouseY);
+
+    requestAnimationFrame(updateCursor);
+  });
+
+  window.addEventListener("scroll", () => {
+    if (!hasMouseMoved) return;
+    requestAnimationFrame(updateCursor);
+  }, { passive: true });
+}
+
+function resetDynamicTextCursor() {
+  if (cursorEl) cursorEl.setAttribute("data-cursor", "");
 }
 
 function initLogoHover() {
@@ -1820,6 +1878,165 @@ function initWipeReveal() {
       if (tween) tween.kill();
       st.kill();
       if (isNew) overlay.remove();
+    });
+  });
+}
+
+function initVideoPopup() {
+  const buttons = Array.from(nextPage.querySelectorAll("[data-open-video]")).filter(
+    (btn) => btn.dataset.videoInitialized !== "true"
+  );
+  if (!buttons.length) return;
+
+  const findPopup = (btn) => {
+    const id = (btn.getAttribute("data-open-video") || "").trim();
+    const scopes = [nextPage, document];
+    for (const scope of scopes) {
+      const popup = id
+        ? scope.querySelector(`[data-popup-video="${id}"]`)
+        : scope.querySelector("[data-popup-video]");
+      if (popup) return popup;
+    }
+    return null;
+  };
+
+  const stopMedia = (popup) => {
+    popup.querySelectorAll("video").forEach((video) => {
+      video.pause();
+      video.currentTime = 0;
+    });
+    popup.querySelectorAll("iframe").forEach((iframe) => {
+      if (iframe.dataset.videoSrc === undefined) return;
+      iframe.src = iframe.dataset.videoSrc;
+    });
+  };
+
+  const playMedia = (popup) => {
+    const video = popup.querySelector("video");
+    if (video) {
+      const p = video.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  };
+
+  const setupPopup = (popup) => {
+    if (popup._videoPopup) return popup._videoPopup;
+
+    popup.setAttribute("role", "dialog");
+    popup.setAttribute("aria-modal", "true");
+    if (!popup.hasAttribute("aria-label")) popup.setAttribute("aria-label", "Video");
+
+    popup.querySelectorAll("iframe").forEach((iframe) => {
+      if (iframe.dataset.videoSrc === undefined) iframe.dataset.videoSrc = iframe.src;
+    });
+
+    let isOpen = false;
+    let lastFocus = null;
+
+    const onKeydown = (e) => {
+      if (e.key === "Escape" && isOpen) close();
+    };
+
+    const open = (trigger) => {
+      if (isOpen) return;
+      isOpen = true;
+      lastFocus = trigger || document.activeElement;
+
+      gsap.killTweensOf(popup);
+      gsap.set(popup, { display: "flex" });
+      popup.setAttribute("aria-hidden", "false");
+
+      if (lenis) lenis.stop();
+      document.addEventListener("keydown", onKeydown);
+
+      if (reducedMotion) {
+        gsap.set(popup, { autoAlpha: 1 });
+      } else {
+        gsap.fromTo(popup, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: "power2.out" });
+      }
+
+      playMedia(popup);
+
+      const focusTarget = popup.querySelector("[data-close-video]") || popup;
+      if (focusTarget === popup && !popup.hasAttribute("tabindex")) popup.setAttribute("tabindex", "-1");
+      focusTarget.focus({ preventScroll: true });
+    };
+
+    const close = () => {
+      if (!isOpen) return;
+      isOpen = false;
+
+      document.removeEventListener("keydown", onKeydown);
+      popup.setAttribute("aria-hidden", "true");
+
+      const finish = () => {
+        gsap.set(popup, { display: "none" });
+        stopMedia(popup);
+        if (lenis) lenis.start();
+        if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus({ preventScroll: true });
+      };
+
+      gsap.killTweensOf(popup);
+      if (reducedMotion) {
+        finish();
+      } else {
+        gsap.to(popup, { autoAlpha: 0, duration: 0.3, ease: "power2.in", onComplete: finish });
+      }
+    };
+
+    const onPopupClick = (e) => {
+      if (e.target.closest("[data-close-video]") || e.target === popup) {
+        e.preventDefault();
+        close();
+      }
+    };
+
+    popup.addEventListener("click", onPopupClick);
+
+    popup._videoPopup = { open, close };
+
+    addCleanup(popup.closest('[data-barba="container"]') ? popup : buttons[0], () => {
+      close();
+      popup.removeEventListener("click", onPopupClick);
+      document.removeEventListener("keydown", onKeydown);
+      delete popup._videoPopup;
+    });
+
+    return popup._videoPopup;
+  };
+
+  buttons.forEach((btn) => {
+    btn.dataset.videoInitialized = "true";
+
+    const popup = findPopup(btn);
+    if (!popup) {
+      console.warn("[video popup] Geen [data-popup-video] gevonden voor deze knop.", btn);
+      return;
+    }
+
+    const controls = setupPopup(popup);
+
+    if (!btn.matches("a, button")) {
+      btn.setAttribute("role", "button");
+      btn.setAttribute("tabindex", "0");
+    }
+
+    const onOpen = (e) => {
+      e.preventDefault();
+      controls.open(btn);
+    };
+
+    const onKey = (e) => {
+      if (e.key === "Enter" || e.key === " ") onOpen(e);
+    };
+
+    btn.addEventListener("click", onOpen);
+    btn.addEventListener("keydown", onKey);
+
+    addCleanup(btn, () => {
+      btn.removeEventListener("click", onOpen);
+      btn.removeEventListener("keydown", onKey);
+      delete btn.dataset.videoInitialized;
     });
   });
 }
