@@ -1932,6 +1932,23 @@ function initVideoPopup() {
 
     let isOpen = false;
     let lastFocus = null;
+    let pausedBgVideos = [];
+
+    const pauseBackgroundVideos = () => {
+      pausedBgVideos = Array.from(document.querySelectorAll(".w-background-video video, [data-bg-video] video")).filter(
+        (video) => !popup.contains(video) && !video.paused
+      );
+      pausedBgVideos.forEach((video) => video.pause());
+    };
+
+    const resumeBackgroundVideos = () => {
+      pausedBgVideos.forEach((video) => {
+        if (!video.isConnected) return;
+        const p = video.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      });
+      pausedBgVideos = [];
+    };
 
     const onKeydown = (e) => {
       if (e.key === "Escape" && isOpen) close();
@@ -1947,6 +1964,7 @@ function initVideoPopup() {
       popup.setAttribute("aria-hidden", "false");
 
       if (lenis) lenis.stop();
+      pauseBackgroundVideos();
       document.addEventListener("keydown", onKeydown);
 
       if (reducedMotion) {
@@ -1972,6 +1990,7 @@ function initVideoPopup() {
       const finish = () => {
         gsap.set(popup, { display: "none" });
         stopMedia(popup);
+        resumeBackgroundVideos();
         if (lenis) lenis.start();
         if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus({ preventScroll: true });
       };
