@@ -854,7 +854,10 @@ function initRichTextButtons(rt) {
     let button;
 
     if (template) {
-      button = template.cloneNode(true);
+      const source = template.matches("a, .primary_cta")
+        ? template
+        : template.querySelector(".primary_cta, a") || template;
+      button = source.cloneNode(true);
       button.removeAttribute("data-rt-button-template");
       button.querySelectorAll("[data-cta-split]").forEach((n) => n.removeAttribute("data-cta-split"));
       if (button.dataset.ctaSplit) button.removeAttribute("data-cta-split");
