@@ -773,11 +773,6 @@ function initNavCurrentUnderline() {
 }
 
 function initRichTextClasses() {
-  document.querySelectorAll("[data-rt-button-template]").forEach((el) => {
-    el.style.setProperty("display", "none", "important");
-    el.setAttribute("aria-hidden", "true");
-  });
-
   const BR = "(?:\\s|&nbsp;|<br\\s*\\/?>)*";
   const OPEN = /^[\s ]*(?:<br\s*\/?>[\s ]*)*(?:<(?:em|i)>)?[\s ]*[“"„‘'«][\s ]*(?:<br\s*\/?>[\s ]*)*/i;
   const CLOSE = /[\s ]*(?:<br\s*\/?>[\s ]*)*[”"’'»][\s ]*(?:<\/(?:em|i)>)?[\s ]*(?:<br\s*\/?>[\s ]*)*$/i;
@@ -822,82 +817,6 @@ function initRichTextClasses() {
         `<span class="rt-quote_text"${splitAttr}>“${quote}”</span>` +
         (source ? `<cite class="rt-quote_source">${source}</cite>` : "");
     });
-
-    initRichTextButtons(rt);
-  });
-}
-
-function initRichTextButtons(rt) {
-  const template = document.querySelector("[data-rt-button-template]");
-
-  rt.querySelectorAll(":scope > p").forEach((p) => {
-    if (p.dataset.rtButtonDone === "true") return;
-
-    const elements = Array.from(p.children);
-    const textOutside = Array.from(p.childNodes).some(
-      (n) => n.nodeType === 3 && n.textContent.trim() !== ""
-    );
-    if (elements.length !== 1 || textOutside) return;
-
-    const el = elements[0];
-    let link = null;
-    if (el.matches("a") && el.querySelector("strong, b") && el.textContent.trim() === el.querySelector("strong, b").textContent.trim()) {
-      link = el;
-    } else if (el.matches("strong, b") && el.children.length === 1 && el.firstElementChild.matches("a")) {
-      const inner = el.firstElementChild;
-      const outside = Array.from(el.childNodes).some((n) => n !== inner && n.textContent.trim() !== "");
-      if (!outside) link = inner;
-    }
-    if (!link) return;
-
-    p.dataset.rtButtonDone = "true";
-
-    const label = link.textContent.trim();
-    const href = link.getAttribute("href") || "#";
-    const target = link.getAttribute("target");
-    const rel = link.getAttribute("rel");
-
-    let button;
-
-    if (template) {
-      const source = template.matches("a, .primary_cta")
-        ? template
-        : template.querySelector(".primary_cta, a") || template;
-      button = source.cloneNode(true);
-      button.removeAttribute("data-rt-button-template");
-      button.querySelectorAll("[data-cta-split]").forEach((n) => n.removeAttribute("data-cta-split"));
-      if (button.dataset.ctaSplit) button.removeAttribute("data-cta-split");
-
-      button.removeAttribute("aria-hidden");
-      button.style.removeProperty("display");
-
-      let anchor = button.matches("a") ? button : button.querySelector("a");
-      if (!anchor) {
-        anchor = document.createElement("a");
-        anchor.className = "rt-button_link";
-        anchor.appendChild(button);
-        button = anchor;
-      }
-      anchor.setAttribute("href", href);
-      if (target) anchor.setAttribute("target", target);
-      else anchor.removeAttribute("target");
-      if (rel) anchor.setAttribute("rel", rel);
-
-      const textEl =
-        button.querySelector("[data-rt-button-text]") ||
-        button.querySelector(".cta_text, .grid_card_cta_text");
-      if (textEl) textEl.textContent = label;
-    } else {
-      button = document.createElement("a");
-      button.className = "rt-button";
-      button.setAttribute("href", href);
-      if (target) button.setAttribute("target", target);
-      if (rel) button.setAttribute("rel", rel);
-      button.textContent = label;
-    }
-
-    p.classList.add("rt-button_wrap");
-    p.replaceChildren(button);
   });
 }
 
