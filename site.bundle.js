@@ -79,6 +79,15 @@ function initAfterEnterFunctions(next) {
   }
 }
 
+function markFirstLoadHeadings(container) {
+  (container || document).querySelectorAll("h1").forEach((h1) => {
+    if (h1.hasAttribute("data-split") || h1.hasAttribute("data-no-split")) return;
+    h1.setAttribute("data-split", "heading");
+    h1.setAttribute("data-split-immediate", "true");
+    h1.setAttribute("data-split-auto", "true");
+  });
+}
+
 function runPageOnceAnimation(next) {
   const tl = gsap.timeline();
 
@@ -216,6 +225,7 @@ barba.init({
 
       async once(data) {
         initOnceFunctions();
+        markFirstLoadHeadings(data.next.container);
         initBeforeEnterFunctions(document);
 
         return runPageOnceAnimation(data.next.container);
