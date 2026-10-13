@@ -60,6 +60,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-wipe-reveal]")) initWipeReveal();
   if (has("[data-open-video]")) initVideoPopup();
   if (has("[data-team-slider]")) initTeamSlider();
+  if (has("[data-gallery]")) initGalleries();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
@@ -1937,6 +1938,276 @@ function initWipeReveal() {
       if (tween) tween.kill();
       st.kill();
       if (isNew) overlay.remove();
+    });
+  });
+}
+
+function initGalleries() {
+  const galleries = Array.from(nextPage.querySelectorAll("[data-gallery]")).filter(
+    (el) => el.dataset.galleryInitialized !== "true"
+  );
+  if (!galleries.length) return;
+
+  const getImg = (el) => (el.tagName === "IMG" ? el : el.querySelector("img"));
+
+  galleries.forEach((gallery) => {
+    gallery.dataset.galleryInitialized = "true";
+
+    const own = (selector) =>
+      Array.from(gallery.querySelectorAll(selector)).filter((el) => el.closest("[data-gallery]") === gallery);
+    const first = (selector) => own(selector)[0] || null;
+
+    const items = own("[data-gallery-item]").filter((item) => getImg(item));
+    const count = items.length;
+
+    if (!count) {
+      if (gallery.dataset.galleryHideEmpty !== "false") gallery.style.display = "none";
+      return;
+    }
+
+    const main = first("[data-gallery-main]") || items[0].parentElement;
+    const prevBtns = own("[data-gallery-prev]");
+    const nextBtns = own("[data-gallery-next]");
+    const currentEls = own("[data-gallery-current]");
+    const totalEls = own("[data-gallery-total]");
+    const captionEls = own("[data-gallery-caption]");
+    const thumbsWrap = first("[data-gallery-thumbs]");
+
+    const loop = gallery.dataset.galleryLoop !== "false";
+    const duration = reducedMotion ? 0 : toNumber(gallery.dataset.galleryDuration, 0.7);
+    const zoom = toNumber(gallery.dataset.galleryZoom, 1.04);
+    const pad = Math.max(0, Math.round(toNumber(gallery.dataset.galleryPad, 0)));
+    const swipe = gallery.dataset.gallerySwipe !== "false";
+    const keyboard = gallery.dataset.galleryKeyboard !== "false";
+    const activeClass = gallery.dataset.galleryActiveClass || "is-active";
+    const disabledClass = gallery.dataset.galleryDisabledClass || "is-disabled";
+    const start = Math.min(count - 1, Math.max(0, Math.round(toNumber(gallery.dataset.galleryStart, 1)) - 1));
+
+    const format = (n) => String(n).padStart(pad, "0");
+    totalEls.forEach((el) => (el.textContent = format(count)));
+
+    if (getComputedStyle(main).position === "static") main.style.position = "relative";
+    main.style.overflow = "clip";
+
+    items.forEach((item) => {
+      Object.assign(item.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
+      const img = getImg(item);
+      Object.assign(img.style, { width: "100%", height: "100%", objectFit: "cover" });
+      img.setAttribute("draggable", "false");
+    });
+
+    if (count === 1) {
+      gallery.dataset.gallerySingle = "true";
+      [...prevBtns, ...nextBtns].forEach((el) => (el.style.display = "none"));
+      if (thumbsWrap) thumbsWrap.style.display = "none";
+    }
+
+    let thumbs = [];
+    if (thumbsWrap && count > 1) {
+      const existing = Array.from(thumbsWrap.querySelectorAll("[data-gallery-thumb]"));
+
+      if (existing.length > 1) {
+        thumbs = existing.slice(0, count);
+      } else {
+        const template = existing[0] || null;
+        if (template) template.remove();
+
+        thumbs = items.map((item) => {
+          const source = getImg(item);
+          let thumb;
+          if (template) {
+            thumb = template.cloneNode(true);
+          } else {
+            thumb = document.createElement("button");
+            thumb.type = "button";
+            thumb.className = "gallery_thumb";
+          }
+          let img = getImg(thumb);
+          if (!img) {
+            img = document.createElement("img");
+            thumb.appendChild(img);
+          }
+          img.src = source.currentSrc || source.src;
+          if (source.srcset) img.srcset = source.srcset;
+          img.sizes = "160px";
+          img.alt = "";
+          img.loading = "lazy";
+          img.setAttribute("draggable", "false");
+          thumbsWrap.appendChild(thumb);
+          return thumb;
+        });
+      }
+
+      thumbs.forEach((thumb, i) => {
+        if (thumb.tagName !== "BUTTON" && thumb.tagName !== "A") {
+          thumb.setAttribute("role", "button");
+          thumb.setAttribute("tabindex", "0");
+        }
+        thumb.setAttribute("aria-label", `Foto ${i + 1} van ${count}`);
+        thumb.style.cursor = "pointer";
+      });
+    }
+
+    let current = -1;
+    let activeTween = null;
+
+    const scrollThumbIntoView = (thumb) => {
+      if (!thumb || !thumbsWrap) return;
+      if (thumbsWrap.scrollWidth <= thumbsWrap.clientWidth) return;
+      const left = thumb.offsetLeft - thumbsWrap.offsetLeft - (thumbsWrap.clientWidth - thumb.offsetWidth) / 2;
+      thumbsWrap.scrollTo({ left, behavior: reducedMotion ? "auto" : "smooth" });
+    };
+
+    const updateControls = () => {
+      currentEls.forEach((el) => (el.textContent = format(current + 1)));
+
+      const caption = items[current].dataset.galleryCaption || getImg(items[current]).alt || "";
+      captionEls.forEach((el) => {
+        el.textContent = caption;
+        el.style.display = caption ? "" : "none";
+      });
+
+      thumbs.forEach((thumb, i) => {
+        const on = i === current;
+        thumb.classList.toggle(activeClass, on);
+        thumb.setAttribute("aria-current", on ? "true" : "false");
+      });
+      scrollThumbIntoView(thumbs[current]);
+
+      if (!loop) {
+        const atStart = current === 0;
+        const atEnd = current === count - 1;
+        prevBtns.forEach((el) => {
+          el.classList.toggle(disabledClass, atStart);
+          el.setAttribute("aria-disabled", atStart ? "true" : "false");
+        });
+        nextBtns.forEach((el) => {
+          el.classList.toggle(disabledClass, atEnd);
+          el.setAttribute("aria-disabled", atEnd ? "true" : "false");
+        });
+      }
+    };
+
+    const go = (index, animate = true) => {
+      if (loop) index = (index + count) % count;
+      if (index < 0 || index >= count || index === current) return;
+
+      const prev = current;
+      current = index;
+
+      items.forEach((item, i) => {
+        item.setAttribute("aria-hidden", i === current ? "false" : "true");
+        item.style.zIndex = i === current ? "2" : i === prev ? "1" : "0";
+      });
+
+      if (activeTween) activeTween.progress(1);
+
+      const incoming = items[current];
+      const incomingImg = getImg(incoming);
+
+      if (!animate || prev < 0 || !duration) {
+        items.forEach((item, i) => gsap.set(item, { opacity: i === current ? 1 : 0 }));
+        gsap.set(incomingImg, { scale: 1 });
+      } else {
+        const outgoing = items[prev];
+        activeTween = gsap.timeline({
+          onComplete: () => {
+            items.forEach((item, i) => {
+              if (i !== current) gsap.set(item, { opacity: 0 });
+            });
+            activeTween = null;
+          }
+        });
+        activeTween
+          .fromTo(incoming, { opacity: 0 }, { opacity: 1, duration, ease: "power2.out" }, 0)
+          .fromTo(incomingImg, { scale: zoom }, { scale: 1, duration: duration * 1.6, ease: "expo.out" }, 0)
+          .set(outgoing, { opacity: 0 }, duration);
+      }
+
+      updateControls();
+    };
+
+    const next = () => go(current + 1);
+    const prev = () => go(current - 1);
+
+    const listeners = [];
+    const on = (el, type, fn, opts) => {
+      el.addEventListener(type, fn, opts);
+      listeners.push(() => el.removeEventListener(type, fn, opts));
+    };
+
+    prevBtns.forEach((el) =>
+      on(el, "click", (e) => {
+        e.preventDefault();
+        prev();
+      })
+    );
+    nextBtns.forEach((el) =>
+      on(el, "click", (e) => {
+        e.preventDefault();
+        next();
+      })
+    );
+
+    thumbs.forEach((thumb, i) => {
+      on(thumb, "click", (e) => {
+        e.preventDefault();
+        go(i);
+      });
+      on(thumb, "keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          go(i);
+        }
+      });
+    });
+
+    if (keyboard && count > 1) {
+      if (!gallery.hasAttribute("tabindex")) gallery.setAttribute("tabindex", "-1");
+      on(gallery, "keydown", (e) => {
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          next();
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          prev();
+        }
+      });
+    }
+
+    if (swipe && count > 1) {
+      let startX = 0;
+      let startY = 0;
+      let tracking = false;
+      main.style.touchAction = "pan-y";
+
+      on(main, "pointerdown", (e) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        tracking = true;
+        startX = e.clientX;
+        startY = e.clientY;
+      });
+      on(main, "pointerup", (e) => {
+        if (!tracking) return;
+        tracking = false;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) next();
+          else prev();
+        }
+      });
+      on(main, "pointercancel", () => (tracking = false));
+    }
+
+    gallery.setAttribute("role", "region");
+    if (!gallery.hasAttribute("aria-label")) gallery.setAttribute("aria-label", "Fotogalerij");
+
+    go(start, false);
+
+    addCleanup(gallery, () => {
+      listeners.forEach((off) => off());
+      if (activeTween) activeTween.kill();
     });
   });
 }
