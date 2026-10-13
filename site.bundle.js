@@ -773,6 +773,11 @@ function initNavCurrentUnderline() {
 }
 
 function initRichTextClasses() {
+  document.querySelectorAll("[data-rt-button-template]").forEach((el) => {
+    el.style.setProperty("display", "none", "important");
+    el.setAttribute("aria-hidden", "true");
+  });
+
   const BR = "(?:\\s|&nbsp;|<br\\s*\\/?>)*";
   const OPEN = /^[\s ]*(?:<br\s*\/?>[\s ]*)*(?:<(?:em|i)>)?[\s ]*[“"„‘'«][\s ]*(?:<br\s*\/?>[\s ]*)*/i;
   const CLOSE = /[\s ]*(?:<br\s*\/?>[\s ]*)*[”"’'»][\s ]*(?:<\/(?:em|i)>)?[\s ]*(?:<br\s*\/?>[\s ]*)*$/i;
@@ -862,13 +867,20 @@ function initRichTextButtons(rt) {
       button.querySelectorAll("[data-cta-split]").forEach((n) => n.removeAttribute("data-cta-split"));
       if (button.dataset.ctaSplit) button.removeAttribute("data-cta-split");
 
-      const anchor = button.matches("a") ? button : button.querySelector("a");
-      if (anchor) {
-        anchor.setAttribute("href", href);
-        if (target) anchor.setAttribute("target", target);
-        else anchor.removeAttribute("target");
-        if (rel) anchor.setAttribute("rel", rel);
+      button.removeAttribute("aria-hidden");
+      button.style.removeProperty("display");
+
+      let anchor = button.matches("a") ? button : button.querySelector("a");
+      if (!anchor) {
+        anchor = document.createElement("a");
+        anchor.className = "rt-button_link";
+        anchor.appendChild(button);
+        button = anchor;
       }
+      anchor.setAttribute("href", href);
+      if (target) anchor.setAttribute("target", target);
+      else anchor.removeAttribute("target");
+      if (rel) anchor.setAttribute("rel", rel);
 
       const textEl =
         button.querySelector("[data-rt-button-text]") ||
