@@ -1996,6 +1996,13 @@ function initGalleries() {
       img.setAttribute("draggable", "false");
     });
 
+    Array.from(main.children).forEach((child) => {
+      if (items.some((item) => child.contains(item))) return;
+      const cs = getComputedStyle(child);
+      if (cs.position === "static") child.style.position = "relative";
+      if (cs.zIndex === "auto" || parseInt(cs.zIndex, 10) < 3) child.style.zIndex = "3";
+    });
+
     if (count === 1) {
       gallery.dataset.gallerySingle = "true";
       [...prevBtns, ...nextBtns].forEach((el) => (el.style.display = "none"));
@@ -2978,7 +2985,15 @@ function initDomainTabs() {
 
     let current = -1;
     let tl = null;
-    let split = null;
+    let splits = [];
+    const revertSplits = () => {
+      splits.forEach((sp) => sp.revert());
+      splits = [];
+    };
+    const splitBody = module.dataset.domainsSplitText !== "false";
+    const textStagger = num(module.dataset.domainsTextStagger, 0.06);
+    const canSplit = (el) =>
+      hasSplitText && splitBody && el.matches("p, [data-domain-split]") && !el.matches("[data-domain-split='false']");
 
     const finishRunning = () => {
       if (tl) {
@@ -2987,10 +3002,7 @@ function initDomainTabs() {
         running.progress(1);
         running.kill();
       }
-      if (split) {
-        split.revert();
-        split = null;
-      }
+      revertSplits();
     };
 
     const updateTabs = (index, animate) => {
@@ -3084,10 +3096,7 @@ function initDomainTabs() {
       tl = gsap.timeline({
         defaults: { ease: "osmo" },
         onComplete: () => {
-          if (split) {
-            split.revert();
-            split = null;
-          }
+          revertSplits();
           if (fades.length) gsap.set(fades, { clearProps: "opacity,visibility,transform" });
           if (cards.length) gsap.set(cards, { clearProps: "opacity,visibility,transform" });
           tl = null;
@@ -3099,16 +3108,23 @@ function initDomainTabs() {
         .set(newPanel, { autoAlpha: 1, y: 0 });
 
       if (heading && hasSplitText) {
-        split = SplitText.create(heading, { type: "lines", mask: "lines", linesClass: "line" });
-        tl.from(split.lines, { yPercent: 110, duration, stagger }, ">");
+        const headingSplit = SplitText.create(heading, { type: "lines", mask: "lines", linesClass: "line" });
+        splits.push(headingSplit);
+        tl.from(headingSplit.lines, { yPercent: 110, duration, stagger }, ">");
       }
 
       if (fades.length) {
-        tl.from(
-          fades,
-          { autoAlpha: 0, y: 16, duration, stagger },
-          heading && hasSplitText ? "<0.15" : ">"
-        );
+        const fadeTl = gsap.timeline({ defaults: { ease: "osmo" } });
+        fades.forEach((el, i) => {
+          if (canSplit(el)) {
+            const bodySplit = SplitText.create(el, { type: "lines", mask: "lines", linesClass: "line" });
+            splits.push(bodySplit);
+            fadeTl.from(bodySplit.lines, { yPercent: 110, duration, stagger: textStagger }, i * stagger);
+          } else {
+            fadeTl.from(el, { autoAlpha: 0, y: 16, duration }, i * stagger);
+          }
+        });
+        tl.add(fadeTl, heading && hasSplitText ? "<0.15" : ">");
       }
 
       if (cards.length) {
