@@ -2992,6 +2992,9 @@ function initDomainTabs() {
     };
     const splitBody = module.dataset.domainsSplitText !== "false";
     const textStagger = num(module.dataset.domainsTextStagger, 0.06);
+    const fadeDuration = num(module.dataset.domainsFadeDuration, 0.9);
+    const fadeStagger = num(module.dataset.domainsFadeStagger, 0.12);
+    const fadeDelay = num(module.dataset.domainsFadeDelay, 0.2);
     const canSplit = (el) =>
       hasSplitText && splitBody && el.matches("p, [data-domain-split]") && !el.matches("[data-domain-split='false']");
 
@@ -3114,17 +3117,24 @@ function initDomainTabs() {
       }
 
       if (fades.length) {
-        const fadeTl = gsap.timeline({ defaults: { ease: "osmo" } });
-        fades.forEach((el, i) => {
+        const fadeTl = gsap.timeline();
+        let cursor = 0;
+        fades.forEach((el) => {
           if (canSplit(el)) {
             const bodySplit = SplitText.create(el, { type: "lines", mask: "lines", linesClass: "line" });
             splits.push(bodySplit);
-            fadeTl.from(bodySplit.lines, { yPercent: 110, duration, stagger: textStagger }, i * stagger);
+            fadeTl.from(
+              bodySplit.lines,
+              { yPercent: 105, duration, stagger: textStagger, ease: "osmo" },
+              cursor
+            );
+            cursor += Math.min(bodySplit.lines.length, 3) * textStagger + fadeStagger;
           } else {
-            fadeTl.from(el, { autoAlpha: 0, y: 16, duration }, i * stagger);
+            fadeTl.from(el, { autoAlpha: 0, y: 20, duration: fadeDuration, ease: "power3.out" }, cursor);
+            cursor += fadeStagger;
           }
         });
-        tl.add(fadeTl, heading && hasSplitText ? "<0.15" : ">");
+        tl.add(fadeTl, heading && hasSplitText ? "<" + fadeDelay : ">");
       }
 
       if (cards.length) {
