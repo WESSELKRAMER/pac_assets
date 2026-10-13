@@ -1,3 +1,4 @@
+window.PAC_BUNDLE = "2026-10-13 17:25";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2806,6 +2807,7 @@ function initTeamSlider() {
 function initDomainTabs() {
   nextPage.querySelectorAll("[data-domains], .domains_module").forEach((module) => {
     if (module.dataset.domainsInitialized === "true") return;
+    if (module.querySelector("[data-domains], .domains_module")) return;
 
     const tabs = Array.from(module.querySelectorAll("[data-domain-tab], .domains_collection_item"));
     const panels = Array.from(module.querySelectorAll("[data-domain-panel], .domains_contents_item, .domain_contents_item"));
