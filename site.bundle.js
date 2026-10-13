@@ -1974,8 +1974,8 @@ function initGalleries() {
     const thumbsWrap = first("[data-gallery-thumbs]");
 
     const loop = gallery.dataset.galleryLoop !== "false";
-    const duration = reducedMotion ? 0 : toNumber(gallery.dataset.galleryDuration, 0.7);
-    const zoom = toNumber(gallery.dataset.galleryZoom, 1.04);
+    const duration = reducedMotion ? 0 : toNumber(gallery.dataset.galleryDuration, 0.6);
+    const zoom = toNumber(gallery.dataset.galleryZoom, 1);
     const pad = Math.max(0, Math.round(toNumber(gallery.dataset.galleryPad, 0)));
     const swipe = gallery.dataset.gallerySwipe !== "false";
     const keyboard = gallery.dataset.galleryKeyboard !== "false";
@@ -2126,8 +2126,7 @@ function initGalleries() {
           }
         });
         activeTween
-          .fromTo(incoming, { opacity: 0 }, { opacity: 1, duration, ease: "power2.out" }, 0)
-          .fromTo(incomingImg, { scale: zoom }, { scale: 1, duration: duration * 1.6, ease: "expo.out" }, 0)
+          .fromTo(incoming, { opacity: 0 }, { opacity: 1, duration, ease: "power1.inOut" }, 0)
           .set(outgoing, { opacity: 0 }, duration);
       }
 
@@ -2211,6 +2210,14 @@ function initGalleries() {
     if (!gallery.hasAttribute("aria-label")) gallery.setAttribute("aria-label", "Fotogalerij");
 
     go(start, false);
+
+    if (zoom !== 1) {
+      const zoomIn = () => {
+        if (!duration) return;
+        gsap.fromTo(getImg(items[current]), { scale: zoom }, { scale: 1, duration: duration * 1.5, ease: "power2.out" });
+      };
+      [...prevBtns, ...nextBtns, ...thumbs].forEach((el) => on(el, "click", zoomIn));
+    }
 
     addCleanup(gallery, () => {
       listeners.forEach((off) => off());
@@ -2825,7 +2832,7 @@ function initDomainTabs() {
     const hoverOpacity = num(module.dataset.domainsHoverOpacity, 0.7);
     const cardStagger = num(module.dataset.domainsCardStagger, 0.1);
     const cardDelay = num(module.dataset.domainsCardDelay, 0.2);
-    const CARD_SELECTOR = "[data-domain-card], .project_grid_card";
+    const CARD_SELECTOR = "[data-domain-card], .project_grid_card, [data-gallery]";
     const blobDuration = num(module.dataset.domainsBlobDuration, 1.2);
 
     const blobSection = module.closest("[data-blob-section], .section_domains");
@@ -2956,18 +2963,10 @@ function initDomainTabs() {
     const getPanelFades = (panel, heading) => {
       const marked = panel.querySelectorAll("[data-domain-fade]");
       if (marked.length) return Array.from(marked);
-      const usable = (el) => !el.matches(CARD_SELECTOR) && !el.querySelector(CARD_SELECTOR);
-      if (!heading) return Array.from(panel.children).filter(usable);
-      const out = [];
-      let node = heading;
-      while (node && node !== panel && node.parentElement) {
-        const parent = node.parentElement;
-        Array.from(parent.children).forEach((el) => {
-          if (el !== node && usable(el)) out.push(el);
-        });
-        node = parent;
-      }
-      return out;
+      if (!heading || !heading.parentElement) return [];
+      return Array.from(heading.parentElement.children).filter(
+        (el) => el !== heading && !el.matches(CARD_SELECTOR) && !el.querySelector(CARD_SELECTOR)
+      );
     };
 
     const getPanelCards = (panel) => Array.from(panel.querySelectorAll(CARD_SELECTOR));
@@ -2990,13 +2989,6 @@ function initDomainTabs() {
       splits.forEach((sp) => sp.revert());
       splits = [];
     };
-    const splitBody = module.dataset.domainsSplitText !== "false";
-    const textStagger = num(module.dataset.domainsTextStagger, 0.06);
-    const fadeDuration = num(module.dataset.domainsFadeDuration, 0.9);
-    const fadeStagger = num(module.dataset.domainsFadeStagger, 0.12);
-    const fadeDelay = num(module.dataset.domainsFadeDelay, 0.2);
-    const canSplit = (el) =>
-      hasSplitText && splitBody && el.matches("p, [data-domain-split]") && !el.matches("[data-domain-split='false']");
 
     const finishRunning = () => {
       if (tl) {
@@ -3117,24 +3109,11 @@ function initDomainTabs() {
       }
 
       if (fades.length) {
-        const fadeTl = gsap.timeline();
-        let cursor = 0;
-        fades.forEach((el) => {
-          if (canSplit(el)) {
-            const bodySplit = SplitText.create(el, { type: "lines", mask: "lines", linesClass: "line" });
-            splits.push(bodySplit);
-            fadeTl.from(
-              bodySplit.lines,
-              { yPercent: 105, duration, stagger: textStagger, ease: "osmo" },
-              cursor
-            );
-            cursor += Math.min(bodySplit.lines.length, 3) * textStagger + fadeStagger;
-          } else {
-            fadeTl.from(el, { autoAlpha: 0, y: 20, duration: fadeDuration, ease: "power3.out" }, cursor);
-            cursor += fadeStagger;
-          }
-        });
-        tl.add(fadeTl, heading && hasSplitText ? "<" + fadeDelay : ">");
+        tl.from(
+          fades,
+          { autoAlpha: 0, y: 16, duration, stagger },
+          heading && hasSplitText ? "<0.15" : ">"
+        );
       }
 
       if (cards.length) {
