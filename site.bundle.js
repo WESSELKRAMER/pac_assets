@@ -44,6 +44,7 @@ function initBeforeEnterFunctions(next) {
   nextPage = next || document;
 
   applyNavbarPageConfig(nextPage);
+  initRichTextClasses();
   initDynamicCurrentYear();
   initUnselectableText();
   if (has(".home_grid_card, [data-load-fade]")) initLoadFade();
@@ -768,6 +769,16 @@ function initNavCurrentUnderline() {
     } else {
       el.setAttribute("data-underline-link", original);
     }
+  });
+}
+
+function initRichTextClasses() {
+  nextPage.querySelectorAll(".rich-text, .w-richtext").forEach((rt) => {
+    const quoteClass = (rt.dataset.rtQuoteClass || "display_text_medium").trim();
+    if (!quoteClass) return;
+    rt.querySelectorAll("blockquote").forEach((bq) => {
+      quoteClass.split(/\s+/).forEach((c) => bq.classList.add(c));
+    });
   });
 }
 
