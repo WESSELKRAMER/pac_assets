@@ -817,8 +817,9 @@ function initRichTextClasses() {
       const quote = cleanQuote(html);
       if (!quote) return;
 
+      const splitAttr = rt.dataset.rtQuoteSplit === "false" ? "" : ' data-split="heading"';
       bq.innerHTML =
-        `<span class="rt-quote_text">${quote}</span>` +
+        `<span class="rt-quote_text"${splitAttr}>“${quote}”</span>` +
         (source ? `<cite class="rt-quote_source">${source}</cite>` : "");
     });
 
