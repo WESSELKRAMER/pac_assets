@@ -2949,10 +2949,18 @@ function initDomainTabs() {
     const getPanelFades = (panel, heading) => {
       const marked = panel.querySelectorAll("[data-domain-fade]");
       if (marked.length) return Array.from(marked);
-      if (!heading || !heading.parentElement) return [];
-      return Array.from(heading.parentElement.children).filter(
-        (el) => el !== heading && !el.matches(CARD_SELECTOR) && !el.querySelector(CARD_SELECTOR)
-      );
+      const usable = (el) => !el.matches(CARD_SELECTOR) && !el.querySelector(CARD_SELECTOR);
+      if (!heading) return Array.from(panel.children).filter(usable);
+      const out = [];
+      let node = heading;
+      while (node && node !== panel && node.parentElement) {
+        const parent = node.parentElement;
+        Array.from(parent.children).forEach((el) => {
+          if (el !== node && usable(el)) out.push(el);
+        });
+        node = parent;
+      }
+      return out;
     };
 
     const getPanelCards = (panel) => Array.from(panel.querySelectorAll(CARD_SELECTOR));
