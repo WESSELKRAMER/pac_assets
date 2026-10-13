@@ -2796,7 +2796,13 @@ function initDomainTabs() {
     const tabs = Array.from(module.querySelectorAll("[data-domain-tab], .domains_collection_item"));
     const panels = Array.from(module.querySelectorAll("[data-domain-panel], .domains_contents_item, .domain_contents_item"));
     const count = Math.min(tabs.length, panels.length);
-    if (!count) return;
+    if (!count) {
+      console.warn("[domains] Geen tabs of panels gevonden", { tabs: tabs.length, panels: panels.length }, module);
+      return;
+    }
+    if (tabs.length !== panels.length) {
+      console.warn("[domains] Aantal tabs (" + tabs.length + ") en panels (" + panels.length + ") verschilt", module);
+    }
     tabs.length = count;
     panels.length = count;
 
@@ -3107,10 +3113,9 @@ function initDomainTabs() {
     };
 
     const onClick = (e) => {
-      const tab = e.target.closest("[role='tab']");
-      const i = tabs.indexOf(tab);
+      const i = tabs.indexOf(e.currentTarget);
       if (i === -1) return;
-      if (e.target.closest("a")) e.preventDefault();
+      if (e.target.closest("a") || e.currentTarget.tagName === "A") e.preventDefault();
       go(i);
     };
 
@@ -3145,9 +3150,9 @@ function initDomainTabs() {
       gsap.to(getTabFades(tabs[i]), { opacity: inactiveOpacity, duration: 0.3, ease: "power2.out", overwrite: true });
     };
 
-    tabList.addEventListener("click", onClick);
-    tabList.addEventListener("keydown", onKeydown);
     tabs.forEach((tab) => {
+      tab.addEventListener("click", onClick);
+      tab.addEventListener("keydown", onKeydown);
       tab.addEventListener("mouseenter", onEnter);
       tab.addEventListener("mouseleave", onLeave);
     });
@@ -3162,9 +3167,9 @@ function initDomainTabs() {
 
     addCleanup(module, () => {
       finishRunning();
-      tabList.removeEventListener("click", onClick);
-      tabList.removeEventListener("keydown", onKeydown);
       tabs.forEach((tab) => {
+        tab.removeEventListener("click", onClick);
+        tab.removeEventListener("keydown", onKeydown);
         tab.removeEventListener("mouseenter", onEnter);
         tab.removeEventListener("mouseleave", onLeave);
       });
