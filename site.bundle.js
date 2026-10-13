@@ -773,11 +773,48 @@ function initNavCurrentUnderline() {
 }
 
 function initRichTextClasses() {
+  const BR = "(?:\\s|&nbsp;|<br\\s*\\/?>)*";
+  const OPEN = /^[\s ]*(?:<br\s*\/?>[\s ]*)*(?:<(?:em|i)>)?[\s ]*[“"„‘'«][\s ]*(?:<br\s*\/?>[\s ]*)*/i;
+  const CLOSE = /[\s ]*(?:<br\s*\/?>[\s ]*)*[”"’'»][\s ]*(?:<\/(?:em|i)>)?[\s ]*(?:<br\s*\/?>[\s ]*)*$/i;
+  const SOURCE = new RegExp("(?:(?:<br\\s*\\/?>[\\s\u00a0]*)+|[”\"’'][\\s\u00a0]*)(?:<(?:em|i)>)?[\\s\u00a0]*[—–-][\\s\u00a0]*([^<>—–]{2,80}?)[\\s\u00a0]*(?:<\\/(?:em|i)>)?" + BR + "$", "i");
+  const SOURCE_EM = new RegExp("(?:<br\\s*\\/?>[\\s\u00a0]*)+<(em|i)>[\\s\u00a0]*([^<>]{2,80}?)[\\s\u00a0]*<\\/\\1>" + BR + "$", "i");
+
+  const cleanQuote = (html) => {
+    let q = html.trim();
+    q = q.replace(OPEN, "").replace(CLOSE, "");
+    q = q.replace(new RegExp("^" + BR), "").replace(new RegExp(BR + "$"), "");
+    const wrapped = q.match(/^<(em|i)>([\s\S]*)<\/\1>$/i);
+    if (wrapped && !/<(em|i)>/i.test(wrapped[2])) q = wrapped[2];
+    return q.replace(OPEN, "").replace(CLOSE, "").trim();
+  };
+
   nextPage.querySelectorAll(".rich-text, .w-richtext").forEach((rt) => {
-    const quoteClass = (rt.dataset.rtQuoteClass || "display_text_medium").trim();
-    if (!quoteClass) return;
+    const quoteClass = (rt.dataset.rtQuoteClass ?? "display_text_medium").trim();
+
     rt.querySelectorAll("blockquote").forEach((bq) => {
-      quoteClass.split(/\s+/).forEach((c) => bq.classList.add(c));
+      if (bq.dataset.rtQuoteDone === "true") return;
+      bq.dataset.rtQuoteDone = "true";
+
+      if (quoteClass) quoteClass.split(/\s+/).forEach((c) => bq.classList.add(c));
+
+      let html = bq.innerHTML;
+      let source = "";
+      const m = html.match(SOURCE);
+      const mEm = m ? null : html.match(SOURCE_EM);
+      if (m && m.index > 0) {
+        source = m[1].trim();
+        html = html.slice(0, m.index);
+      } else if (mEm && mEm.index > 0) {
+        source = mEm[2].trim();
+        html = html.slice(0, mEm.index);
+      }
+
+      const quote = cleanQuote(html);
+      if (!quote) return;
+
+      bq.innerHTML =
+        `<span class="rt-quote_text">${quote}</span>` +
+        (source ? `<cite class="rt-quote_source">${source}</cite>` : "");
     });
   });
 }
