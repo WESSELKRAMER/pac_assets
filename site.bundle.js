@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 21:00";
+window.PAC_BUNDLE = "2026-10-14 21:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3172,11 +3172,8 @@ function initBreadcrumbs() {
     if (el.dataset.breadcrumbsInit === "true") return;
     el.dataset.breadcrumbsInit = "true";
     const update = () => el.classList.toggle("is-end", el.scrollLeft >= el.scrollWidth - el.clientWidth - 2);
-    // Start aan het eind, zodat de huidige pagina in beeld is
-    requestAnimationFrame(() => {
-      el.scrollLeft = el.scrollWidth;
-      update();
-    });
+    el.scrollLeft = 0;
+    requestAnimationFrame(update);
     el.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
     addCleanup(el, () => {
