@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 07:58";
+window.PAC_BUNDLE = "2026-10-14 08:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -63,6 +63,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-team-slider]")) initTeamSlider();
   if (has("[data-gallery]")) initGalleries();
   if (has("[data-agenda]")) initAgendaMonths();
+  if (has("[data-social-share]")) initSocialShare();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
@@ -2404,6 +2405,65 @@ function initAgendaMonths() {
       if (tl) tl.kill();
       prevBtns.forEach((el) => el.removeEventListener("click", onPrev));
       nextBtns.forEach((el) => el.removeEventListener("click", onNext));
+    });
+  });
+}
+
+function initSocialShare() {
+  nextPage.querySelectorAll("[data-social-share]").forEach((root) => {
+    if (root._socialShareBound) return;
+    root._socialShareBound = true;
+
+    root.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-social-share-type]");
+      if (!btn || !root.contains(btn)) return;
+      e.preventDefault();
+
+      const link = root.getAttribute("data-social-share-link") || location.href;
+      const title = root.getAttribute("data-social-share-title") || document.title;
+      const type = btn.getAttribute("data-social-share-type");
+      const u = encodeURIComponent(link);
+      const t = encodeURIComponent(title);
+
+      const map = {
+        x: `https://twitter.com/intent/tweet?text=${t}&url=${u}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
+        telegram: `https://t.me/share/url?url=${u}&text=${t}`,
+        whatsapp: `https://api.whatsapp.com/send?text=${t}%20${u}`,
+        mail: `mailto:?subject=${t}&body=${t}%0A%0A${u}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`
+      };
+
+      if (type === "clipboard") {
+        const done = () => {
+          btn.setAttribute("data-social-share-success", "");
+          setTimeout(() => btn.removeAttribute("data-social-share-success"), 2000);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(link).then(done).catch(() => {});
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = link;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand("copy");
+            done();
+          } catch (err) {}
+          ta.remove();
+        }
+        return;
+      }
+
+      if (type === "mail") {
+        window.location.href = map.mail;
+        return;
+      }
+
+      const url = map[type];
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
     });
   });
 }
