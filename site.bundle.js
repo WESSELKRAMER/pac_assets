@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 14:05";
+window.PAC_BUNDLE = "2026-10-14 14:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -1520,7 +1520,16 @@ function initMaskTextScrollReveal() {
           gsap.set(heading, { autoAlpha: 1 });
           scheduleCheck(inst);
 
-          if (!targets || !targets.length || played) return;
+          const release = () => {
+            heading.setAttribute("data-split-done", "");
+            [...(inst.masks || []), ...(inst.lines || [])].forEach((el) => (el.style.overflow = "visible"));
+          };
+
+          if (played) {
+            release();
+            return;
+          }
+          if (!targets || !targets.length) return;
 
           const animation = {
             yPercent: 110,
@@ -1530,6 +1539,7 @@ function initMaskTextScrollReveal() {
             ease,
             onComplete: () => {
               played = true;
+              release();
             }
           };
 
