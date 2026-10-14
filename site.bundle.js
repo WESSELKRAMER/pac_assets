@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 12:50";
+window.PAC_BUNDLE = "2026-10-14 12:58";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -519,25 +519,45 @@ function initNavbarSub() {
   sub.dataset.navbarSubInitialized = "true";
 
   const threshold = toNumber(sub.dataset.navbarSubOffset, 10);
-  const duration = reducedMotion ? 0 : toNumber(sub.dataset.navbarSubDuration, 0.5);
+  const duration = reducedMotion ? 0 : toNumber(sub.dataset.navbarSubDuration, 0.6);
+  const ease = sub.dataset.navbarSubEase || "power3.inOut";
+  const content = Array.from(sub.children);
   let visible = true;
+  let tl = null;
 
   sub.style.overflow = "clip";
+
+  const run = (open) => {
+    if (tl) tl.kill();
+    const from = sub.offsetHeight;
+    gsap.set(sub, { height: "auto" });
+    const full = sub.offsetHeight;
+    gsap.set(sub, { height: from });
+
+    tl = gsap.timeline({
+      onComplete: () => {
+        if (open) gsap.set(sub, { clearProps: "height" });
+        tl = null;
+      }
+    });
+    tl.to(sub, { height: open ? full : 0, duration, ease }, 0);
+    if (content.length) {
+      tl.to(
+        content,
+        open
+          ? { opacity: 1, y: 0, duration: duration * 0.7, ease: "power2.out", delay: duration * 0.25 }
+          : { opacity: 0, y: -6, duration: duration * 0.4, ease: "power2.in" },
+        0
+      );
+    }
+  };
 
   const show = () => {
     if (visible) return;
     visible = true;
     sub.removeAttribute("inert");
     sub.setAttribute("aria-hidden", "false");
-    const target = sub.scrollHeight;
-    gsap.to(sub, {
-      height: target,
-      opacity: 1,
-      duration,
-      ease: "osmo",
-      overwrite: true,
-      onComplete: () => gsap.set(sub, { clearProps: "height" })
-    });
+    run(true);
   };
 
   const hide = () => {
@@ -545,13 +565,13 @@ function initNavbarSub() {
     visible = false;
     sub.setAttribute("inert", "");
     sub.setAttribute("aria-hidden", "true");
-    gsap.fromTo(sub, { height: sub.offsetHeight }, { height: 0, opacity: 0, duration, ease: "osmo", overwrite: true });
+    run(false);
   };
 
   const check = () => {
     const y = window.pageYOffset || document.documentElement.scrollTop || 0;
-    if (y <= threshold) show();
-    else hide();
+    if (y > threshold) hide();
+    else if (y <= Math.max(1, threshold / 3)) show();
   };
 
   let ticking = false;
