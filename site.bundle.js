@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 21:10";
+window.PAC_BUNDLE = "2026-10-14 21:20";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4199,7 +4199,9 @@ function initDomainTabs() {
               }
             : false,
           onUpdate: (self) => {
-            module.style.setProperty("--domains-progress", self.progress.toFixed(4));
+            const pr = self.progress.toFixed(4);
+            module.style.setProperty("--domains-progress", pr);
+            scrollHost.style.setProperty("--domains-progress", pr);
             const i = Math.min(count - 1, Math.floor(self.progress * count));
             if (i !== current) go(i);
           }
@@ -4207,6 +4209,7 @@ function initDomainTabs() {
         return () => {
           scrollST = null;
           module.style.removeProperty("--domains-progress");
+          scrollHost.style.removeProperty("--domains-progress");
         };
       });
     }
