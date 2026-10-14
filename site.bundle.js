@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 16:30";
+window.PAC_BUNDLE = "2026-10-14 17:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3846,7 +3846,9 @@ function initDomainTabs() {
 
       gsap.to(blob, vars);
     };
-    const useHash = module.dataset.domainsHash !== "false";
+    const scrollHost = module.closest("[data-domains-scroll]");
+    const scrollMode = !!(scrollHost && hasScrollTrigger);
+    const useHash = module.dataset.domainsHash !== "false" && !scrollMode;
 
     const uid = "domain-" + Math.random().toString(36).slice(2, 7);
     const tabList = tabs[0].parentElement;
@@ -4090,11 +4092,22 @@ function initDomainTabs() {
       }
     };
 
+    let scrollST = null;
+    const select = (i) => {
+      if (scrollST && scrollST.end > scrollST.start) {
+        const y = scrollST.start + ((i + 0.5) / count) * (scrollST.end - scrollST.start);
+        if (hasLenis && lenis) lenis.scrollTo(y, { duration: 1 });
+        else window.scrollTo({ top: y, behavior: reducedMotion ? "auto" : "smooth" });
+        return;
+      }
+      go(i);
+    };
+
     const onClick = (e) => {
       const i = tabs.indexOf(e.currentTarget);
       if (i === -1) return;
       if (e.target.closest("a") || e.currentTarget.tagName === "A") e.preventDefault();
-      go(i);
+      select(i);
     };
 
     const onKeydown = (e) => {
@@ -4107,13 +4120,13 @@ function initDomainTabs() {
       else if (e.key === "End") next = count - 1;
       else if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        go(i);
+        select(i);
         return;
       }
       if (next === null) return;
       e.preventDefault();
       tabs[next].focus();
-      go(next);
+      select(next);
     };
 
     const onEnter = (e) => {
@@ -4141,9 +4154,48 @@ function initDomainTabs() {
       const fromHash = tabs.findIndex((_, i) => getSlug(i) === hash);
       if (fromHash !== -1) startIndex = fromHash;
     }
+    if (scrollMode) startIndex = 0;
     go(startIndex, false);
 
+    // Scroll-modus: data-domains-scroll op een wrapper pint de module en speelt de domeinen 1 voor 1 af
+    let scrollMM = null;
+    if (scrollMode) {
+      const sd = scrollHost.dataset;
+      const stepVh = num(sd.domainsScrollStep, 80);
+      const query = sd.domainsScroll === "desktop" ? "(min-width: 992px)" : "all";
+      scrollMM = gsap.matchMedia();
+      scrollMM.add(query, () => {
+        scrollST = ScrollTrigger.create({
+          trigger: scrollHost,
+          start: sd.domainsScrollStart || "top top",
+          end: () => "+=" + Math.round((count * stepVh * window.innerHeight) / 100),
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          snap: sd.domainsScrollSnap !== undefined
+            ? {
+                snapTo: (v) => (Math.min(count - 1, Math.floor(v * count)) + 0.5) / count,
+                duration: { min: 0.2, max: 0.6 },
+                delay: 0.1,
+                ease: "power2.inOut"
+              }
+            : false,
+          onUpdate: (self) => {
+            module.style.setProperty("--domains-progress", self.progress.toFixed(4));
+            const i = Math.min(count - 1, Math.floor(self.progress * count));
+            if (i !== current) go(i);
+          }
+        });
+        return () => {
+          scrollST = null;
+          module.style.removeProperty("--domains-progress");
+        };
+      });
+    }
+
     addCleanup(module, () => {
+      if (scrollMM) scrollMM.revert();
       finishRunning();
       tabs.forEach((tab) => {
         tab.removeEventListener("click", onClick);
