@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-13 17:25";
+window.PAC_BUNDLE = "2026-10-14 07:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -62,6 +62,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-open-video]")) initVideoPopup();
   if (has("[data-team-slider]")) initTeamSlider();
   if (has("[data-gallery]")) initGalleries();
+  if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
@@ -2223,6 +2224,177 @@ function initGalleries() {
     addCleanup(gallery, () => {
       listeners.forEach((off) => off());
       if (activeTween) activeTween.kill();
+    });
+  });
+}
+
+function initAgendaMonths() {
+  const roots = Array.from(nextPage.querySelectorAll("[data-agenda]")).filter(
+    (el) => el.dataset.agendaInitialized !== "true"
+  );
+  if (!roots.length) return;
+
+  const MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+  const MONTHS_EN = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+  const parseDate = (value) => {
+    const v = (value || "").trim();
+    if (!v) return null;
+    let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    m = v.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);
+    if (m) {
+      const a = +m[1];
+      const b = +m[2];
+      return v.includes("/") && a <= 12 ? new Date(+m[3], a - 1, b) : new Date(+m[3], b - 1, a);
+    }
+    const lower = v.toLowerCase();
+    const nl = MONTHS.findIndex((name) => lower.includes(name));
+    const en = MONTHS_EN.findIndex((name) => lower.includes(name));
+    const monthIndex = nl !== -1 ? nl : en;
+    const year = lower.match(/\d{4}/);
+    const day = lower.replace(/\d{4}/, "").match(/\d{1,2}/);
+    if (monthIndex !== -1 && year) return new Date(+year[0], monthIndex, day ? +day[0] : 1);
+    const t = Date.parse(v);
+    return isNaN(t) ? null : new Date(t);
+  };
+
+  const keyOf = (d) => d.getFullYear() * 12 + d.getMonth();
+  const labelOf = (key) => {
+    const name = MONTHS[key % 12];
+    return name.charAt(0).toUpperCase() + name.slice(1) + " " + Math.floor(key / 12);
+  };
+
+  roots.forEach((root) => {
+    root.dataset.agendaInitialized = "true";
+
+    const items = Array.from(root.querySelectorAll("[data-agenda-item]"))
+      .map((el) => {
+        const source = el.hasAttribute("data-agenda-date") ? el : el.querySelector("[data-agenda-date]");
+        const date = source ? parseDate(source.getAttribute("data-agenda-date") || source.textContent) : null;
+        if (!date) console.warn("[agenda] Geen geldige datum gevonden", el);
+        return { el, date, key: date ? keyOf(date) : null };
+      })
+      .filter((item) => item.date);
+
+    const labels = Array.from(root.querySelectorAll("[data-agenda-month]"));
+    const prevBtns = Array.from(root.querySelectorAll("[data-agenda-prev]"));
+    const nextBtns = Array.from(root.querySelectorAll("[data-agenda-next]"));
+    const empties = Array.from(root.querySelectorAll("[data-agenda-empty]"));
+    const disabledClass = root.dataset.agendaDisabledClass || "is-disabled";
+    const order = root.dataset.agendaOrder === "desc" ? -1 : 1;
+    const skipEmpty = root.dataset.agendaSkipEmpty !== "false";
+    const duration = reducedMotion ? 0 : toNumber(root.dataset.agendaDuration, 0.6);
+    const stagger = toNumber(root.dataset.agendaStagger, 0.08);
+
+    const parents = new Set(items.map((item) => item.el.parentElement));
+    parents.forEach((parent) => {
+      items
+        .filter((item) => item.el.parentElement === parent)
+        .sort((a, b) => (a.date - b.date) * order)
+        .forEach((item) => parent.appendChild(item.el));
+    });
+
+    const today = new Date();
+    const currentKey = keyOf(today);
+    const startAttr = root.dataset.agendaStart ? parseDate(root.dataset.agendaStart + "-01") : null;
+    const startKey = startAttr ? keyOf(startAttr) : currentKey;
+
+    let months;
+    const itemKeys = items.map((item) => item.key);
+    if (skipEmpty) {
+      months = Array.from(new Set([...itemKeys, startKey])).sort((a, b) => a - b);
+    } else {
+      const min = Math.min(startKey, ...itemKeys);
+      const max = Math.max(startKey, ...itemKeys);
+      months = [];
+      for (let k = min; k <= max; k++) months.push(k);
+    }
+
+    let index = -1;
+    let tl = null;
+
+    const setLabel = (key) => labels.forEach((el) => (el.textContent = labelOf(key)));
+
+    const updateButtons = () => {
+      const atStart = index <= 0;
+      const atEnd = index >= months.length - 1;
+      prevBtns.forEach((el) => {
+        el.classList.toggle(disabledClass, atStart);
+        el.setAttribute("aria-disabled", atStart ? "true" : "false");
+      });
+      nextBtns.forEach((el) => {
+        el.classList.toggle(disabledClass, atEnd);
+        el.setAttribute("aria-disabled", atEnd ? "true" : "false");
+      });
+    };
+
+    const refreshLayout = () => {
+      if (hasLenis && lenis) lenis.resize();
+      if (hasScrollTrigger) ScrollTrigger.refresh();
+    };
+
+    const go = (newIndex, animate = true) => {
+      if (newIndex < 0 || newIndex >= months.length || newIndex === index) return;
+      if (tl) tl.progress(1);
+
+      const key = months[newIndex];
+      index = newIndex;
+      root.dataset.agendaCurrent = String(key);
+
+      const show = items.filter((item) => item.key === key).map((item) => item.el);
+      const hide = items.filter((item) => item.key !== key).map((item) => item.el);
+      const visibleNow = items.filter((item) => item.el.style.display !== "none").map((item) => item.el);
+
+      const swap = () => {
+        hide.forEach((el) => (el.style.display = "none"));
+        show.forEach((el) => (el.style.display = ""));
+        empties.forEach((el) => (el.style.display = show.length ? "none" : ""));
+        setLabel(key);
+        updateButtons();
+        refreshLayout();
+      };
+
+      if (!animate || !duration) {
+        swap();
+        return;
+      }
+
+      tl = gsap.timeline({ onComplete: () => (tl = null) });
+      tl.to([...labels, ...visibleNow, ...empties.filter((el) => el.style.display !== "none")], {
+        autoAlpha: 0,
+        y: -8,
+        duration: 0.25,
+        ease: "power2.in"
+      })
+        .add(swap)
+        .set([...visibleNow, ...empties], { y: 0, autoAlpha: 1 })
+        .fromTo(labels, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration, ease: "power2.out" })
+        .fromTo(
+          show.length ? show : empties,
+          { autoAlpha: 0, y: 16 },
+          { autoAlpha: 1, y: 0, duration, stagger, ease: "power2.out", clearProps: "opacity,visibility,transform" },
+          "<0.05"
+        );
+    };
+
+    const onPrev = (e) => {
+      e.preventDefault();
+      go(index - 1);
+    };
+    const onNext = (e) => {
+      e.preventDefault();
+      go(index + 1);
+    };
+    prevBtns.forEach((el) => el.addEventListener("click", onPrev));
+    nextBtns.forEach((el) => el.addEventListener("click", onNext));
+
+    go(Math.max(0, months.indexOf(startKey)), false);
+
+    addCleanup(root, () => {
+      if (tl) tl.kill();
+      prevBtns.forEach((el) => el.removeEventListener("click", onPrev));
+      nextBtns.forEach((el) => el.removeEventListener("click", onNext));
     });
   });
 }
