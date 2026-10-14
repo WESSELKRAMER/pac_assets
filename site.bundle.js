@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 10:40";
+window.PAC_BUNDLE = "2026-10-14 10:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2889,7 +2889,7 @@ function initListFilters() {
     };
 
     [...selects, ...sorts].forEach((select) => {
-      if (select.hasAttribute("data-filter-custom") || root.hasAttribute("data-filter-custom")) buildDropdown(select);
+      if (select.getAttribute("data-filter-custom") !== "false" && root.getAttribute("data-filter-custom") !== "false") buildDropdown(select);
     });
 
     apply(false);
