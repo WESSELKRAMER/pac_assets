@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 08:40";
+window.PAC_BUNDLE = "2026-10-14 10:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2626,6 +2626,7 @@ function initListFilters() {
       sorts.forEach((select) => {
         if (state.sort) select.value = state.sort;
       });
+      if (typeof customDropdowns !== "undefined") customDropdowns.forEach((d) => d.refresh());
       const filtered = isFiltered();
       resets.forEach((el) => {
         if (el.hasAttribute("data-filter-reset-always")) return;
@@ -2752,10 +2753,150 @@ function initListFilters() {
       )
     );
 
+    const customDropdowns = [];
+    const buildDropdown = (select) => {
+      const wrap = document.createElement("div");
+      wrap.className = "filter-dropdown";
+      const id = "fd-" + Math.random().toString(36).slice(2, 8);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "filter-dropdown__button";
+      button.setAttribute("aria-haspopup", "listbox");
+      button.setAttribute("aria-expanded", "false");
+      button.setAttribute("aria-controls", id);
+      const label = document.createElement("span");
+      label.className = "filter-dropdown__label";
+      button.appendChild(label);
+      button.insertAdjacentHTML(
+        "beforeend",
+        '<svg class="filter-dropdown__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
+      );
+
+      const list = document.createElement("ul");
+      list.className = "filter-dropdown__list";
+      list.id = id;
+      list.setAttribute("role", "listbox");
+      list.setAttribute("tabindex", "-1");
+      list.setAttribute("data-lenis-prevent", "");
+      list.hidden = true;
+
+      wrap.appendChild(button);
+      wrap.appendChild(list);
+      select.insertAdjacentElement("afterend", wrap);
+      select.classList.add("filter-dropdown__native");
+      select.setAttribute("tabindex", "-1");
+      select.setAttribute("aria-hidden", "true");
+
+      let options = [];
+      let activeIndex = -1;
+      let isOpen = false;
+
+      const render = () => {
+        list.innerHTML = "";
+        options = Array.from(select.options).map((opt, i) => {
+          const li = document.createElement("li");
+          li.className = "filter-dropdown__option";
+          li.setAttribute("role", "option");
+          li.id = id + "-" + i;
+          li.textContent = opt.textContent;
+          li.addEventListener("click", () => choose(i));
+          li.addEventListener("mousemove", () => setActive(i));
+          list.appendChild(li);
+          return li;
+        });
+        refresh();
+      };
+
+      const refresh = () => {
+        const i = Math.max(0, select.selectedIndex);
+        label.textContent = select.options[i] ? select.options[i].textContent : "";
+        options.forEach((li, j) => {
+          li.setAttribute("aria-selected", j === i ? "true" : "false");
+          li.classList.toggle("is-selected", j === i);
+        });
+        button.classList.toggle("is-filtered", !!select.value && select.value !== "all");
+      };
+
+      const setActive = (i) => {
+        activeIndex = Math.max(0, Math.min(options.length - 1, i));
+        options.forEach((li, j) => li.classList.toggle("is-active", j === activeIndex));
+        const li = options[activeIndex];
+        if (li) {
+          list.setAttribute("aria-activedescendant", li.id);
+          const top = li.offsetTop;
+          const bottom = top + li.offsetHeight;
+          if (top < list.scrollTop) list.scrollTop = top;
+          else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+        }
+      };
+
+      const open = () => {
+        if (isOpen) return;
+        isOpen = true;
+        list.hidden = false;
+        wrap.classList.add("is-open");
+        button.setAttribute("aria-expanded", "true");
+        setActive(Math.max(0, select.selectedIndex));
+        list.focus({ preventScroll: true });
+        if (!reducedMotion) gsap.fromTo(list, { autoAlpha: 0, y: -6 }, { autoAlpha: 1, y: 0, duration: 0.25, ease: "power2.out" });
+      };
+
+      const close = (focusButton = true) => {
+        if (!isOpen) return;
+        isOpen = false;
+        wrap.classList.remove("is-open");
+        button.setAttribute("aria-expanded", "false");
+        const done = () => (list.hidden = true);
+        if (reducedMotion) done();
+        else gsap.to(list, { autoAlpha: 0, y: -6, duration: 0.18, ease: "power2.in", onComplete: done });
+        if (focusButton) button.focus({ preventScroll: true });
+      };
+
+      const choose = (i) => {
+        if (select.selectedIndex !== i) {
+          select.selectedIndex = i;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        refresh();
+        close();
+      };
+
+      on(button, "click", () => (isOpen ? close() : open()));
+      on(button, "keydown", (e) => {
+        if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
+          e.preventDefault();
+          open();
+        }
+      });
+      on(list, "keydown", (e) => {
+        if (e.key === "ArrowDown") { e.preventDefault(); setActive(activeIndex + 1); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); setActive(activeIndex - 1); }
+        else if (e.key === "Home") { e.preventDefault(); setActive(0); }
+        else if (e.key === "End") { e.preventDefault(); setActive(options.length - 1); }
+        else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(activeIndex); }
+        else if (e.key === "Escape") { e.preventDefault(); close(); }
+        else if (e.key === "Tab") close(false);
+      });
+      on(document, "pointerdown", (e) => {
+        if (isOpen && !wrap.contains(e.target)) close(false);
+      });
+
+      render();
+      const api = { refresh, render, wrap };
+      customDropdowns.push(api);
+      return api;
+    };
+
+    [...selects, ...sorts].forEach((select) => {
+      if (select.hasAttribute("data-filter-custom") || root.hasAttribute("data-filter-custom")) buildDropdown(select);
+    });
+
     apply(false);
 
     addCleanup(root, () => {
       clearTimeout(searchTimer);
+      customDropdowns.forEach((d) => d.wrap.remove());
       if (tween) tween.kill();
       listeners.forEach((off) => off());
     });
