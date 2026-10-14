@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 14:10";
+window.PAC_BUNDLE = "2026-10-14 14:35";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -66,6 +66,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-gallery]")) initGalleries();
   if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-social-share]")) initSocialShare();
+  if (has("[data-filter-link]")) initFilterLinks();
   if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
@@ -3043,6 +3044,30 @@ function initGradientColors() {
       const v = target.dataset[key];
       if (v) target.style.setProperty(prop, /^\d+(\.\d+)?$/.test(v) ? v + (key === "gradientDirection" ? "deg" : "%") : v);
     });
+  });
+}
+
+function initFilterLinks() {
+  const slug = (v) =>
+    (v || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  nextPage.querySelectorAll("[data-filter-link]").forEach((link) => {
+    const group = slug(link.getAttribute("data-filter-link"));
+    const value = slug(link.getAttribute("data-filter-link-value") || link.textContent);
+    if (!group || !value) return;
+    const base = link.getAttribute("data-filter-link-base") || link.getAttribute("href") || "/nieuws-media";
+    try {
+      const url = new URL(base, location.origin);
+      url.searchParams.set(group, value);
+      link.setAttribute("href", url.pathname + url.search + url.hash);
+    } catch (e) {}
   });
 }
 
