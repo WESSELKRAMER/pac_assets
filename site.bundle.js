@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 11:05";
+window.PAC_BUNDLE = "2026-10-14 12:50";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -35,6 +35,7 @@ function initOnceFunctions() {
 
   initAutoRefresh();
   initNavbarHide();
+  initNavbarSub();
   initMobileMenu();
   initLogoHover();
   initNavCurrentUnderline();
@@ -508,6 +509,66 @@ function initNavbarHide() {
     },
     { passive: true }
   );
+}
+
+function initNavbarSub() {
+  const nav = document.querySelector("[data-navbar]") || document.querySelector(".navbar");
+  if (!nav) return;
+  const sub = nav.querySelector("[data-navbar-sub], .subfooter_inner");
+  if (!sub || sub.dataset.navbarSubInitialized === "true") return;
+  sub.dataset.navbarSubInitialized = "true";
+
+  const threshold = toNumber(sub.dataset.navbarSubOffset, 10);
+  const duration = reducedMotion ? 0 : toNumber(sub.dataset.navbarSubDuration, 0.5);
+  let visible = true;
+
+  sub.style.overflow = "clip";
+
+  const show = () => {
+    if (visible) return;
+    visible = true;
+    sub.removeAttribute("inert");
+    sub.setAttribute("aria-hidden", "false");
+    const target = sub.scrollHeight;
+    gsap.to(sub, {
+      height: target,
+      opacity: 1,
+      duration,
+      ease: "osmo",
+      overwrite: true,
+      onComplete: () => gsap.set(sub, { clearProps: "height" })
+    });
+  };
+
+  const hide = () => {
+    if (!visible) return;
+    visible = false;
+    sub.setAttribute("inert", "");
+    sub.setAttribute("aria-hidden", "true");
+    gsap.fromTo(sub, { height: sub.offsetHeight }, { height: 0, opacity: 0, duration, ease: "osmo", overwrite: true });
+  };
+
+  const check = () => {
+    const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    if (y <= threshold) show();
+    else hide();
+  };
+
+  let ticking = false;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        check();
+      });
+    },
+    { passive: true }
+  );
+
+  check();
 }
 
 const menuMQ = window.matchMedia("(max-width: 991px)");
