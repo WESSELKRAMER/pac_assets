@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 15:00";
+window.PAC_BUNDLE = "2026-10-14 16:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -67,6 +67,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-social-share]")) initSocialShare();
   if (has("[data-filter-link]")) initFilterLinks();
+  if (has("[data-hover-reveal]")) initHoverReveal();
   if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
@@ -3055,6 +3056,112 @@ function initGradientColors() {
     Object.entries(map).forEach(([key, prop]) => {
       const v = target.dataset[key];
       if (v) target.style.setProperty(prop, /^\d+(\.\d+)?$/.test(v) ? v + (key === "gradientDirection" ? "deg" : "%") : v);
+    });
+  });
+}
+
+function initHoverReveal() {
+  const targets = Array.from(nextPage.querySelectorAll("[data-hover-reveal]")).filter(
+    (el) => el.dataset.hoverRevealInit !== "true"
+  );
+  if (!targets.length) return;
+
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  let refreshTimer = null;
+  const refreshLayout = () => {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      if (hasLenis && lenis) lenis.resize();
+      if (hasScrollTrigger) ScrollTrigger.refresh();
+    }, 250);
+  };
+
+  targets.forEach((el) => {
+    el.dataset.hoverRevealInit = "true";
+
+    // Touch / geen hover: tekst gewoon zichtbaar laten
+    if (!canHover) return;
+
+    const trigger = el.closest("[data-hover-reveal-trigger]") || el.parentElement;
+    const mode = el.getAttribute("data-hover-reveal") === "fade" ? "fade" : "expand";
+    const duration = reducedMotion ? 0.01 : toNumber(el.dataset.hoverRevealDuration, 0.7);
+    const stagger = reducedMotion ? 0 : toNumber(el.dataset.hoverRevealStagger, 0.06);
+
+    // Flex/grid gap compenseren zodat er in dichte staat geen lege ruimte blijft
+    const ps = getComputedStyle(el.parentElement);
+    const stacked = (ps.display.includes("flex") && ps.flexDirection.startsWith("column")) || ps.display.includes("grid");
+    const gap = stacked ? parseFloat(ps.rowGap) || 0 : 0;
+    const openMargin = parseFloat(getComputedStyle(el).marginTop) || 0;
+    const closedMargin = el.previousElementSibling ? -gap : 0;
+
+    let open = false;
+    let lines = [];
+    let split = null;
+
+    if (mode === "expand") gsap.set(el, { height: 0, overflow: "hidden", marginTop: closedMargin });
+
+    if (hasSplitText) {
+      split = SplitText.create(el, {
+        type: "lines",
+        mask: "lines",
+        linesClass: "hover-reveal-line",
+        autoSplit: true,
+        onSplit(self) {
+          lines = self.lines;
+          gsap.set(lines, { yPercent: open ? 0 : 110 });
+          gsap.set(el, { autoAlpha: 1 });
+        }
+      });
+    } else {
+      gsap.set(el, { autoAlpha: 0 });
+    }
+
+    const show = () => {
+      if (open) return;
+      open = true;
+      if (mode === "expand") {
+        gsap.to(el, { height: "auto", marginTop: openMargin, duration, ease: "osmo", overwrite: "auto", onComplete: refreshLayout });
+      }
+      if (lines.length) {
+        gsap.to(lines, { yPercent: 0, duration, stagger, ease: "osmo", overwrite: "auto", delay: mode === "expand" ? 0.06 : 0 });
+      } else {
+        gsap.to(el, { autoAlpha: 1, duration, ease: "osmo", overwrite: "auto" });
+      }
+    };
+
+    const hide = () => {
+      if (!open) return;
+      open = false;
+      const d = duration * 0.75;
+      if (lines.length) {
+        gsap.to(lines, { yPercent: 110, duration: d * 0.8, stagger: stagger * 0.5, ease: "power2.in", overwrite: "auto" });
+      } else {
+        gsap.to(el, { autoAlpha: 0, duration: d, ease: "osmo", overwrite: "auto" });
+      }
+      if (mode === "expand") {
+        gsap.to(el, { height: 0, marginTop: closedMargin, duration: d, delay: 0.08, ease: "osmo", overwrite: "auto", onComplete: refreshLayout });
+      }
+    };
+
+    const onFocusOut = (e) => {
+      if (!trigger.contains(e.relatedTarget)) hide();
+    };
+
+    trigger.addEventListener("mouseenter", show);
+    trigger.addEventListener("mouseleave", hide);
+    trigger.addEventListener("focusin", show);
+    trigger.addEventListener("focusout", onFocusOut);
+
+    addCleanup(el, () => {
+      clearTimeout(refreshTimer);
+      trigger.removeEventListener("mouseenter", show);
+      trigger.removeEventListener("mouseleave", hide);
+      trigger.removeEventListener("focusin", show);
+      trigger.removeEventListener("focusout", onFocusOut);
+      gsap.killTweensOf([el, ...lines]);
+      if (split) split.revert();
+      gsap.set(el, { clearProps: "height,overflow,marginTop,opacity,visibility" });
     });
   });
 }
