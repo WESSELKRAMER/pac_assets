@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 14:35";
+window.PAC_BUNDLE = "2026-10-14 15:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2604,14 +2604,25 @@ function initListFilters() {
   roots.forEach((root) => {
     root.dataset.filterInitialized = "true";
 
+    const searchNormalize = (v) =>
+      (v || "")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+
     const RESERVED = ["filter-item", "filter-date", "filter-title", "filter-initialized"];
     const items = Array.from(root.querySelectorAll("[data-filter-item]")).map((el, index) => {
       const values = {};
+      const labels = [];
       const add = (group, value) => {
         const g = slug(group);
         const v = slug(value);
         if (!g || !v) return;
         (values[g] = values[g] || new Set()).add(v);
+        labels.push((value || "").toString().trim());
       };
       Array.from(el.attributes).forEach((attr) => {
         const name = attr.name.replace(/^data-/, "");
@@ -2624,7 +2635,8 @@ function initListFilters() {
       const dateSource = el.hasAttribute("data-filter-date") ? el : el.querySelector("[data-filter-date]");
       const date = dateSource ? parseDate(dateSource.getAttribute("data-filter-date") || dateSource.textContent) : 0;
       const titleEl = el.querySelector("[data-filter-title]");
-      const text = ((titleEl || el).textContent || "").toLowerCase().replace(/\s+/g, " ");
+      const searchFields = root.dataset.filterSearchFields !== "false";
+      const text = searchNormalize(((titleEl || el).textContent || "") + (searchFields ? " " + labels.join(" ") : ""));
       return { el, index, values, date, text };
     });
 
@@ -2730,7 +2742,7 @@ function initListFilters() {
     let tween = null;
 
     const apply = (animate = true) => {
-      const q = state.query.trim().toLowerCase();
+      const q = searchNormalize(state.query);
       const matches = items.filter((item) => {
         for (const g of groups) {
           const want = state.filters[g];
