@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 12:58";
+window.PAC_BUNDLE = "2026-10-14 14:05";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -47,6 +47,7 @@ function initBeforeEnterFunctions(next) {
 
   applyNavbarPageConfig(nextPage);
   initRichTextClasses();
+  if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
   initUnselectableText();
   if (has(".home_grid_card, [data-load-fade]")) initLoadFade();
@@ -3011,6 +3012,26 @@ function initListFilters() {
       customDropdowns.forEach((d) => d.wrap.remove());
       if (tween) tween.kill();
       listeners.forEach((off) => off());
+    });
+  });
+}
+
+function initGradientColors() {
+  nextPage.querySelectorAll("[data-gradient]").forEach((target) => {
+    const source =
+      target.querySelector("[data-gradient-color]") ||
+      (target.getAttribute("data-gradient") && nextPage.querySelector(`[data-gradient-color="${target.getAttribute("data-gradient")}"]`)) ||
+      nextPage.querySelector("[data-gradient-color]");
+    if (!source) return;
+
+    const bg = getComputedStyle(source).backgroundColor;
+    const usable = bg && bg !== "transparent" && !/rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/.test(bg);
+    if (usable) target.style.setProperty("--gradient-color", bg);
+
+    const map = { gradientDirection: "--gradient-direction", gradientStart: "--gradient-start", gradientEnd: "--gradient-end" };
+    Object.entries(map).forEach(([key, prop]) => {
+      const v = target.dataset[key];
+      if (v) target.style.setProperty(prop, /^\d+(\.\d+)?$/.test(v) ? v + (key === "gradientDirection" ? "deg" : "%") : v);
     });
   });
 }
