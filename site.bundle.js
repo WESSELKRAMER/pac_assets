@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 20:45";
+window.PAC_BUNDLE = "2026-10-14 21:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -67,6 +67,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-social-share]")) initSocialShare();
   if (has("[data-filter-link]")) initFilterLinks();
+  if (has("[data-breadcrumbs]")) initBreadcrumbs();
   if (has("[data-hover-reveal]")) initHoverReveal();
   if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
@@ -3162,6 +3163,25 @@ function initHoverReveal() {
       gsap.killTweensOf([el, ...lines]);
       if (split) split.revert();
       gsap.set(el, { clearProps: "height,overflow,marginTop,opacity,visibility" });
+    });
+  });
+}
+
+function initBreadcrumbs() {
+  nextPage.querySelectorAll("[data-breadcrumbs]").forEach((el) => {
+    if (el.dataset.breadcrumbsInit === "true") return;
+    el.dataset.breadcrumbsInit = "true";
+    const update = () => el.classList.toggle("is-end", el.scrollLeft >= el.scrollWidth - el.clientWidth - 2);
+    // Start aan het eind, zodat de huidige pagina in beeld is
+    requestAnimationFrame(() => {
+      el.scrollLeft = el.scrollWidth;
+      update();
+    });
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    addCleanup(el, () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
     });
   });
 }
