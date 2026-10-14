@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 10:55";
+window.PAC_BUNDLE = "2026-10-14 11:05";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2887,6 +2887,37 @@ function initListFilters() {
       customDropdowns.push(api);
       return api;
     };
+
+    root.querySelectorAll("[data-filter-mobile-dropdown]").forEach((group) => {
+      const groupButtons = buttons.filter((btn) => group.contains(btn));
+      if (!groupButtons.length) return;
+      const g = slug(group.getAttribute("data-filter-mobile-dropdown") || groupButtons[0].getAttribute("data-filter-button"));
+      const holder = document.createElement("div");
+      holder.className = "filter-mobile-select";
+      const select = document.createElement("select");
+      select.setAttribute("data-filter-select", g);
+      select.setAttribute("aria-label", group.getAttribute("aria-label") || g);
+      const seen = new Set();
+      groupButtons.forEach((btn) => {
+        const raw = slug(btn.getAttribute("data-filter-value") || "");
+        const value = raw === "" ? "all" : raw;
+        if (seen.has(value)) return;
+        seen.add(value);
+        const opt = document.createElement("option");
+        opt.value = value;
+        opt.textContent = (btn.textContent || "").trim();
+        select.appendChild(opt);
+      });
+      holder.appendChild(select);
+      group.insertAdjacentElement("afterend", holder);
+      selects.push(select);
+      on(select, "change", () => {
+        const v = slug(select.value);
+        state.filters[g] = v === "all" ? "" : v;
+        update();
+      });
+      addCleanup(root, () => holder.remove());
+    });
 
     [...selects, ...sorts].forEach((select) => {
       if (select.getAttribute("data-filter-custom") !== "false" && root.getAttribute("data-filter-custom") !== "false") buildDropdown(select);
