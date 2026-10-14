@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 07:40";
+window.PAC_BUNDLE = "2026-10-14 07:58";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2360,22 +2360,31 @@ function initAgendaMonths() {
         return;
       }
 
+      const visibleEmpties = empties.filter((el) => el.style.display !== "none");
+
       tl = gsap.timeline({ onComplete: () => (tl = null) });
-      tl.to([...labels, ...visibleNow, ...empties.filter((el) => el.style.display !== "none")], {
-        autoAlpha: 0,
-        y: -8,
-        duration: 0.25,
-        ease: "power2.in"
-      })
-        .add(swap)
-        .set([...visibleNow, ...empties], { y: 0, autoAlpha: 1 })
-        .fromTo(labels, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration, ease: "power2.out" })
-        .fromTo(
-          show.length ? show : empties,
+      tl.to([...labels, ...visibleNow], { autoAlpha: 0, y: -8, duration: 0.25, ease: "power2.in" }, 0);
+      if (visibleEmpties.length) tl.to(visibleEmpties, { autoAlpha: 0, duration: 0.25, ease: "power2.in" }, 0);
+      tl.add(swap)
+        .set(visibleNow, { y: 0, autoAlpha: 1 })
+        .set(empties, { autoAlpha: 1 })
+        .fromTo(labels, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration, ease: "power2.out" });
+
+      if (show.length) {
+        tl.fromTo(
+          show,
           { autoAlpha: 0, y: 16 },
           { autoAlpha: 1, y: 0, duration, stagger, ease: "power2.out", clearProps: "opacity,visibility,transform" },
           "<0.05"
         );
+      } else if (empties.length) {
+        tl.fromTo(
+          empties,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration, ease: "power1.out", clearProps: "opacity,visibility" },
+          "<0.05"
+        );
+      }
     };
 
     const onPrev = (e) => {
