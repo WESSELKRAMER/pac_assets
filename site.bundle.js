@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 10:45";
+window.PAC_BUNDLE = "2026-10-14 10:55";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2815,7 +2815,7 @@ function initListFilters() {
           li.setAttribute("aria-selected", j === i ? "true" : "false");
           li.classList.toggle("is-selected", j === i);
         });
-        button.classList.toggle("is-filtered", !!select.value && select.value !== "all");
+        button.classList.toggle("is-filtered", select.selectedIndex > 0);
       };
 
       const setActive = (i) => {
