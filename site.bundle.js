@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 08:10";
+window.PAC_BUNDLE = "2026-10-14 08:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -64,6 +64,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-gallery]")) initGalleries();
   if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-social-share]")) initSocialShare();
+  if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
@@ -2464,6 +2465,299 @@ function initSocialShare() {
 
       const url = map[type];
       if (url) window.open(url, "_blank", "noopener,noreferrer");
+    });
+  });
+}
+
+function initListFilters() {
+  const roots = Array.from(nextPage.querySelectorAll("[data-filter]")).filter(
+    (el) => el.dataset.filterInitialized !== "true"
+  );
+  if (!roots.length) return;
+
+  const slug = (v) =>
+    (v || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  const MONTHS_NL = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+  const parseDate = (value) => {
+    const v = (value || "").trim();
+    if (!v) return 0;
+    let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]).getTime();
+    m = v.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);
+    if (m) {
+      const a = +m[1];
+      const b = +m[2];
+      return (v.includes("/") && a <= 12 ? new Date(+m[3], a - 1, b) : new Date(+m[3], b - 1, a)).getTime();
+    }
+    const lower = v.toLowerCase();
+    const month = MONTHS_NL.findIndex((n) => lower.includes(n));
+    const year = lower.match(/\d{4}/);
+    if (month !== -1 && year) {
+      const day = lower.replace(/\d{4}/, "").match(/\d{1,2}/);
+      return new Date(+year[0], month, day ? +day[0] : 1).getTime();
+    }
+    const t = Date.parse(v);
+    return isNaN(t) ? 0 : t;
+  };
+
+  roots.forEach((root) => {
+    root.dataset.filterInitialized = "true";
+
+    const RESERVED = ["filter-item", "filter-date", "filter-title", "filter-initialized"];
+    const items = Array.from(root.querySelectorAll("[data-filter-item]")).map((el, index) => {
+      const values = {};
+      const add = (group, value) => {
+        const g = slug(group);
+        const v = slug(value);
+        if (!g || !v) return;
+        (values[g] = values[g] || new Set()).add(v);
+      };
+      Array.from(el.attributes).forEach((attr) => {
+        const name = attr.name.replace(/^data-/, "");
+        if (!name.startsWith("filter-") || RESERVED.includes(name)) return;
+        attr.value.split(/[,;|]/).forEach((v) => add(name.replace(/^filter-/, ""), v));
+      });
+      el.querySelectorAll("[data-filter-field]").forEach((field) => {
+        add(field.getAttribute("data-filter-field"), field.getAttribute("data-filter-field-value") || field.textContent);
+      });
+      const dateSource = el.hasAttribute("data-filter-date") ? el : el.querySelector("[data-filter-date]");
+      const date = dateSource ? parseDate(dateSource.getAttribute("data-filter-date") || dateSource.textContent) : 0;
+      const titleEl = el.querySelector("[data-filter-title]");
+      const text = ((titleEl || el).textContent || "").toLowerCase().replace(/\s+/g, " ");
+      return { el, index, values, date, text };
+    });
+
+    const buttons = Array.from(root.querySelectorAll("[data-filter-button]"));
+    const selects = Array.from(root.querySelectorAll("[data-filter-select]"));
+    const searches = Array.from(root.querySelectorAll("[data-filter-search]"));
+    const sorts = Array.from(root.querySelectorAll("[data-filter-sort]"));
+    const counts = Array.from(root.querySelectorAll("[data-filter-count]"));
+    const resets = Array.from(root.querySelectorAll("[data-filter-reset]"));
+    const empties = Array.from(root.querySelectorAll("[data-filter-empty]"));
+    const activeClass = root.dataset.filterActiveClass || "is-active";
+    const useUrl = root.dataset.filterUrl !== "false";
+    const duration = reducedMotion ? 0 : toNumber(root.dataset.filterDuration, 0.5);
+    const stagger = toNumber(root.dataset.filterStagger, 0.05);
+    const singular = root.dataset.filterSingular || "verhaal";
+    const plural = root.dataset.filterPlural || "verhalen";
+
+    const groups = new Set([
+      ...buttons.map((b) => slug(b.getAttribute("data-filter-button"))),
+      ...selects.map((s) => slug(s.getAttribute("data-filter-select")))
+    ]);
+
+    const state = { filters: {}, query: "", sort: sorts[0] ? sorts[0].value || "new" : "" };
+    groups.forEach((g) => (state.filters[g] = ""));
+
+    selects.forEach((select) => {
+      if (!select.hasAttribute("data-filter-populate")) return;
+      const group = slug(select.getAttribute("data-filter-select"));
+      const labels = new Map();
+      items.forEach((item) => {
+        item.el.querySelectorAll(`[data-filter-field]`).forEach((field) => {
+          if (slug(field.getAttribute("data-filter-field")) !== group) return;
+          const label = (field.textContent || "").trim();
+          if (label) labels.set(slug(field.getAttribute("data-filter-field-value") || label), label);
+        });
+        const attr = item.el.getAttribute("data-filter-" + group);
+        if (attr) attr.split(/[,;|]/).forEach((v) => v.trim() && !labels.has(slug(v)) && labels.set(slug(v), v.trim()));
+      });
+      Array.from(select.options).forEach((opt) => {
+        if (opt.value && opt.value !== "all") opt.remove();
+      });
+      Array.from(labels.entries())
+        .sort((a, b) => a[1].localeCompare(b[1], "nl"))
+        .forEach(([value, label]) => {
+          const opt = document.createElement("option");
+          opt.value = value;
+          opt.textContent = label;
+          select.appendChild(opt);
+        });
+    });
+
+    if (useUrl) {
+      const params = new URLSearchParams(location.search);
+      groups.forEach((g) => {
+        if (params.has(g)) state.filters[g] = slug(params.get(g));
+      });
+      if (params.has("q")) state.query = params.get("q");
+      if (params.has("sort") && sorts.length) state.sort = params.get("sort");
+    }
+
+    const writeUrl = () => {
+      if (!useUrl) return;
+      const params = new URLSearchParams(location.search);
+      groups.forEach((g) => (state.filters[g] ? params.set(g, state.filters[g]) : params.delete(g)));
+      state.query.trim() ? params.set("q", state.query.trim()) : params.delete("q");
+      sorts.length && state.sort && state.sort !== (sorts[0].options[0] || {}).value ? params.set("sort", state.sort) : params.delete("sort");
+      const qs = params.toString();
+      try {
+        history.replaceState(history.state, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
+      } catch (e) {}
+    };
+
+    const isFiltered = () => Object.values(state.filters).some(Boolean) || state.query.trim() !== "";
+
+    const syncControls = () => {
+      buttons.forEach((btn) => {
+        const g = slug(btn.getAttribute("data-filter-button"));
+        const v = slug(btn.getAttribute("data-filter-value") || "");
+        const on = (v === "" || v === "all") ? !state.filters[g] : state.filters[g] === v;
+        btn.classList.toggle(activeClass, on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      selects.forEach((select) => {
+        const g = slug(select.getAttribute("data-filter-select"));
+        const want = state.filters[g] || "";
+        const match = Array.from(select.options).find((o) => slug(o.value) === want || (!want && (o.value === "" || o.value === "all")));
+        if (match) select.value = match.value;
+      });
+      searches.forEach((input) => {
+        if (input.value !== state.query) input.value = state.query;
+      });
+      sorts.forEach((select) => {
+        if (state.sort) select.value = state.sort;
+      });
+      const filtered = isFiltered();
+      resets.forEach((el) => {
+        if (el.hasAttribute("data-filter-reset-always")) return;
+        el.style.display = filtered ? "" : "none";
+      });
+    };
+
+    let tween = null;
+
+    const apply = (animate = true) => {
+      const q = state.query.trim().toLowerCase();
+      const matches = items.filter((item) => {
+        for (const g of groups) {
+          const want = state.filters[g];
+          if (want && !(item.values[g] && item.values[g].has(want))) return false;
+        }
+        return !q || item.text.includes(q);
+      });
+
+      if (sorts.length) {
+        const dir = state.sort === "old" ? 1 : state.sort === "new" ? -1 : 0;
+        const sorted = dir ? [...items].sort((a, b) => (a.date - b.date) * dir || a.index - b.index) : [...items].sort((a, b) => a.index - b.index);
+        sorted.forEach((item) => item.el.parentElement && item.el.parentElement.appendChild(item.el));
+      }
+
+      const show = new Set(matches.map((m) => m.el));
+      if (tween) tween.progress(1);
+      items.forEach((item) => (item.el.style.display = show.has(item.el) ? "" : "none"));
+      empties.forEach((el) => (el.style.display = matches.length ? "none" : ""));
+      counts.forEach((el) => {
+        const one = el.getAttribute("data-filter-singular") || singular;
+        const many = el.getAttribute("data-filter-plural") || plural;
+        el.textContent = matches.length + " " + (matches.length === 1 ? one : many);
+      });
+      syncControls();
+
+      if (animate && duration) {
+        const visible = (sorts.length ? Array.from(show).sort((a, b) => (a.compareDocumentPosition(b) & 4 ? -1 : 1)) : Array.from(show)).slice(0, 12);
+        const targets = visible.length ? visible : empties;
+        if (targets.length) {
+          tween = gsap.fromTo(
+            targets,
+            { autoAlpha: 0, y: visible.length ? 16 : 0 },
+            { autoAlpha: 1, y: 0, duration, stagger: visible.length ? stagger : 0, ease: "power2.out", clearProps: "opacity,visibility,transform", onComplete: () => (tween = null) }
+          );
+        }
+      }
+
+      if (hasLenis && lenis) lenis.resize();
+      if (hasScrollTrigger) ScrollTrigger.refresh();
+    };
+
+    const update = () => {
+      writeUrl();
+      apply(true);
+    };
+
+    const listeners = [];
+    const on = (el, type, fn, opts) => {
+      el.addEventListener(type, fn, opts);
+      listeners.push(() => el.removeEventListener(type, fn, opts));
+    };
+
+    buttons.forEach((btn) =>
+      on(btn, "click", (e) => {
+        e.preventDefault();
+        const g = slug(btn.getAttribute("data-filter-button"));
+        const v = slug(btn.getAttribute("data-filter-value") || "");
+        const next = v === "all" ? "" : v;
+        state.filters[g] = state.filters[g] === next && btn.hasAttribute("data-filter-toggle") ? "" : next;
+        update();
+      })
+    );
+
+    selects.forEach((select) =>
+      on(select, "change", () => {
+        const g = slug(select.getAttribute("data-filter-select"));
+        const v = slug(select.value);
+        state.filters[g] = v === "all" ? "" : v;
+        update();
+      })
+    );
+
+    let searchTimer = null;
+    searches.forEach((input) => {
+      on(input, "input", () => {
+        state.query = input.value;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(update, 200);
+      });
+      on(input, "keydown", (e) => {
+        if (e.key === "Enter") e.preventDefault();
+      });
+    });
+
+    sorts.forEach((select) =>
+      on(select, "change", () => {
+        state.sort = select.value;
+        update();
+      })
+    );
+
+    resets.forEach((el) =>
+      on(el, "click", (e) => {
+        e.preventDefault();
+        groups.forEach((g) => (state.filters[g] = ""));
+        state.query = "";
+        update();
+      })
+    );
+
+    const forms = new Set(
+      [...selects, ...searches, ...sorts].map((el) => el.closest("form")).filter(Boolean)
+    );
+    forms.forEach((form) =>
+      on(
+        form,
+        "submit",
+        (e) => {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        },
+        true
+      )
+    );
+
+    apply(false);
+
+    addCleanup(root, () => {
+      clearTimeout(searchTimer);
+      if (tween) tween.kill();
+      listeners.forEach((off) => off());
     });
   });
 }
