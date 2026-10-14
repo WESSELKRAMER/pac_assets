@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 17:30";
+window.PAC_BUNDLE = "2026-10-14 20:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -74,7 +74,7 @@ function initBeforeEnterFunctions(next) {
   if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
   if (has(".footer_link")) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
-  if (has(".stories-swiper")) initStoriesSwiper();
+  if (has("[data-slider], .stories-swiper")) initSliders();
 }
 
 function initAfterEnterFunctions(next) {
@@ -4416,54 +4416,245 @@ function initFooterLinkHover() {
   });
 }
 
-function initStoriesSwiper() {
-  if (typeof Swiper === "undefined") return;
+function initSliders() {
+  const roots = Array.from(nextPage.querySelectorAll("[data-slider], .stories-swiper")).filter(
+    (el) => el.dataset.sliderInit !== "true"
+  );
+  if (!roots.length) return;
 
-  nextPage.querySelectorAll(".stories-swiper").forEach((swiperEl) => {
-    if (swiperEl.swiper) {
-      swiperEl.swiper.destroy(true, true);
-    }
+  roots.forEach((root) => {
+    const track =
+      root.querySelector("[data-slider-track]") ||
+      root.querySelector(".swiper-wrapper") ||
+      root.querySelector(".w-dyn-items") ||
+      root.firstElementChild;
+    if (!track) return;
+    root.dataset.sliderInit = "true";
+    root.classList.add("pac-slider");
+    track.classList.add("pac-slider__track");
 
-    const swiper = new Swiper(swiperEl, {
-      slidesPerView: "auto",
-      slidesPerGroup: 1,
-      spaceBetween: 12,
-      speed: 700,
+    const getItems = () => {
+      const marked = track.querySelectorAll("[data-slider-item]");
+      return Array.from(marked.length ? marked : track.children).filter((el) => el.offsetParent !== null || el === document.activeElement);
+    };
+    let items = getItems();
+    items.forEach((el) => el.classList.add("pac-slider__item"));
 
-      grabCursor: true,
-      simulateTouch: true,
-      allowTouchMove: true,
-      touchStartPreventDefault: false,
-      passiveListeners: true,
+    const scope = root.closest("[data-slider-ui]") || root.parentElement || root;
+    const find = (sel) => Array.from(root.querySelectorAll(sel)).concat(root === scope ? [] : Array.from(scope.querySelectorAll(sel))).filter((el, i, a) => a.indexOf(el) === i);
+    const prevBtns = find("[data-slider-prev]");
+    const nextBtns = find("[data-slider-next]");
+    const currentEls = find("[data-slider-current]");
+    const totalEls = find("[data-slider-total]");
+    const uiEls = find("[data-slider-controls]");
+    const disabledClass = root.dataset.sliderDisabledClass || "is-disabled";
+    const duration = reducedMotion ? 0 : toNumber(root.dataset.sliderDuration, 0.8);
+    const dragEnabled = root.dataset.sliderDrag !== "false";
+    const friction = toNumber(root.dataset.sliderMomentum, 1);
 
-      threshold: 5,
-      longSwipes: true,
-      longSwipesRatio: 0.2,
-      longSwipesMs: 250,
-      followFinger: true,
+    track.setAttribute("tabindex", track.getAttribute("tabindex") || "0");
+    if (!track.hasAttribute("role")) track.setAttribute("role", "region");
+    if (!track.hasAttribute("aria-label")) track.setAttribute("aria-label", root.dataset.sliderLabel || "Carrousel");
 
-      watchOverflow: false,
-      observer: true,
-      observeParents: true,
-      resizeObserver: true,
+    const maxScroll = () => Math.max(0, track.scrollWidth - track.clientWidth);
+    const padLeft = () => parseFloat(getComputedStyle(track).scrollPaddingLeft) || parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    const itemLeft = (el) => track.scrollLeft + (el.getBoundingClientRect().left - track.getBoundingClientRect().left) - padLeft();
 
-      freeMode: {
-        enabled: false
-      },
+    let tween = null;
+    const pauseSnap = () => track.classList.add("is-moving");
+    const resumeSnap = () => track.classList.remove("is-moving");
 
-      breakpoints: {
-        768: {
-          spaceBetween: 16,
-          freeMode: {
-            enabled: true,
-            momentum: true,
-            momentumRatio: 0.6,
-            sticky: false
-          }
+    const scrollToX = (x, dur = duration, ease = "osmo") => {
+      if (tween) tween.kill();
+      const target = gsap.utils.clamp(0, maxScroll(), x);
+      pauseSnap();
+      tween = gsap.to(track, {
+        scrollLeft: target,
+        duration: dur,
+        ease,
+        onComplete: () => {
+          tween = null;
+          resumeSnap();
         }
-      }
-    });
+      });
+    };
 
-    addCleanup(swiperEl, () => swiper.destroy(true, true));
+    const currentIndex = () => {
+      const x = track.scrollLeft;
+      let idx = 0;
+      items.forEach((el, i) => {
+        if (itemLeft(el) <= x + 4) idx = i;
+      });
+      if (x >= maxScroll() - 4) idx = items.length - 1;
+      return idx;
+    };
+
+    const go = (dir) => {
+      const x = track.scrollLeft;
+      if (dir > 0) {
+        const next = items.find((el) => itemLeft(el) > x + 4);
+        scrollToX(next ? itemLeft(next) : maxScroll());
+      } else {
+        const prev = items.slice().reverse().find((el) => itemLeft(el) < x - 4);
+        scrollToX(prev ? itemLeft(prev) : 0);
+      }
+    };
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const max = maxScroll();
+      const x = track.scrollLeft;
+      const scrollable = max > 2;
+      const progress = scrollable ? x / max : 0;
+      root.style.setProperty("--slider-progress", progress.toFixed(4));
+      root.classList.toggle("is-static", !scrollable);
+      uiEls.forEach((el) => (el.style.display = scrollable ? "" : "none"));
+      const atStart = x <= 2;
+      const atEnd = x >= max - 2;
+      prevBtns.forEach((b) => {
+        b.classList.toggle(disabledClass, atStart || !scrollable);
+        b.setAttribute("aria-disabled", atStart ? "true" : "false");
+      });
+      nextBtns.forEach((b) => {
+        b.classList.toggle(disabledClass, atEnd || !scrollable);
+        b.setAttribute("aria-disabled", atEnd ? "true" : "false");
+      });
+      const idx = currentIndex();
+      currentEls.forEach((el) => (el.textContent = String(idx + 1)));
+      totalEls.forEach((el) => (el.textContent = String(items.length)));
+      items.forEach((el, i) => el.classList.toggle("is-current", i === idx));
+    };
+    const requestUpdate = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+
+    // Muis-slepen met momentum (touch blijft native)
+    let dragging = false;
+    let moved = false;
+    let startX = 0;
+    let startScroll = 0;
+    let lastX = 0;
+    let lastT = 0;
+    let velocity = 0;
+
+    const onPointerDown = (e) => {
+      if (!dragEnabled || e.pointerType !== "mouse" || e.button !== 0) return;
+      if (maxScroll() <= 2) return;
+      if (tween) tween.kill();
+      dragging = true;
+      moved = false;
+      startX = lastX = e.clientX;
+      startScroll = track.scrollLeft;
+      lastT = performance.now();
+      velocity = 0;
+      pauseSnap();
+    };
+    const onPointerMove = (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 5) {
+        moved = true;
+        track.classList.add("is-dragging");
+        try { track.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      if (!moved) return;
+      const now = performance.now();
+      const dt = Math.max(1, now - lastT);
+      velocity = 0.8 * ((e.clientX - lastX) / dt) + 0.2 * velocity;
+      lastX = e.clientX;
+      lastT = now;
+      track.scrollLeft = startScroll - dx;
+    };
+    const onPointerUp = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      track.classList.remove("is-dragging");
+      try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+      if (!moved) {
+        resumeSnap();
+        return;
+      }
+      const throwDist = -velocity * 380 * friction;
+      let target = track.scrollLeft + throwDist;
+      if (getComputedStyle(track).scrollSnapType.indexOf("x") !== -1 || root.dataset.sliderSnap === "true") {
+        let best = 0;
+        let bestD = Infinity;
+        items.forEach((el) => {
+          const d = Math.abs(itemLeft(el) - target);
+          if (d < bestD) {
+            bestD = d;
+            best = itemLeft(el);
+          }
+        });
+        target = best;
+      }
+      scrollToX(target, reducedMotion ? 0 : gsap.utils.clamp(0.5, 1.1, 0.5 + Math.abs(velocity) * 0.25), "power3.out");
+    };
+    const onClickCapture = (e) => {
+      if (moved) {
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }
+    };
+    const onDragStart = (e) => e.preventDefault();
+    const onWheelOrTouch = () => {
+      if (tween) {
+        tween.kill();
+        tween = null;
+        resumeSnap();
+      }
+    };
+
+    const onPrev = (e) => {
+      e.preventDefault();
+      go(-1);
+    };
+    const onNext = (e) => {
+      e.preventDefault();
+      go(1);
+    };
+
+    track.addEventListener("scroll", requestUpdate, { passive: true });
+    track.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    track.addEventListener("click", onClickCapture, true);
+    track.addEventListener("dragstart", onDragStart);
+    track.addEventListener("wheel", onWheelOrTouch, { passive: true });
+    track.addEventListener("touchstart", onWheelOrTouch, { passive: true });
+    prevBtns.forEach((b) => b.addEventListener("click", onPrev));
+    nextBtns.forEach((b) => b.addEventListener("click", onNext));
+
+    const ro = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => {
+          items = getItems();
+          requestUpdate();
+        })
+      : null;
+    if (ro) {
+      ro.observe(track);
+      items.forEach((el) => ro.observe(el));
+    }
+    update();
+
+    addCleanup(root, () => {
+      if (tween) tween.kill();
+      if (raf) cancelAnimationFrame(raf);
+      if (ro) ro.disconnect();
+      track.removeEventListener("scroll", requestUpdate);
+      track.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      track.removeEventListener("click", onClickCapture, true);
+      track.removeEventListener("dragstart", onDragStart);
+      track.removeEventListener("wheel", onWheelOrTouch);
+      track.removeEventListener("touchstart", onWheelOrTouch);
+      prevBtns.forEach((b) => b.removeEventListener("click", onPrev));
+      nextBtns.forEach((b) => b.removeEventListener("click", onNext));
+    });
   });
 }
