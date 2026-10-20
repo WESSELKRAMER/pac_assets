@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-14 21:20";
+window.PAC_BUNDLE = "2026-10-20 13:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2397,6 +2397,38 @@ function initAgendaMonths() {
     const startAttr = root.dataset.agendaStart ? parseDate(root.dataset.agendaStart + "-01") : null;
     const startKey = startAttr ? keyOf(startAttr) : currentKey;
 
+    // Vaste modus: alleen de huidige maand als label, geen bladeren tussen maanden.
+    // Actief met data-agenda-mode="current", of automatisch als er geen vorige/volgende-knoppen zijn.
+    const staticMode = root.dataset.agendaMode === "current" || (!prevBtns.length && !nextBtns.length);
+    if (staticMode) {
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+      const when = (root.dataset.agendaWhen || "").toLowerCase();
+      const onlyMonth = root.dataset.agendaFilter === "month";
+
+      const visible = items.filter((item) => {
+        const t = item.date.getTime();
+        if (when === "upcoming" && t < startOfToday) return false;
+        if (when === "past" && t >= startOfToday) return false;
+        if (onlyMonth && item.key !== currentKey) return false;
+        return true;
+      });
+      const show = new Set(visible.map((item) => item.el));
+      items.forEach((item) => (item.el.style.display = show.has(item.el) ? "" : "none"));
+      empties.forEach((el) => (el.style.display = visible.length ? "none" : ""));
+
+      const label = labelOf(currentKey);
+      labels.forEach((el) => (el.textContent = label));
+      nextPage.querySelectorAll("[data-agenda-month]").forEach((el) => {
+        if (!el.closest("[data-agenda]")) el.textContent = label;
+      });
+      [...prevBtns, ...nextBtns].forEach((el) => (el.style.display = "none"));
+      root.dataset.agendaCurrent = String(currentKey);
+
+      if (hasLenis && lenis) lenis.resize();
+      if (hasScrollTrigger) ScrollTrigger.refresh();
+      return;
+    }
+
     let months;
     const itemKeys = items.map((item) => item.key);
     if (skipEmpty) {
@@ -2406,6 +2438,13 @@ function initAgendaMonths() {
       const max = Math.max(startKey, ...itemKeys);
       months = [];
       for (let k = min; k <= max; k++) months.push(k);
+    }
+
+    // Alleen vooruit bladeren: data-agenda-range="future" of data-agenda-when="upcoming"
+    const futureOnly = root.dataset.agendaRange === "future" || (root.dataset.agendaWhen || "").toLowerCase() === "upcoming";
+    if (futureOnly) {
+      months = months.filter((k) => k >= currentKey);
+      if (!months.includes(currentKey)) months.unshift(currentKey);
     }
 
     let index = -1;
