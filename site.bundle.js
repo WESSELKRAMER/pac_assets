@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-20 13:45";
+window.PAC_BUNDLE = "2026-10-20 14:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2443,8 +2443,12 @@ function initAgendaMonths() {
     // Alleen vooruit bladeren: data-agenda-range="future" of data-agenda-when="upcoming"
     const futureOnly = root.dataset.agendaRange === "future" || (root.dataset.agendaWhen || "").toLowerCase() === "upcoming";
     if (futureOnly) {
-      months = months.filter((k) => k >= currentKey);
-      if (!months.includes(currentKey)) months.unshift(currentKey);
+      // Altijd vooruit kunnen klikken, ook naar maanden zonder events
+      const ahead = Math.max(1, Math.round(toNumber(root.dataset.agendaMonthsAhead, 12)));
+      const futureKeys = itemKeys.filter((k) => k >= currentKey);
+      const last = Math.max(currentKey + ahead - 1, ...futureKeys);
+      months = [];
+      for (let k = currentKey; k <= last; k++) months.push(k);
     }
 
     let index = -1;
