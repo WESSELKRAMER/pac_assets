@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 10:45";
+window.PAC_BUNDLE = "2026-10-21 11:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2880,6 +2880,14 @@ function createDatePicker(host, opts) {
     if (from) view = monthOf(from);
     renderGrid();
     panel.hidden = false;
+    // Rechts uitlijnen als het paneel buiten beeld zou vallen
+    panel.style.left = "";
+    panel.style.right = "";
+    const rect = panel.getBoundingClientRect();
+    if (rect.right > window.innerWidth - 8) {
+      panel.style.left = "auto";
+      panel.style.right = "0";
+    }
     wrap.classList.add("is-open");
     button.setAttribute("aria-expanded", "true");
     if (!reducedMotion) gsap.fromTo(panel, { autoAlpha: 0, y: -6 }, { autoAlpha: 1, y: 0, duration: 0.25, ease: "power2.out" });
