@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 22:10";
+window.PAC_BUNDLE = "2026-10-21 22:15";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2063,7 +2063,10 @@ function initWipeReveal() {
     }
 
     const style = getComputedStyle(el);
-    if (style.position === "static") el.style.position = "relative";
+    if (style.position === "static") {
+      el.style.position = "relative";
+      el.style.inset = "auto";
+    }
     if (style.overflow === "visible") el.style.overflow = CLIP_OVERFLOW;
 
     let overlay = el.querySelector(":scope > .wipe_overlay");
