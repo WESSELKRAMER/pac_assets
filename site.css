@@ -1423,3 +1423,14 @@ input[type="submit"] {
     width: 84vw;
   }
 }
+
+[data-jury-link]:not([href]),
+[data-jury-link][href="#"],
+[data-jury-link][href=""],
+[data-jury-link].w-dyn-bind-empty {
+  display: none;
+}
+
+.jury_links:not(:has([data-jury-link][href]:not([href="#"]):not([href=""]))) {
+  display: none;
+}
