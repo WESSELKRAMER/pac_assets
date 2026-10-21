@@ -612,6 +612,8 @@ html.lenis body { height: auto; }
   outline-offset: 2px;
 }
 @media (max-width: 767px) {
+  [data-filter-datepicker],
+  [data-agenda-datepicker] { width: 100%; align-self: stretch; }
   .filter-datepicker { width: 100%; }
   .filter-datepicker > .filter-dropdown__button { flex: 1 1 auto; min-width: 0; }
   .filter-datepicker__panel { width: 100%; max-width: none; }
