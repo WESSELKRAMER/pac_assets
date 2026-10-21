@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 11:00";
+window.PAC_BUNDLE = "2026-10-21 11:15";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2763,17 +2763,29 @@ function createDatePicker(host, opts) {
     "</div>" +
     '<div class="filter-datepicker__weekdays"><span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span></div>' +
     '<div class="filter-datepicker__grid" role="grid"></div>' +
-    '<div class="filter-datepicker__foot"><span class="filter-datepicker__hint"></span><button type="button" class="filter-datepicker__clear">Wis datum</button></div>';
+    '<div class="filter-datepicker__foot"><span class="filter-datepicker__hint"></span></div>';
 
   wrap.appendChild(button);
   wrap.appendChild(panel);
   host.appendChild(wrap);
 
+  // "Wis datum" naast de knop: eigen element met [data-filter-datepicker-clear] in dezelfde filter/agenda, anders automatisch
+  const scope = host.closest("[data-filter], [data-agenda]") || host.parentElement || host;
+  let clearEls = Array.from(scope.querySelectorAll("[data-filter-datepicker-clear]"));
+  const ownClear = !clearEls.length;
+  if (ownClear) {
+    const c = document.createElement("button");
+    c.type = "button";
+    c.className = "filter-datepicker__reset";
+    c.textContent = host.getAttribute("data-filter-datepicker-clear-label") || "Wis datum";
+    wrap.appendChild(c);
+    clearEls = [c];
+  }
+
   const presetsEl = panel.querySelector(".filter-datepicker__presets");
   const titleEl = panel.querySelector(".filter-datepicker__title");
   const gridEl = panel.querySelector(".filter-datepicker__grid");
   const hintEl = panel.querySelector(".filter-datepicker__hint");
-  const clearEl = panel.querySelector(".filter-datepicker__clear");
   const prevEl = panel.querySelector("[data-dp-prev]");
 
   let from = 0;
@@ -2829,7 +2841,6 @@ function createDatePicker(host, opts) {
       cell.setAttribute("aria-pressed", inRange ? "true" : "false");
     });
     hintEl.textContent = pending ? "Kies een einddatum" : from ? dpRangeLabel(from, to) : "Kies een begindatum";
-    clearEl.hidden = !from;
     presetBtns.forEach(({ b, p }) =>
       b.classList.toggle("is-active", !pending && from === p.from.getTime() && to === p.to.getTime())
     );
@@ -2870,6 +2881,7 @@ function createDatePicker(host, opts) {
     sync();
     label.textContent = dpRangeLabel(from, to) || placeholder;
     button.classList.toggle("is-filtered", !!from);
+    clearEls.forEach((el) => (el.style.display = from ? "" : "none"));
     if (isOpen) paint();
   };
 
@@ -2936,10 +2948,15 @@ function createDatePicker(host, opts) {
     hoverDay = +cell.dataset.day;
     paint();
   });
-  on(clearEl, "click", () => {
-    commit(0, 0);
-    paint();
-  });
+  clearEls.forEach((el) =>
+    on(el, "click", (e) => {
+      e.preventDefault();
+      pending = false;
+      commit(0, 0);
+      refresh();
+      if (isOpen) paint();
+    })
+  );
   on(panel, "keydown", (e) => {
     if (e.key === "Escape") {
       e.preventDefault();
