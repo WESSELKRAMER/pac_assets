@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 16:25";
+window.PAC_BUNDLE = "2026-10-21 16:35";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -169,6 +169,53 @@ function runPageEnterAnimation(next) {
     tl.call(resolve, null, "pageReady");
   });
 }
+
+// Navigatieslot: Barba zet isRunning pas als de nieuwe pagina binnen is, dus klikken tijdens het laden
+// startten extra transities en lieten containers op elkaar staan. Vanaf de eerste klik blokkeren tot de transitie klaar is.
+let navLocked = false;
+let navLockTimer = null;
+
+function lockNav() {
+  navLocked = true;
+  clearTimeout(navLockTimer);
+  navLockTimer = setTimeout(() => { navLocked = false; }, 9000);
+}
+
+function unlockNav() {
+  navLocked = false;
+  clearTimeout(navLockTimer);
+}
+
+document.addEventListener("click", (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest && e.target.closest("a[href]");
+  if (!a) return;
+  if (a.target && a.target !== "_self") return;
+  if (a.hasAttribute("download") || a.closest("[data-barba-prevent]")) return;
+  let url;
+  try { url = new URL(a.href, window.location.href); } catch (err) { return; }
+  if (url.origin !== window.location.origin) return;
+  if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+  if (navLocked || barba.transitions.isRunning) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return;
+  }
+  lockNav();
+}, true);
+
+barba.hooks.after(data => {
+  unlockNav();
+  const next = data && data.next && data.next.container;
+  const wrapper = next && next.parentElement;
+  if (!wrapper) return;
+  Array.from(wrapper.children).forEach((el) => {
+    if (el !== next && el.matches('[data-barba="container"]')) {
+      runPageCleanups(el);
+      el.remove();
+    }
+  });
+});
 
 barba.hooks.beforeEnter(data => {
   isTransitioning = true;
