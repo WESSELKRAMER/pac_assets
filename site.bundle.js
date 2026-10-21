@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 12:15";
+window.PAC_BUNDLE = "2026-10-21 12:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -71,6 +71,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-hover-reveal]")) initHoverReveal();
   if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
+  if (has("[data-stack]")) initStackCards();
   if (has(".big_logo")) initBigLogoReveal();
   if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
   if (has(".footer_link")) initFooterLinkHover();
@@ -3662,6 +3663,86 @@ function initBreadcrumbs() {
       el.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     });
+  });
+}
+
+// Sticky stapel: [data-stack] op de lijst; kaarten vliegen van onder in en landen bovenop de stapel
+function initStackCards() {
+  if (!hasScrollTrigger) return;
+  nextPage.querySelectorAll("[data-stack]").forEach((list) => {
+    if (list.dataset.stackInit === "true") return;
+    list.dataset.stackInit = "true";
+
+    const items = Array.from(list.querySelectorAll(":scope > [data-stack-item]")).length
+      ? Array.from(list.querySelectorAll(":scope > [data-stack-item]"))
+      : Array.from(list.children);
+    if (items.length < 2 || reducedMotion) {
+      list.classList.add("is-static");
+      return;
+    }
+
+    const ds = list.dataset;
+    const pinTarget = list.closest("[data-stack-pin]") || list;
+    const stepVh = toNumber(ds.stackStep, 70);
+    const depthZ = toNumber(ds.stackDepth, 140);
+    const offsetY = toNumber(ds.stackOffset, 7);
+    const dim = gsap.utils.clamp(0, 1, toNumber(ds.stackDim, 0.12));
+    const tilt = toNumber(ds.stackTilt, 10);
+    const query = ds.stack === "desktop" ? "(min-width: 992px)" : "all";
+
+    const mm = gsap.matchMedia();
+    if (query !== "all") {
+      mm.add("(max-width: 991px)", () => {
+        list.classList.add("is-static");
+        return () => list.classList.remove("is-static");
+      });
+    }
+    mm.add(query, () => {
+      list.classList.add("is-stacked");
+      items.forEach((el, i) => (el.style.zIndex = String(i + 1)));
+      gsap.set(items, { transformOrigin: "50% 100%", force3D: true, filter: "brightness(1)" });
+      gsap.set(items.slice(1), { y: () => window.innerHeight * 1.1, rotationX: -tilt, autoAlpha: 1 });
+
+      const tl = gsap.timeline({ defaults: { ease: "power2.out", duration: 1 } });
+      for (let i = 1; i < items.length; i++) {
+        const at = i - 1;
+        tl.to(items[i], { y: 0, rotationX: 0 }, at);
+        for (let j = 0; j < i; j++) {
+          const depth = i - j;
+          tl.to(
+            items[j],
+            {
+              z: -depth * depthZ,
+              yPercent: -depth * offsetY,
+              filter: "brightness(" + Math.max(0, 1 - depth * dim) + ")"
+            },
+            at
+          );
+        }
+      }
+      tl.to({}, { duration: 0.35 });
+
+      const st = ScrollTrigger.create({
+        trigger: pinTarget,
+        start: ds.stackStart || "center center",
+        end: () => "+=" + Math.round(((items.length - 1) * stepVh * window.innerHeight) / 100),
+        pin: pinTarget,
+        pinSpacing: true,
+        scrub: toNumber(ds.stackScrub, 1),
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        animation: tl
+      });
+
+      return () => {
+        st.kill();
+        tl.kill();
+        list.classList.remove("is-stacked");
+        gsap.set(items, { clearProps: "transform,filter,zIndex,opacity,visibility" });
+      };
+    });
+
+    addCleanup(list, () => mm.revert());
   });
 }
 
