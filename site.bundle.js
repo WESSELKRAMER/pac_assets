@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 12:45";
+window.PAC_BUNDLE = "2026-10-21 13:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3688,11 +3688,14 @@ function initStackCards() {
     const offsetY = toNumber(ds.stackOffset, 7);
     const dim = gsap.utils.clamp(0, 1, toNumber(ds.stackDim, 0.12));
     const tilt = toNumber(ds.stackTilt, 10);
-    const query = ds.stack === "desktop" ? "(min-width: 992px)" : "all";
+    // data-stack="desktop" = vanaf 992px, data-stack="tablet" = vanaf 768px (uit op mobiel L en kleiner)
+    const breakpoints = { desktop: 992, tablet: 768 };
+    const minW = breakpoints[ds.stack] || 0;
+    const query = minW ? "(min-width: " + minW + "px)" : "all";
 
     const mm = gsap.matchMedia();
     if (query !== "all") {
-      mm.add("(max-width: 991px)", () => {
+      mm.add("(max-width: " + (minW - 1) + "px)", () => {
         list.classList.add("is-static");
         return () => list.classList.remove("is-static");
       });
