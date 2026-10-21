@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 22:00";
+window.PAC_BUNDLE = "2026-10-21 22:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -75,6 +75,7 @@ function initBeforeEnterFunctions(next) {
 
   applyNavbarPageConfig(nextPage);
   if (has("[data-project-slug]")) initProjectFilter();
+  if (has("[data-chapter]")) initProjectChapters();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
@@ -3726,6 +3727,23 @@ function initHoverReveal() {
       if (split) split.revert();
       gsap.set(el, { clearProps: "height,overflow,marginTop,opacity,visibility" });
     });
+  });
+}
+
+// Projecthoofdstukken: lege hoofdstukken verbergen en zichtbare hoofdstukken om en om spiegelen
+function initProjectChapters() {
+  const empty = (el) => !el || el.classList.contains("w-dyn-bind-empty") || !el.textContent.trim();
+  let i = 0;
+  nextPage.querySelectorAll("[data-chapter]").forEach((chapter) => {
+    const title = chapter.querySelector("[data-chapter-title]");
+    const text = chapter.querySelector("[data-chapter-text]");
+    const img = chapter.querySelector(".flex_img_wrap img");
+    const hasImg = img && !img.classList.contains("w-dyn-bind-empty") && (img.getAttribute("src") || "").length > 0;
+    const isEmpty = empty(title) && empty(text) && !hasImg;
+    chapter.classList.toggle("is-empty", isEmpty);
+    if (isEmpty) return;
+    chapter.classList.toggle("is-reverse", i % 2 === 1);
+    i++;
   });
 }
 
