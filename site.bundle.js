@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 18:00";
+window.PAC_BUNDLE = "2026-10-21 18:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3726,6 +3726,22 @@ function initHoverReveal() {
   });
 }
 
+// Scroll-rij hint: pill-nav schuift op mobiel één keer per sessie kort op en terug
+function peekRow(el) {
+  if (reducedMotion || !el.matches("[data-pill-nav][data-scroll-row]")) return;
+  if (!window.matchMedia("(max-width: 767px)").matches) return;
+  if (el.scrollLeft > 2 || el.scrollWidth - el.clientWidth < 24) return;
+  try {
+    if (sessionStorage.getItem("pacRowPeek")) return;
+    sessionStorage.setItem("pacRowPeek", "1");
+  } catch (e) {}
+  const dist = Math.min(72, el.scrollWidth - el.clientWidth);
+  gsap.to(el, { scrollLeft: dist, duration: 0.7, delay: 0.9, ease: "power2.inOut", yoyo: true, repeat: 1, repeatDelay: 0.25, onUpdate: () => el.dispatchEvent(new Event("scroll")) });
+  const stop = () => gsap.killTweensOf(el);
+  el.addEventListener("pointerdown", stop, { once: true, passive: true });
+  el.addEventListener("wheel", stop, { once: true, passive: true });
+}
+
 function initBreadcrumbs() {
   nextPage.querySelectorAll("[data-breadcrumbs], [data-scroll-row]").forEach((el) => {
     if (el.dataset.breadcrumbsInit === "true") return;
@@ -3744,6 +3760,7 @@ function initBreadcrumbs() {
         el.scrollLeft = Math.max(0, Math.min(left, el.scrollWidth - el.clientWidth));
       }
       update();
+      peekRow(el);
     });
     el.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);

@@ -1690,3 +1690,44 @@ input[type="submit"] {
 
 :where(a.w-inline-block) { color: inherit; }
 .w-dyn-empty { padding: 0; background-color: transparent; }
+
+@media (max-width: 767px) {
+  [data-pill-nav][data-scroll-row] {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 4.5rem), transparent calc(100% - 0.75rem));
+    mask-image: linear-gradient(90deg, #000 calc(100% - 4.5rem), transparent calc(100% - 0.75rem));
+  }
+  [data-pill-nav][data-scroll-row].is-scrolled:not(.is-end) {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 3rem, #000 calc(100% - 4.5rem), transparent calc(100% - 0.75rem));
+    mask-image: linear-gradient(90deg, transparent 0, #000 3rem, #000 calc(100% - 4.5rem), transparent calc(100% - 0.75rem));
+  }
+  [data-pill-nav][data-scroll-row].is-scrolled.is-end {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 3rem);
+    mask-image: linear-gradient(90deg, transparent 0, #000 3rem);
+  }
+  :has(> [data-pill-nav][data-scroll-row]) {
+    position: relative;
+  }
+  :has(> [data-pill-nav][data-scroll-row])::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 1.1rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-top: 1.5px solid var(--pill-nav-text, var(--pac-light--500, #fff));
+    border-right: 1.5px solid var(--pill-nav-text, var(--pac-light--500, #fff));
+    transform: translate(0, -50%) rotate(45deg);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    animation: pac-row-hint 1.6s ease-in-out infinite;
+  }
+  :has(> [data-pill-nav][data-scroll-row].is-end)::after {
+    opacity: 0;
+    animation: none;
+  }
+}
+
+@keyframes pac-row-hint {
+  0%, 100% { transform: translate(0, -50%) rotate(45deg); }
+  50% { transform: translate(0.25rem, -50%) rotate(45deg); }
+}
