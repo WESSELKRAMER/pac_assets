@@ -1669,3 +1669,15 @@ input[type="submit"] {
 .photowall_grid.is-loading {
   min-height: 60vh;
 }
+
+[data-legal-docs]:not([data-legal-page="anbi"]) {
+  display: none;
+}
+
+.legal_docs_list .w-dyn-item {
+  margin-bottom: 0.5rem;
+}
+
+.legal_docs_list .w-dyn-empty {
+  display: none;
+}
