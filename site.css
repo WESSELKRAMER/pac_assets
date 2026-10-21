@@ -1731,3 +1731,13 @@ input[type="submit"] {
   0%, 100% { transform: translate(0, -50%) rotate(45deg); }
   50% { transform: translate(0.25rem, -50%) rotate(45deg); }
 }
+
+@media (max-width: 767px) {
+  .breadcrumb_subproject_wrap,
+  .breadcrumb_agenda_wrap {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}

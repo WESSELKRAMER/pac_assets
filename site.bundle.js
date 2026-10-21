@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 18:10";
+window.PAC_BUNDLE = "2026-10-21 18:15";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -44,7 +44,8 @@ const SEL = {
   ctaCircle: "[data-cta-circle], .cta_arrow_wrapper",
   blob: "[data-domain-blob], .blob",
   domainsInner: "[data-domains-inner], .domains_collection_item_inner",
-  swiperWrapper: "[data-swiper-wrapper], .swiper-wrapper"
+  swiperWrapper: "[data-swiper-wrapper], .swiper-wrapper",
+  breadcrumbs: "[data-breadcrumbs], .breadcrumb_subproject_wrap, .breadcrumb_agenda_wrap"
 };
 
 const has = (s) => !!nextPage.querySelector(s);
@@ -95,7 +96,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-social-share]")) initSocialShare();
   if (has("[data-filter-link]")) initFilterLinks();
   if (has("[data-pill-nav]")) initPillNav();
-  if (has("[data-breadcrumbs], [data-scroll-row]")) initBreadcrumbs();
+  if (has(SEL.breadcrumbs + ", [data-scroll-row]")) initBreadcrumbs();
   if (has("[data-hover-reveal]")) initHoverReveal();
   if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
@@ -3743,6 +3744,9 @@ function peekRow(el) {
 }
 
 function initBreadcrumbs() {
+  nextPage.querySelectorAll(SEL.breadcrumbs).forEach((el) => {
+    if (!el.hasAttribute("data-breadcrumbs")) el.setAttribute("data-breadcrumbs", "");
+  });
   nextPage.querySelectorAll("[data-breadcrumbs], [data-scroll-row]").forEach((el) => {
     if (el.dataset.breadcrumbsInit === "true") return;
     el.dataset.breadcrumbsInit = "true";
