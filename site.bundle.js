@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 16:20";
+window.PAC_BUNDLE = "2026-10-21 16:25";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3809,9 +3809,15 @@ function initPillNav() {
     if (fresh && mem.index !== active) requestAnimationFrame(() => moveTo(active));
     delete pillNavMemory[key];
 
+    const transitionRunning = () => !!(window.barba && barba.transitions && barba.transitions.isRunning);
     const onClick = (e) => {
       const i = items.indexOf(e.currentTarget);
       if (i === -1) return;
+      if (transitionRunning()) {
+        e.preventDefault();
+        return;
+      }
+      if (i === active) return;
       pillNavMemory[key] = { index: i, time: Date.now() };
       moveTo(i);
     };
