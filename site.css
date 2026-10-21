@@ -1817,7 +1817,8 @@ input[type="submit"] {
   gap: 1.5rem;
 }
 [data-project-subs] .title_top_wrap .team_slider_buttons,
-[data-project-media] .title_top_wrap .team_slider_buttons { flex-shrink: 0; }
+[data-project-media] .title_top_wrap .team_slider_buttons,
+[data-project-media] .title_wrap .team_slider_buttons { flex-shrink: 0; }
 [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item,
 [data-project-media] .pac-slider__track > .pac-slider__item {
   flex: 0 0 auto;

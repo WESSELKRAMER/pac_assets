@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 23:20";
+window.PAC_BUNDLE = "2026-10-21 23:25";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3744,13 +3744,14 @@ function initProjectMediaSlider() {
   page.querySelectorAll(":scope > .section_stories:not([data-project-subs])").forEach((section) => {
     if (section.hasAttribute("data-slider-ui")) return;
     const list = section.querySelector(".w-dyn-list");
-    const titleRow = section.querySelector(".title_top_wrap");
-    if (!list || !titleRow || !list.querySelector(".w-dyn-item")) return;
+    const titleRow = section.querySelector(".title_top_wrap, .title_wrap");
+    if (!list || !list.querySelector(".w-dyn-item")) return;
     section.setAttribute("data-slider-ui", "");
     section.setAttribute("data-project-media", "");
     list.setAttribute("data-slider", "");
     list.setAttribute("data-slider-bleed", "");
     list.setAttribute("data-slider-label", "Verhalen, nieuws en media");
+    if (section.querySelector("[data-slider-prev], [data-slider-next]") || !titleRow) return;
     const controls = document.createElement("div");
     controls.className = "team_slider_buttons";
     controls.setAttribute("data-slider-controls", "");
