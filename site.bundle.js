@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 15:45";
+window.PAC_BUNDLE = "2026-10-21 15:50";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3893,7 +3893,7 @@ function initVideoPopup() {
     });
     popup.querySelectorAll("iframe").forEach((iframe) => {
       if (iframe.dataset.videoSrc === undefined) return;
-      iframe.src = iframe.hasAttribute("data-video-dynamic") ? "about:blank" : iframe.dataset.videoSrc;
+      iframe.src = iframe.hasAttribute("data-video-dynamic") || iframe.hasAttribute("data-video-direct") ? "about:blank" : iframe.dataset.videoSrc;
     });
   };
 
@@ -3998,7 +3998,20 @@ function initVideoPopup() {
     if (!popup.hasAttribute("aria-label")) popup.setAttribute("aria-label", "Video");
 
     popup.querySelectorAll("iframe").forEach((iframe) => {
-      if (iframe.dataset.videoSrc === undefined) iframe.dataset.videoSrc = iframe.src;
+      if (iframe.dataset.videoSrc !== undefined || iframe.hasAttribute("data-video-dynamic")) return;
+      let direct = "";
+      try {
+        const url = new URL(iframe.src, window.location.href);
+        if (url.hostname.includes("embedly.com")) direct = toEmbed(url.searchParams.get("src") || url.searchParams.get("url") || "");
+      } catch (e) {}
+      if (direct) {
+        iframe.setAttribute("data-video-direct", "");
+        iframe.dataset.videoSrc = direct;
+        iframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
+        iframe.src = "about:blank";
+      } else {
+        iframe.dataset.videoSrc = iframe.src;
+      }
     });
 
     let isOpen = false;
