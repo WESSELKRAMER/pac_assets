@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 11:30";
+window.PAC_BUNDLE = "2026-10-21 12:15";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3957,16 +3957,58 @@ function initTeamSlider() {
 
     if (textWrap) textWrap.setAttribute("aria-live", "polite");
 
+    // Social links: [data-team-url="linkedin"] in het CMS-item → [data-team-link="linkedin"] in de tekst
+    const linkTargets = Array.from(slider.querySelectorAll("[data-team-link]")).filter((el) => !el.closest("[data-team-item]"));
+    const linksWrap = slider.querySelector("[data-team-links]") || (linkTargets[0] ? linkTargets[0].parentElement : null);
+
+    const readUrl = (el) => {
+      if (!el) return "";
+      if (el.classList.contains("w-condition-invisible")) return "";
+      const raw = (el.getAttribute("href") || el.textContent || "").trim();
+      if (!raw || raw.endsWith("#")) return "";
+      return raw;
+    };
+
     function getData(index) {
       const tpl = templates[index];
       const name = tpl.querySelector("[data-team-name]");
       const role = tpl.querySelector("[data-team-role]");
       const bio = tpl.querySelector("[data-team-bio]");
+      const links = {};
+      tpl.querySelectorAll("[data-team-url]").forEach((el) => {
+        const key = (el.getAttribute("data-team-url") || "").trim().toLowerCase();
+        if (key) links[key] = readUrl(el);
+      });
       return {
         name: name ? name.textContent : "",
         role: role ? role.textContent : "",
-        bio: bio ? bio.innerHTML : ""
+        bio: bio ? bio.innerHTML : "",
+        links
       };
+    }
+
+    function fillLinks(data) {
+      if (!linkTargets.length) return;
+      let any = false;
+      linkTargets.forEach((el) => {
+        const key = (el.getAttribute("data-team-link") || "").trim().toLowerCase();
+        const url = data.links[key] || "";
+        if (url) {
+          any = true;
+          el.style.display = "";
+          el.setAttribute("href", url);
+          el.setAttribute("target", "_blank");
+          el.setAttribute("rel", "noopener");
+          el.setAttribute("aria-label", (el.textContent || key).trim() + " van " + data.name.trim());
+        } else {
+          el.style.display = "none";
+          el.removeAttribute("href");
+        }
+      });
+      if (linksWrap) linksWrap.style.display = any ? "" : "none";
+      if (any && linksWrap && !reducedMotion) {
+        gsap.fromTo(linksWrap, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.6, delay: 0.15, ease: "expo.out", overwrite: true });
+      }
     }
 
     function fillText(index) {
@@ -3974,6 +4016,7 @@ function initTeamSlider() {
       if (textName) textName.textContent = data.name;
       if (textRole) textRole.textContent = data.role;
       if (textBio) textBio.innerHTML = data.bio;
+      fillLinks(data);
     }
 
     function prepareItem(el, index, isClone) {
