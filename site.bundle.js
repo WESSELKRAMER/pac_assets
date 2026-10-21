@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 11:15";
+window.PAC_BUNDLE = "2026-10-21 11:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3071,6 +3071,9 @@ function initListFilters() {
     const empties = Array.from(root.querySelectorAll("[data-filter-empty]"));
     const activeClass = root.dataset.filterActiveClass || "is-active";
     const useUrl = root.dataset.filterUrl !== "false";
+    // Eigen URL-voorvoegsel per filter, bv. data-filter-url-key="afgelopen" → ?afgelopen-van=…
+    const urlKey = slug(root.dataset.filterUrlKey || "");
+    const uk = (name) => (urlKey ? urlKey + "-" + name : name);
     const duration = reducedMotion ? 0 : toNumber(root.dataset.filterDuration, 0.5);
     const stagger = toNumber(root.dataset.filterStagger, 0.05);
     const singular = root.dataset.filterSingular || "verhaal";
@@ -3127,16 +3130,16 @@ function initListFilters() {
     if (useUrl) {
       const params = new URLSearchParams(location.search);
       groups.forEach((g) => {
-        if (params.has(g)) state.filters[g] = slug(params.get(g));
+        if (params.has(uk(g))) state.filters[g] = slug(params.get(uk(g)));
       });
-      if (params.has("q")) state.query = params.get("q");
-      if (params.has("sort") && sorts.length) state.sort = params.get("sort");
+      if (params.has(uk("q"))) state.query = params.get(uk("q"));
+      if (params.has(uk("sort")) && sorts.length) state.sort = params.get(uk("sort"));
       const ymd = (v) => {
         const mt = (v || "").match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
         return mt ? new Date(+mt[1], +mt[2] - 1, +mt[3]).getTime() : 0;
       };
-      if (params.has("van")) state.from = ymd(params.get("van"));
-      if (params.has("tot")) state.to = ymd(params.get("tot"));
+      if (params.has(uk("van"))) state.from = ymd(params.get(uk("van")));
+      if (params.has(uk("tot"))) state.to = ymd(params.get(uk("tot")));
       if (state.to && !state.from) state.from = state.to;
       if (state.from && !state.to) state.to = state.from;
     }
@@ -3144,15 +3147,15 @@ function initListFilters() {
     const writeUrl = () => {
       if (!useUrl) return;
       const params = new URLSearchParams(location.search);
-      groups.forEach((g) => (state.filters[g] ? params.set(g, state.filters[g]) : params.delete(g)));
-      state.query.trim() ? params.set("q", state.query.trim()) : params.delete("q");
+      groups.forEach((g) => (state.filters[g] ? params.set(uk(g), state.filters[g]) : params.delete(uk(g))));
+      state.query.trim() ? params.set(uk("q"), state.query.trim()) : params.delete(uk("q"));
       const toYmd = (t) => {
         const d = new Date(t);
         return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       };
-      state.from ? params.set("van", toYmd(state.from)) : params.delete("van");
-      state.from && state.to ? params.set("tot", toYmd(state.to)) : params.delete("tot");
-      sorts.length && state.sort && state.sort !== (sorts[0].options[0] || {}).value ? params.set("sort", state.sort) : params.delete("sort");
+      state.from ? params.set(uk("van"), toYmd(state.from)) : params.delete(uk("van"));
+      state.from && state.to ? params.set(uk("tot"), toYmd(state.to)) : params.delete(uk("tot"));
+      sorts.length && state.sort && state.sort !== (sorts[0].options[0] || {}).value ? params.set(uk("sort"), state.sort) : params.delete(uk("sort"));
       const qs = params.toString();
       try {
         history.replaceState(history.state, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
