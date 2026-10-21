@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 22:15";
+window.PAC_BUNDLE = "2026-10-21 22:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -21,6 +21,7 @@ rmMQ.addEventListener?.("change", e => (reducedMotion = e.matches));
 rmMQ.addListener?.(e => (reducedMotion = e.matches));
 
 const SEL = {
+  animateLine: "[data-animate-line], .u-line-hor",
   faqItem: "[data-faq-item], .faq_item",
   faqAnswer: "[data-faq-answer], .faq_answer",
   faqIcon: "[data-faq-icon], .plus_icon",
@@ -81,7 +82,7 @@ function initBeforeEnterFunctions(next) {
   initDynamicCurrentYear();
   initUnselectableText();
   if (has(SEL.loadFade)) initLoadFade();
-  if (has("[data-animate-line]")) initAnimateLines();
+  if (has(SEL.animateLine)) initAnimateLines();
   initCTAAnimation();
   if (has("[data-submit-trigger]")) initSubmitTriggers();
   if (has("[data-team-prev], [data-team-next], [data-arrow-button]")) initArrowButtons();
@@ -1061,6 +1062,7 @@ function initLoadFade() {
 }
 
 function initAnimateLines() {
+  nextPage.querySelectorAll(".u-line-hor:not([data-animate-line])").forEach((el) => el.setAttribute("data-animate-line", "width"));
   const lines = nextPage.querySelectorAll("[data-animate-line]");
   if (!lines.length) return;
 

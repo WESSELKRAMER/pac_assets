@@ -50,6 +50,7 @@ html.lenis body { height: auto; }
 .js .home_grid_card,
 .js [data-load-fade],
 .js [data-animate-line],
+.js .u-line-hor,
 .js [data-image-reveal],
 .js [data-wipe-reveal],
 .js :is(.rich-text, .w-richtext) blockquote:not([data-rt-quote-done]) {
@@ -275,6 +276,7 @@ html.lenis body { height: auto; }
 .wf-design-mode .home_grid_card,
 .wf-design-mode [data-load-fade],
 .wf-design-mode [data-animate-line],
+.wf-design-mode .u-line-hor,
 .wf-design-mode [data-image-reveal],
 .wf-design-mode [data-wipe-reveal],
 .wf-design-mode blockquote,
@@ -285,6 +287,7 @@ html.lenis body { height: auto; }
 .w-editor .home_grid_card,
 .w-editor [data-load-fade],
 .w-editor [data-animate-line],
+.w-editor .u-line-hor,
 .w-editor [data-image-reveal],
 .w-editor [data-wipe-reveal],
 .w-editor blockquote {
