@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 21:40";
+window.PAC_BUNDLE = "2026-10-21 22:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -74,6 +74,7 @@ function initBeforeEnterFunctions(next) {
   nextPage = next || document;
 
   applyNavbarPageConfig(nextPage);
+  if (has("[data-project-slug]")) initProjectFilter();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
@@ -3725,6 +3726,19 @@ function initHoverReveal() {
       if (split) split.revert();
       gsap.set(el, { clearProps: "height,overflow,marginTop,opacity,visibility" });
     });
+  });
+}
+
+// Projectpagina's: lijsten filteren op het huidige (sub)project via slug-attributen
+function initProjectFilter() {
+  const hero = nextPage.querySelector("[data-project-slug]");
+  const slug = hero ? (hero.getAttribute("data-project-slug") || "").trim() : "";
+  if (!slug) return;
+  nextPage.querySelectorAll("[data-project-subs] [data-parent]").forEach((item) => {
+    if ((item.getAttribute("data-parent") || "").trim() !== slug) item.remove();
+  });
+  nextPage.querySelectorAll("[data-project-agenda] [data-project-ref]").forEach((item) => {
+    if ((item.getAttribute("data-project-ref") || "").trim() !== slug) item.remove();
   });
 }
 
