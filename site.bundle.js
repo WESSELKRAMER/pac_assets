@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 15:50";
+window.PAC_BUNDLE = "2026-10-21 16:20";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -78,6 +78,7 @@ function initBeforeEnterFunctions(next) {
   if (has(".footer_link")) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
   if (has("[data-slider], .stories-swiper")) initSliders();
+  if (has("[data-photowall]")) initPhotowall();
 }
 
 function initAfterEnterFunctions(next) {
@@ -5440,6 +5441,277 @@ function initSliders() {
       track.removeEventListener("touchstart", onWheelOrTouch);
       prevBtns.forEach((b) => b.removeEventListener("click", onPrev));
       nextBtns.forEach((b) => b.removeEventListener("click", onNext));
+    });
+  });
+}
+
+// Photowall: albums uit het CMS (meerdere multi-image velden per album) samengevoegd tot één wall met lightbox
+function initPhotowall() {
+  nextPage.querySelectorAll("[data-photowall]").forEach((wall) => {
+    if (wall.dataset.photowallInit === "true") return;
+    wall.dataset.photowallInit = "true";
+
+    const source = wall.querySelector("[data-photowall-source]") || wall;
+    const grid = wall.querySelector("[data-photowall-grid]");
+    const filtersWrap = wall.querySelector("[data-photowall-filters]");
+    if (!grid) return;
+
+    const batchSize = Math.max(6, Math.round(toNumber(wall.dataset.photowallBatch, 24)));
+    const creditPrefix = wall.dataset.photowallCreditPrefix || "Foto:";
+    const allLabel = wall.dataset.photowallAll || "Alle foto's";
+
+    const visibleImg = (img) => !img.closest(".w-dyn-empty, .w-condition-invisible") && (img.getAttribute("src") || "").length > 0 && !/placeholder/i.test(img.getAttribute("src"));
+
+    const albumEls = Array.from(source.querySelectorAll("[data-photowall-album]"));
+    const albums = (albumEls.length ? albumEls : Array.from(source.querySelectorAll(".w-dyn-item")).filter((el) => el.querySelector("[data-photowall-name], [data-photowall-credit]"))).map((el, i) => {
+      const name = (el.querySelector("[data-photowall-name]")?.textContent || "").trim();
+      const credit = (el.querySelector("[data-photowall-credit]")?.textContent || "").trim();
+      const seen = new Set();
+      const photos = Array.from(el.querySelectorAll("img")).filter(visibleImg).filter((img) => {
+        const key = img.getAttribute("src");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).map((img) => ({
+        src: img.getAttribute("src"),
+        srcset: img.getAttribute("srcset") || "",
+        alt: img.getAttribute("alt") || name,
+        credit,
+        album: i
+      }));
+      return { name, credit, label: credit || name || "Album " + (i + 1), photos };
+    }).filter((a) => a.photos.length);
+
+    const all = albums.flatMap((a) => a.photos);
+    if (!all.length) return;
+
+    const largest = (p) => {
+      if (!p.srcset) return p.src;
+      let best = p.src, bw = 0;
+      p.srcset.split(",").forEach((part) => {
+        const [url, w] = part.trim().split(/\s+/);
+        const n = parseInt(w, 10) || 0;
+        if (n > bw) { bw = n; best = url; }
+      });
+      return best;
+    };
+
+    let activeAlbum = -1;
+    let list = all;
+    let rendered = 0;
+
+    const io = "IntersectionObserver" in window ? new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-in");
+        io.unobserve(entry.target);
+      });
+    }, { rootMargin: "0px 0px -8% 0px" }) : null;
+
+    const sentinel = document.createElement("div");
+    sentinel.className = "photowall_more";
+    sentinel.setAttribute("aria-hidden", "true");
+
+    const makeItem = (p, index) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "photowall_item";
+      btn.dataset.index = String(index);
+      btn.setAttribute("aria-label", "Bekijk foto " + (index + 1) + (p.credit ? " (" + creditPrefix + " " + p.credit + ")" : ""));
+      const img = document.createElement("img");
+      img.src = p.src;
+      if (p.srcset) {
+        img.srcset = p.srcset;
+        img.sizes = "(max-width: 479px) 50vw, (max-width: 991px) 33vw, 25vw";
+      }
+      img.alt = p.alt;
+      img.loading = "lazy";
+      img.decoding = "async";
+      btn.appendChild(img);
+      if (reducedMotion || !io) btn.classList.add("is-in");
+      else io.observe(btn);
+      return btn;
+    };
+
+    const renderMore = () => {
+      const end = Math.min(list.length, rendered + batchSize);
+      const frag = document.createDocumentFragment();
+      for (let i = rendered; i < end; i++) frag.appendChild(makeItem(list[i], i));
+      grid.insertBefore(frag, sentinel);
+      rendered = end;
+      if (rendered >= list.length) sentinel.remove();
+    };
+
+    const moreIo = "IntersectionObserver" in window ? new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting) || rendered >= list.length) return;
+      renderMore();
+      if (rendered < list.length) requestAnimationFrame(() => { moreIo.unobserve(sentinel); moreIo.observe(sentinel); });
+    }, { rootMargin: "800px 0px" }) : null;
+
+    const reset = () => {
+      grid.innerHTML = "";
+      rendered = 0;
+      grid.appendChild(sentinel);
+      renderMore();
+      if (moreIo) { moreIo.disconnect(); if (rendered < list.length) moreIo.observe(sentinel); }
+      else while (rendered < list.length) renderMore();
+      if (hasScrollTrigger) ScrollTrigger.refresh();
+    };
+
+    if (filtersWrap && albums.length > 1) {
+      const makeFilter = (label, idx, count) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "photowall_filter" + (idx === activeAlbum ? " is-active" : "");
+        b.dataset.album = String(idx);
+        b.setAttribute("aria-pressed", idx === activeAlbum ? "true" : "false");
+        b.innerHTML = '<span class="photowall_filter_label"></span><span class="photowall_filter_count"></span>';
+        b.querySelector(".photowall_filter_label").textContent = label;
+        b.querySelector(".photowall_filter_count").textContent = String(count);
+        return b;
+      };
+      filtersWrap.appendChild(makeFilter(allLabel, -1, all.length));
+      albums.forEach((a, i) => filtersWrap.appendChild(makeFilter(a.label, i, a.photos.length)));
+      const onFilter = (e) => {
+        const b = e.target.closest(".photowall_filter");
+        if (!b) return;
+        const idx = parseInt(b.dataset.album, 10);
+        if (idx === activeAlbum) return;
+        activeAlbum = idx;
+        filtersWrap.querySelectorAll(".photowall_filter").forEach((el) => {
+          const on = el === b;
+          el.classList.toggle("is-active", on);
+          el.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        list = idx === -1 ? all : albums[idx].photos;
+        if (reducedMotion) reset();
+        else gsap.to(grid, { autoAlpha: 0, duration: 0.25, ease: "power2.out", onComplete: () => { reset(); gsap.to(grid, { autoAlpha: 1, duration: 0.35, ease: "power2.out" }); } });
+      };
+      filtersWrap.addEventListener("click", onFilter);
+      addCleanup(wall, () => filtersWrap.removeEventListener("click", onFilter));
+    } else if (filtersWrap) {
+      filtersWrap.style.display = "none";
+    }
+
+    // Lightbox
+    const box = document.createElement("div");
+    box.className = "photowall_lightbox";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+    box.setAttribute("aria-label", "Foto");
+    box.setAttribute("aria-hidden", "true");
+    box.innerHTML =
+      '<div class="photowall_lightbox_backdrop" data-pw-close></div>' +
+      '<figure class="photowall_lightbox_figure"><img class="photowall_lightbox_img" alt=""><figcaption class="photowall_lightbox_caption"><span class="photowall_lightbox_credit"></span><span class="photowall_lightbox_count"></span></figcaption></figure>' +
+      '<button type="button" class="photowall_lightbox_btn is--close" data-pw-close aria-label="Sluiten"><svg viewBox="0 0 24 24" width="100%" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
+      '<button type="button" class="photowall_lightbox_btn is--prev" data-pw-prev aria-label="Vorige foto"><svg viewBox="0 0 24 24" width="100%" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+      '<button type="button" class="photowall_lightbox_btn is--next" data-pw-next aria-label="Volgende foto"><svg viewBox="0 0 24 24" width="100%" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
+    wall.appendChild(box);
+
+    const boxImg = box.querySelector(".photowall_lightbox_img");
+    const boxCredit = box.querySelector(".photowall_lightbox_credit");
+    const boxCount = box.querySelector(".photowall_lightbox_count");
+    let current = 0;
+    let isOpen = false;
+    let lastFocus = null;
+
+    const show = (i, dir = 0) => {
+      current = (i + list.length) % list.length;
+      const p = list[current];
+      boxCredit.textContent = p.credit ? creditPrefix + " " + p.credit : "";
+      boxCount.textContent = current + 1 + " / " + list.length;
+      const apply = () => {
+        boxImg.src = largest(p);
+        boxImg.alt = p.alt;
+      };
+      if (reducedMotion || !isOpen) { apply(); gsap.set(boxImg, { autoAlpha: 1, x: 0 }); }
+      else {
+        gsap.to(boxImg, { autoAlpha: 0, x: dir * -24, duration: 0.18, ease: "power2.in", overwrite: true, onComplete: () => {
+          apply();
+          const done = () => gsap.fromTo(boxImg, { autoAlpha: 0, x: dir * 24 }, { autoAlpha: 1, x: 0, duration: 0.35, ease: "osmo", overwrite: true });
+          if (boxImg.complete) done(); else boxImg.onload = () => { boxImg.onload = null; done(); };
+        } });
+      }
+      [list[current + 1], list[current - 1]].forEach((n) => { if (n) { const pre = new Image(); pre.src = largest(n); } });
+    };
+
+    const onKey = (e) => {
+      if (!isOpen) return;
+      if (e.key === "Escape") close();
+      else if (e.key === "ArrowRight") show(current + 1, 1);
+      else if (e.key === "ArrowLeft") show(current - 1, -1);
+    };
+
+    const open = (i, trigger) => {
+      lastFocus = trigger || document.activeElement;
+      isOpen = false;
+      show(i);
+      isOpen = true;
+      box.setAttribute("aria-hidden", "false");
+      gsap.killTweensOf(box);
+      gsap.set(box, { display: "flex" });
+      if (reducedMotion) gsap.set(box, { autoAlpha: 1 });
+      else {
+        gsap.fromTo(box, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, ease: "power2.out" });
+        gsap.fromTo(boxImg, { scale: 0.96 }, { scale: 1, duration: 0.6, ease: "osmo" });
+      }
+      if (lenis) lenis.stop();
+      document.addEventListener("keydown", onKey);
+      box.querySelector("[data-pw-close].photowall_lightbox_btn").focus({ preventScroll: true });
+    };
+
+    const close = () => {
+      if (!isOpen) return;
+      isOpen = false;
+      box.setAttribute("aria-hidden", "true");
+      document.removeEventListener("keydown", onKey);
+      const finish = () => {
+        gsap.set(box, { display: "none" });
+        if (lenis) lenis.start();
+        if (lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
+      };
+      if (reducedMotion) finish();
+      else gsap.to(box, { autoAlpha: 0, duration: 0.25, ease: "power2.in", onComplete: finish });
+    };
+
+    const onGridClick = (e) => {
+      const item = e.target.closest(".photowall_item");
+      if (!item) return;
+      open(parseInt(item.dataset.index, 10) || 0, item);
+    };
+
+    const onBoxClick = (e) => {
+      if (e.target.closest("[data-pw-close]")) close();
+      else if (e.target.closest("[data-pw-prev]")) show(current - 1, -1);
+      else if (e.target.closest("[data-pw-next]")) show(current + 1, 1);
+    };
+
+    let startX = null, startY = null;
+    const onDown = (e) => { if (e.pointerType === "mouse") return; startX = e.clientX; startY = e.clientY; };
+    const onUp = (e) => {
+      if (startX === null) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      startX = startY = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+    };
+
+    grid.addEventListener("click", onGridClick);
+    box.addEventListener("click", onBoxClick);
+    box.addEventListener("pointerdown", onDown);
+    box.addEventListener("pointerup", onUp);
+
+    wall.classList.add("is-ready");
+    reset();
+
+    addCleanup(wall, () => {
+      close();
+      document.removeEventListener("keydown", onKey);
+      grid.removeEventListener("click", onGridClick);
+      box.removeEventListener("click", onBoxClick);
+      box.removeEventListener("pointerdown", onDown);
+      box.removeEventListener("pointerup", onUp);
+      if (io) io.disconnect();
+      if (moreIo) moreIo.disconnect();
     });
   });
 }
