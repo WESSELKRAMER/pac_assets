@@ -1758,3 +1758,34 @@ input[type="submit"] {
     scrollbar-width: none;
   }
 }
+
+[data-project-theme] { --gradient-color: var(--pac-light--500); }
+[data-project-theme="oranje" i] { --gradient-color: var(--pac-orange--200) !important; }
+[data-project-theme="roze" i] { --gradient-color: var(--pac-pink--500) !important; }
+[data-project-theme="blauw" i] { --gradient-color: var(--pac-blue--500) !important; }
+[data-project-theme="groen" i] { --gradient-color: var(--pac-green--400) !important; }
+[data-project-theme="beige" i] { --gradient-color: var(--pac-beige--500) !important; }
+[data-project-theme="bruin" i] { --gradient-color: var(--pac-brown--200) !important; }
+[data-project-hero] .stories_hero_img_wrap:has(img.w-dyn-bind-empty) { display: none; }
+
+.section_flex_content[data-chapter]:has([data-chapter-title].w-dyn-bind-empty) { display: none; }
+[data-chapter] .flex_img_wrap:has(img.w-dyn-bind-empty) { display: none; }
+[data-chapter] .flex_content_inner:has(img.w-dyn-bind-empty) .flex_text_wrap { padding-left: 0; }
+[data-chapter] .button_wrapper:has(.cta_text.w-dyn-bind-empty),
+[data-chapter] .button_wrapper:not(:has(.primary_cta[href]:not([href="#"]))) { display: none; }
+[data-chapter] .rich-text.w-dyn-bind-empty { display: none; }
+@media (min-width: 992px) {
+  [data-chapter="2"] .flex_content_inner,
+  [data-chapter="4"] .flex_content_inner { flex-direction: row-reverse; }
+  [data-chapter="2"] .flex_text_wrap,
+  [data-chapter="4"] .flex_text_wrap { padding-left: 5rem; padding-right: 2.5rem; }
+}
+
+[data-project-subs]:not(:has(.w-dyn-item)) { display: none; }
+[data-project-agenda].is-empty { display: none; }
+[data-project-credits]:has(.rich-text.w-dyn-bind-empty) { display: none; }
+.breadcrumb_subproject_wrap:has([data-breadcrumb-parent] .w-dyn-bind-empty) [data-breadcrumb-parent],
+.breadcrumb_subproject_wrap:has([data-breadcrumb-parent] .w-dyn-bind-empty) [data-breadcrumb-parent-sep] { display: none; }
+.project_credits_text { max-width: none; columns: 4 14rem; column-gap: 2.5rem; }
+.project_credits_text h3 { margin-top: 0; font-size: var(--_typesetting---body-font, 1.2rem); font-family: var(--_typography---body--font); font-weight: 600; break-after: avoid; }
+.project_credits_text p { break-inside: avoid; margin-bottom: 1.75rem; }

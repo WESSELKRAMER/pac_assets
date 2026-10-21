@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 18:15";
+window.PAC_BUNDLE = "2026-10-21 21:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2493,6 +2493,7 @@ function initAgendaMonths() {
       const show = new Set(visible.map((item) => item.el));
       items.forEach((item) => (item.el.style.display = show.has(item.el) ? "" : "none"));
       empties.forEach((el) => (el.style.display = visible.length ? "none" : ""));
+      root.classList.toggle("is-empty", !visible.length);
 
       const label = labelOf(currentKey);
       labels.forEach((el) => (el.textContent = label));
