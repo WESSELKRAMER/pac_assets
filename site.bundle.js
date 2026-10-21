@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 13:45";
+window.PAC_BUNDLE = "2026-10-21 15:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3893,8 +3893,53 @@ function initVideoPopup() {
     });
     popup.querySelectorAll("iframe").forEach((iframe) => {
       if (iframe.dataset.videoSrc === undefined) return;
-      iframe.src = iframe.dataset.videoSrc;
+      iframe.src = iframe.hasAttribute("data-video-dynamic") ? "about:blank" : iframe.dataset.videoSrc;
     });
+  };
+
+  // Losse video-URL (YouTube/Vimeo) omzetten naar een embed-URL
+  const toEmbed = (src) => {
+    try {
+      const url = new URL(src, window.location.href);
+      const host = url.hostname.replace(/^www\./, "");
+      let id = "";
+      if (host === "youtu.be") id = url.pathname.slice(1);
+      else if (/youtube(-nocookie)?\.com$/.test(host)) {
+        if (url.pathname.startsWith("/embed/")) return url.toString();
+        id = url.searchParams.get("v") || (url.pathname.match(/^\/(shorts|live)\/([^/?]+)/) || [])[2] || "";
+      }
+      if (id) return "https://www.youtube-nocookie.com/embed/" + id.split(/[?&/]/)[0] + "?rel=0";
+      if (host === "vimeo.com") {
+        const vid = (url.pathname.match(/^\/(\d+)/) || [])[1];
+        if (vid) return "https://player.vimeo.com/video/" + vid;
+      }
+      if (host === "player.vimeo.com") return url.toString();
+    } catch (e) {}
+    return "";
+  };
+
+  // Trigger met eigen video: data-video-src="..." of een link met href naar YouTube/Vimeo
+  const triggerSource = (btn) => {
+    const raw = (btn.getAttribute("data-video-src") || (btn.matches("a[href]") ? btn.getAttribute("href") : "") || "").trim();
+    if (!raw || raw.endsWith("#")) return "";
+    return toEmbed(raw);
+  };
+
+  const setSource = (popup, embed) => {
+    let iframe = popup.querySelector("iframe[data-video-dynamic]");
+    if (!iframe) {
+      const host = popup.querySelector("[data-video-frame]") || popup.querySelector(".popup_video_wrap") || popup;
+      iframe = document.createElement("iframe");
+      iframe.setAttribute("data-video-dynamic", "");
+      iframe.setAttribute("title", "Video");
+      iframe.setAttribute("frameborder", "0");
+      iframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
+      iframe.setAttribute("allowfullscreen", "");
+      iframe.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;";
+      if (getComputedStyle(host).position === "static") host.style.position = "relative";
+      host.appendChild(iframe);
+    }
+    iframe.dataset.videoSrc = embed;
   };
 
   const withAutoplay = (src) => {
@@ -4068,6 +4113,9 @@ function initVideoPopup() {
 
     const onOpen = (e) => {
       e.preventDefault();
+      const embed = triggerSource(btn);
+      if (embed) setSource(popup, embed);
+      else if (!popup.querySelector("video, iframe:not([data-video-dynamic]), .w-video")) return;
       controls.open(btn);
     };
 
