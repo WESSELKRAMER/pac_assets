@@ -1681,3 +1681,6 @@ input[type="submit"] {
 .legal_docs_list .w-dyn-empty {
   display: none;
 }
+.section_contact_people .w-dyn-empty { padding: 0; background-color: transparent; }
+.contact_person_link.w-dyn-bind-empty, .contact_person_link[href="#"], .contact_person_link:not([href]) { display: none; }
+.contact_person_img.w-dyn-bind-empty { display: none; }
