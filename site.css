@@ -1665,3 +1665,7 @@ input[type="submit"] {
     right: 1rem;
   }
 }
+
+.photowall_grid.is-loading {
+  min-height: 60vh;
+}

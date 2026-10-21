@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 16:35";
+window.PAC_BUNDLE = "2026-10-21 16:50";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -5500,6 +5500,7 @@ function initSliders() {
 
 // Photowall: albums uit het CMS (meerdere multi-image velden per album) samengevoegd tot één wall met lightbox
 function initPhotowall() {
+  const photowallCache = window.__pacPhotowallCache || (window.__pacPhotowallCache = new Map());
   nextPage.querySelectorAll("[data-photowall]").forEach((wall) => {
     if (wall.dataset.photowallInit === "true") return;
     wall.dataset.photowallInit = "true";
@@ -5516,7 +5517,7 @@ function initPhotowall() {
     const visibleImg = (img) => !img.closest(".w-dyn-empty, .w-condition-invisible") && (img.getAttribute("src") || "").length > 0 && !/placeholder/i.test(img.getAttribute("src"));
 
     const albumEls = Array.from(source.querySelectorAll("[data-photowall-album]"));
-    const albums = (albumEls.length ? albumEls : Array.from(source.querySelectorAll(".w-dyn-item")).filter((el) => el.querySelector("[data-photowall-name], [data-photowall-credit]"))).map((el, i) => {
+    let albums = (albumEls.length ? albumEls : Array.from(source.querySelectorAll(".w-dyn-item")).filter((el) => el.querySelector("[data-photowall-name], [data-photowall-credit]"))).map((el, i) => {
       const name = (el.querySelector("[data-photowall-name]")?.textContent || "").trim();
       const credit = (el.querySelector("[data-photowall-credit]")?.textContent || "").trim();
       const seen = new Set();
@@ -5532,9 +5533,49 @@ function initPhotowall() {
         credit,
         album: i
       }));
-      return { name, credit, label: credit || name || "Album " + (i + 1), photos };
-    }).filter((a) => a.photos.length);
+      const slug = (el.querySelector("[data-photowall-slug]")?.textContent || "").trim();
+      return { name, credit, slug, label: credit || name || "Album " + (i + 1), photos };
+    });
 
+    const base = (wall.dataset.photowallBase || "/awards-photowall/").replace(/\/?$/, "/");
+    const parsePhotos = (html, album, i) => {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const scope = doc.querySelector("[data-photowall-page]") || doc.body;
+      const seen = new Set();
+      return Array.from(scope.querySelectorAll("img")).filter(visibleImg).filter((img) => {
+        const key = img.getAttribute("src");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).map((img) => ({
+        src: img.getAttribute("src"),
+        srcset: img.getAttribute("srcset") || "",
+        alt: img.getAttribute("alt") || album.name,
+        credit: album.credit,
+        album: i
+      }));
+    };
+    const loadAlbum = (album, i) => {
+      if (!album.slug || wall.dataset.photowallFetch === "false") return Promise.resolve();
+      const url = base + album.slug;
+      const cached = photowallCache.get(url);
+      const req = cached || fetch(url, { credentials: "same-origin" }).then((r) => (r.ok ? r.text() : ""));
+      if (!cached) photowallCache.set(url, req);
+      return req.then((html) => {
+        if (!html) return;
+        const photos = parsePhotos(html, album, i);
+        if (photos.length >= album.photos.length) album.photos = photos;
+      }).catch(() => {});
+    };
+
+    grid.classList.add("is-loading");
+    Promise.all(albums.map(loadAlbum)).then(() => {
+      grid.classList.remove("is-loading");
+      if (!wall.isConnected) return;
+      startPhotowall(albums.filter((a) => a.photos.length));
+    });
+
+    function startPhotowall(albums) {
     const all = albums.flatMap((a) => a.photos);
     if (!all.length) return;
 
@@ -5766,5 +5807,6 @@ function initPhotowall() {
       if (io) io.disconnect();
       if (moreIo) moreIo.disconnect();
     });
+    }
   });
 }
