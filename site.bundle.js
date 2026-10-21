@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 16:50";
+window.PAC_BUNDLE = "2026-10-21 18:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -19,6 +19,33 @@ const rmMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
 let reducedMotion = rmMQ.matches;
 rmMQ.addEventListener?.("change", e => (reducedMotion = e.matches));
 rmMQ.addListener?.(e => (reducedMotion = e.matches));
+
+const SEL = {
+  faqItem: "[data-faq-item], .faq_item",
+  faqAnswer: "[data-faq-answer], .faq_answer",
+  faqIcon: "[data-faq-icon], .plus_icon",
+  floatingImg: "[data-floating-img], .floating_img_wrap",
+  floatingInner: "[data-floating-inner], .floating_images_inner",
+  bigLogo: "[data-big-logo], .big_logo",
+  marqueeTrack: "[data-marquee-track], .logo-marquee_track",
+  footerLink: "[data-footer-link], .footer_link",
+  navInner: "[data-nav-inner], .nav_inner",
+  navToggle: "[data-nav-toggle], .hb_wrapper",
+  navPanel: "[data-nav-panel], .nav_items",
+  navItem: "[data-nav-item], .nav_item",
+  navLine: "[data-nav-line], .hb_line",
+  logoWrap: "[data-logo], .logo_wrapper",
+  logoCircle: "[data-logo-circle], .logo_circle",
+  richText: "[data-rich-text], .rich-text, .w-richtext",
+  loadFade: "[data-load-fade], .home_grid_card",
+  cta: "[data-cta], .primary_cta, .grid_card_cta_wrapper",
+  ctaText: "[data-cta-text], .cta_text, .grid_card_cta_text",
+  ctaArrow: "[data-cta-arrow], .cta_arrow",
+  ctaCircle: "[data-cta-circle], .cta_arrow_wrapper",
+  blob: "[data-domain-blob], .blob",
+  domainsInner: "[data-domains-inner], .domains_collection_item_inner",
+  swiperWrapper: "[data-swiper-wrapper], .swiper-wrapper"
+};
 
 const has = (s) => !!nextPage.querySelector(s);
 
@@ -50,15 +77,15 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
   initUnselectableText();
-  if (has(".home_grid_card, [data-load-fade]")) initLoadFade();
+  if (has(SEL.loadFade)) initLoadFade();
   if (has("[data-animate-line]")) initAnimateLines();
   initCTAAnimation();
   if (has("[data-submit-trigger]")) initSubmitTriggers();
   if (has("[data-team-prev], [data-team-next], [data-arrow-button]")) initArrowButtons();
-  if (has(".faq_item")) initFAQAnimation();
+  if (has(SEL.faqItem)) initFAQAnimation();
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
   if (has("[data-highlight-text]")) initHighlightText();
-  if (has(".floating_img_wrap")) initFloatingImages();
+  if (has(SEL.floatingImg)) initFloatingImages();
   if (has("[data-image-reveal]")) initImageReveal();
   if (has("[data-wipe-reveal]")) initWipeReveal();
   if (has("[data-open-video]")) initVideoPopup();
@@ -73,9 +100,9 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has("[data-stack]")) initStackCards();
-  if (has(".big_logo")) initBigLogoReveal();
-  if (has(".logo-marquee_track, [data-marquee-track]")) initLogoMarquee();
-  if (has(".footer_link")) initFooterLinkHover();
+  if (has(SEL.bigLogo)) initBigLogoReveal();
+  if (has(SEL.marqueeTrack)) initLogoMarquee();
+  if (has(SEL.footerLink)) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
   if (has("[data-slider], .stories-swiper")) initSliders();
   if (has("[data-photowall]")) initPhotowall();
@@ -502,7 +529,7 @@ function applyNavbarPageConfig(scope) {
 }
 
 function initNavbarHide() {
-  navbarEl = document.querySelector("[data-navbar]") || document.querySelector(".navbar");
+  navbarEl = (document.querySelector("[data-navbar]") || document.querySelector(".navbar"));
   if (!navbarEl) return;
   if (navbarEl.dataset.navbarInitialized === "true") return;
   navbarEl.dataset.navbarInitialized = "true";
@@ -566,7 +593,7 @@ function initNavbarHide() {
 }
 
 function initNavbarSub() {
-  const nav = document.querySelector("[data-navbar]") || document.querySelector(".navbar");
+  const nav = (document.querySelector("[data-navbar]") || document.querySelector(".navbar"));
   if (!nav) return;
   const sub = nav.querySelector("[data-navbar-sub], .subfooter_inner");
   if (!sub || sub.dataset.navbarSubInitialized === "true") return;
@@ -649,15 +676,15 @@ const menuMQ = window.matchMedia("(max-width: 991px)");
 const MENU_RADIUS = "1.5rem";
 
 function initMobileMenu() {
-  const navInner = document.querySelector(".nav_inner");
-  const toggle = document.querySelector(".hb_wrapper");
-  const panel = document.querySelector(".nav_items");
+  const navInner = document.querySelector(SEL.navInner);
+  const toggle = document.querySelector(SEL.navToggle);
+  const panel = document.querySelector(SEL.navPanel);
   if (!navInner || !toggle || !panel) return;
   if (toggle.dataset.menuInitialized === "true") return;
   toggle.dataset.menuInitialized = "true";
 
-  const items = panel.querySelectorAll(".nav_item");
-  const lines = toggle.querySelectorAll(".hb_line");
+  const items = panel.querySelectorAll(SEL.navItem);
+  const lines = toggle.querySelectorAll(SEL.navLine);
   const firstLine = lines[0];
   const lastLine = lines[lines.length - 1];
 
@@ -864,8 +891,8 @@ function resetDynamicTextCursor() {
 }
 
 function initLogoHover() {
-  document.querySelectorAll(".logo_wrapper").forEach((wrapper) => {
-    const circle = wrapper.querySelector(".logo_circle");
+  document.querySelectorAll(SEL.logoWrap).forEach((wrapper) => {
+    const circle = wrapper.querySelector(SEL.logoCircle);
     if (!circle) return;
     if (wrapper.dataset.logoHoverInitialized === "true") return;
     wrapper.dataset.logoHoverInitialized = "true";
@@ -893,7 +920,7 @@ function initLogoHover() {
 }
 
 function initNavCurrentUnderline() {
-  document.querySelectorAll(".nav_item").forEach((el) => {
+  document.querySelectorAll(SEL.navItem).forEach((el) => {
     if (el.dataset.underlineOriginal === undefined) {
       el.dataset.underlineOriginal = el.hasAttribute("data-underline-link")
         ? el.getAttribute("data-underline-link")
@@ -928,7 +955,7 @@ function initRichTextClasses() {
     return q.replace(OPEN, "").replace(CLOSE, "").trim();
   };
 
-  nextPage.querySelectorAll(".rich-text, .w-richtext").forEach((rt) => {
+  nextPage.querySelectorAll(SEL.richText).forEach((rt) => {
     const quoteClass = (rt.dataset.rtQuoteClass ?? "display_text_medium").trim();
 
     rt.querySelectorAll("blockquote").forEach((bq) => {
@@ -990,7 +1017,7 @@ function initUnselectableText() {
 }
 
 function initLoadFade() {
-  const elements = nextPage.querySelectorAll(".home_grid_card, [data-load-fade]");
+  const elements = nextPage.querySelectorAll(SEL.loadFade);
   if (!elements.length) return;
 
   if (reducedMotion) {
@@ -1103,7 +1130,7 @@ function initAnimateLines() {
 
 function initCursorBlob() {
   nextPage.querySelectorAll("[data-blob-section]").forEach((section) => {
-    const blob = section.querySelector(".blob");
+    const blob = section.querySelector(SEL.blob);
     if (!blob) return;
     if (section.dataset.blobInitialized === "true") return;
     section.dataset.blobInitialized = "true";
@@ -1155,10 +1182,10 @@ function initCursorBlob() {
 }
 
 function initCTAAnimation() {
-  nextPage.querySelectorAll(".primary_cta, .grid_card_cta_wrapper").forEach((cta) => {
-    const text = cta.querySelector(".cta_text, .grid_card_cta_text");
-    const arrow = cta.querySelector(".cta_arrow");
-    const circle = cta.querySelector(".cta_arrow_wrapper");
+  nextPage.querySelectorAll(SEL.cta).forEach((cta) => {
+    const text = cta.querySelector(SEL.ctaText);
+    const arrow = cta.querySelector(SEL.ctaArrow);
+    const circle = cta.querySelector(SEL.ctaCircle);
 
     if (!text || !arrow || !circle) return;
     if (text.dataset.ctaSplit === "true") return;
@@ -1397,12 +1424,12 @@ function initArrowButtons() {
 }
 
 function initFAQAnimation() {
-  const faqItems = nextPage.querySelectorAll(".faq_item");
+  const faqItems = nextPage.querySelectorAll(SEL.faqItem);
   if (!faqItems.length) return;
 
   function closeItem(item) {
-    const answer = item.querySelector(".faq_answer");
-    const plusIcon = item.querySelector(".plus_icon");
+    const answer = item.querySelector(SEL.faqAnswer);
+    const plusIcon = item.querySelector(SEL.faqIcon);
 
     if (!answer) return;
 
@@ -1424,8 +1451,8 @@ function initFAQAnimation() {
   }
 
   function openItem(item) {
-    const answer = item.querySelector(".faq_answer");
-    const plusIcon = item.querySelector(".plus_icon");
+    const answer = item.querySelector(SEL.faqAnswer);
+    const plusIcon = item.querySelector(SEL.faqIcon);
 
     if (!answer) return;
 
@@ -1454,8 +1481,8 @@ function initFAQAnimation() {
   }
 
   faqItems.forEach((item, index) => {
-    const answer = item.querySelector(".faq_answer");
-    const plusIcon = item.querySelector(".plus_icon");
+    const answer = item.querySelector(SEL.faqAnswer);
+    const plusIcon = item.querySelector(SEL.faqIcon);
 
     if (!answer) return;
     if (item.dataset.faqInitialized === "true") return;
@@ -1680,7 +1707,7 @@ function getLayoutCenter(el) {
 }
 
 function initFloatingImages() {
-  const wrapsInPage = nextPage.querySelectorAll(".floating_img_wrap");
+  const wrapsInPage = nextPage.querySelectorAll(SEL.floatingImg);
   if (!wrapsInPage.length) return;
 
   if (!hasScrollTrigger || reducedMotion) {
@@ -1699,7 +1726,7 @@ function initFloatingImages() {
     if (section.dataset.floatingInitialized === "true") return;
     section.dataset.floatingInitialized = "true";
 
-    const wraps = section.querySelectorAll(".floating_img_wrap");
+    const wraps = section.querySelectorAll(SEL.floatingImg);
     if (!wraps.length) return;
 
     const start = section.dataset.floatingStart || "top 70%";
@@ -1710,7 +1737,7 @@ function initFloatingImages() {
 
     const target =
       section.querySelector("[data-floating-target]") ||
-      section.querySelector(".floating_images_inner") ||
+      section.querySelector(SEL.floatingInner) ||
       section;
 
     const items = Array.from(wraps).map((wrap) => {
@@ -1801,7 +1828,7 @@ function initImageReveal() {
   }
 
   const isFirstLoad = nextPage === document;
-  const CURTAIN_COLOR = "var(--pac-dark--900, #141414)";
+  const CURTAIN_COLOR = "var(--pac-dark--900, #1b1c1e)";
 
   const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -2053,7 +2080,7 @@ function initWipeReveal() {
     }
 
     overlay.style.background =
-      style.getPropertyValue("--wipe-color").trim() || "var(--pac-dark--900, #141414)";
+      style.getPropertyValue("--wipe-color").trim() || "var(--pac-dark--900, #1b1c1e)";
 
     const { from, to } = wipeVars(el.getAttribute("data-wipe-reveal"));
     const duration = toNumber(el.dataset.wipeDuration, 1.1);
@@ -4637,7 +4664,7 @@ function initDomainTabs() {
     const blobDuration = num(module.dataset.domainsBlobDuration, 1.2);
 
     const blobSection = module.closest("[data-blob-section], .section_domains");
-    const blob = blobSection ? blobSection.querySelector("[data-domain-blob], .blob") : null;
+    const blob = blobSection ? blobSection.querySelector(SEL.blob) : null;
 
     const isUsableColor = (c) =>
       !!c && c !== "transparent" && !/^rgba\([^)]*,\s*0\)$/.test(c.replace(/\s+/g, " "));
@@ -4754,7 +4781,7 @@ function initDomainTabs() {
     const getTabFades = (tab) => {
       const marked = tab.querySelectorAll("[data-domain-tab-fade]");
       if (marked.length) return Array.from(marked);
-      const inner = tab.querySelector(".domains_collection_item_inner") || tab;
+      const inner = tab.querySelector(SEL.domainsInner) || tab;
       return Array.from(inner.children).filter(
         (el) => !el.matches("[data-domain-indicator], .domain_indicator, .u-domain-line, [data-domain-line]")
       );
@@ -5048,7 +5075,7 @@ function initDomainTabs() {
 }
 
 function initBigLogoReveal() {
-  const logos = nextPage.querySelectorAll(".big_logo");
+  const logos = nextPage.querySelectorAll(SEL.bigLogo);
   if (!logos.length) return;
 
   if (!hasScrollTrigger) {
@@ -5090,7 +5117,7 @@ function initBigLogoReveal() {
 }
 
 function initLogoMarquee() {
-  nextPage.querySelectorAll(".logo-marquee_track, [data-marquee-track]").forEach((track) => {
+  nextPage.querySelectorAll(SEL.marqueeTrack).forEach((track) => {
     if (track.dataset.marqueeInitialized === "true") return;
     track.dataset.marqueeInitialized = "true";
 
@@ -5226,7 +5253,7 @@ function initLogoMarquee() {
 }
 
 function initFooterLinkHover() {
-  const links = nextPage.querySelectorAll(".footer_link");
+  const links = nextPage.querySelectorAll(SEL.footerLink);
   if (!links.length) return;
 
   links.forEach((link) => {
@@ -5264,7 +5291,7 @@ function initSliders() {
   roots.forEach((root) => {
     const track =
       root.querySelector("[data-slider-track]") ||
-      root.querySelector(".swiper-wrapper") ||
+      root.querySelector(SEL.swiperWrapper) ||
       root.querySelector(".w-dyn-items") ||
       root.firstElementChild;
     if (!track) return;
