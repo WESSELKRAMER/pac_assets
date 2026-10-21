@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 13:00";
+window.PAC_BUNDLE = "2026-10-21 13:15";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -67,7 +67,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-social-share]")) initSocialShare();
   if (has("[data-filter-link]")) initFilterLinks();
-  if (has("[data-breadcrumbs]")) initBreadcrumbs();
+  if (has("[data-breadcrumbs], [data-scroll-row]")) initBreadcrumbs();
   if (has("[data-hover-reveal]")) initHoverReveal();
   if (has("[data-filter]")) initListFilters();
   if (has("[data-domains], .domains_module")) initDomainTabs();
@@ -3651,12 +3651,24 @@ function initHoverReveal() {
 }
 
 function initBreadcrumbs() {
-  nextPage.querySelectorAll("[data-breadcrumbs]").forEach((el) => {
+  nextPage.querySelectorAll("[data-breadcrumbs], [data-scroll-row]").forEach((el) => {
     if (el.dataset.breadcrumbsInit === "true") return;
     el.dataset.breadcrumbsInit = "true";
-    const update = () => el.classList.toggle("is-end", el.scrollLeft >= el.scrollWidth - el.clientWidth - 2);
-    el.scrollLeft = 0;
-    requestAnimationFrame(update);
+    const isRow = el.hasAttribute("data-scroll-row");
+    const update = () => {
+      el.classList.toggle("is-end", el.scrollLeft >= el.scrollWidth - el.clientWidth - 2);
+      el.classList.toggle("is-scrolled", el.scrollLeft > 2);
+    };
+    requestAnimationFrame(() => {
+      el.scrollLeft = 0;
+      // Scroll-rij: het actieve item (w--current / is-active / aria-current) in beeld schuiven
+      const current = isRow && el.querySelector(".w--current, .is-active, [aria-current='page']");
+      if (current && el.scrollWidth > el.clientWidth) {
+        const left = current.offsetLeft - (el.clientWidth - current.offsetWidth) / 2;
+        el.scrollLeft = Math.max(0, Math.min(left, el.scrollWidth - el.clientWidth));
+      }
+      update();
+    });
     el.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
     addCleanup(el, () => {
