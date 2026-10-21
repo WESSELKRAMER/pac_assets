@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 13:15";
+window.PAC_BUNDLE = "2026-10-21 13:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -67,6 +67,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-social-share]")) initSocialShare();
   if (has("[data-filter-link]")) initFilterLinks();
+  if (has("[data-pill-nav]")) initPillNav();
   if (has("[data-breadcrumbs], [data-scroll-row]")) initBreadcrumbs();
   if (has("[data-hover-reveal]")) initHoverReveal();
   if (has("[data-filter]")) initListFilters();
@@ -3758,6 +3759,88 @@ function initStackCards() {
     });
 
     addCleanup(list, () => mm.revert());
+  });
+}
+
+// Meebewegend bolletje in een navigatie: [data-pill-nav] op de wrapper van de items
+const pillNavMemory = {};
+function initPillNav() {
+  nextPage.querySelectorAll("[data-pill-nav]").forEach((nav) => {
+    if (nav.dataset.pillNavInit === "true") return;
+    nav.dataset.pillNavInit = "true";
+
+    const key = nav.getAttribute("data-pill-nav") || "default";
+    const items = Array.from(nav.querySelectorAll(":scope > [data-pill-nav-item]")).length
+      ? Array.from(nav.querySelectorAll(":scope > [data-pill-nav-item]"))
+      : Array.from(nav.children).filter((el) => el.matches("a, button, [role='tab']"));
+    if (!items.length) return;
+
+    const duration = reducedMotion ? 0 : toNumber(nav.dataset.pillNavDuration, 0.6);
+    const ease = nav.dataset.pillNavEase || "osmo";
+    const followHover = nav.dataset.pillNavHover === "true";
+
+    const pill = document.createElement("span");
+    pill.className = "pill-nav__indicator";
+    pill.setAttribute("aria-hidden", "true");
+    nav.insertBefore(pill, nav.firstChild);
+
+    const currentIndex = () => {
+      const i = items.findIndex((el) => el.classList.contains("w--current") || el.getAttribute("aria-current") === "page");
+      return i === -1 ? 0 : i;
+    };
+    let active = currentIndex();
+
+    const rectOf = (el) => ({ x: el.offsetLeft, y: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight });
+    const setActiveClass = (i) => items.forEach((el, j) => el.classList.toggle("is-active", j === i));
+
+    const moveTo = (i, animate = true) => {
+      const r = rectOf(items[i]);
+      gsap.to(pill, { ...r, duration: animate ? duration : 0, ease, overwrite: true });
+      setActiveClass(i);
+    };
+
+    // Start: vanaf het item waar net op geklikt is (vorige pagina), anders direct op het actieve item
+    const mem = pillNavMemory[key];
+    const fresh = mem && Date.now() - mem.time < 4000 && items[mem.index];
+    gsap.set(pill, rectOf(items[fresh ? mem.index : active]));
+    setActiveClass(fresh ? mem.index : active);
+    nav.classList.add("is-ready");
+    if (fresh && mem.index !== active) requestAnimationFrame(() => moveTo(active));
+    delete pillNavMemory[key];
+
+    const onClick = (e) => {
+      const i = items.indexOf(e.currentTarget);
+      if (i === -1) return;
+      pillNavMemory[key] = { index: i, time: Date.now() };
+      moveTo(i);
+    };
+    const onEnter = (e) => {
+      const i = items.indexOf(e.currentTarget);
+      if (i !== -1) moveTo(i);
+    };
+    const onLeave = () => moveTo(active);
+    const onResize = () => moveTo(items.findIndex((el) => el.classList.contains("is-active")), false);
+
+    items.forEach((el) => {
+      el.addEventListener("click", onClick);
+      if (followHover) {
+        el.addEventListener("mouseenter", onEnter);
+        el.addEventListener("focus", onEnter);
+      }
+    });
+    if (followHover) nav.addEventListener("mouseleave", onLeave);
+    window.addEventListener("resize", onResize);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => nav.isConnected && onResize());
+
+    addCleanup(nav, () => {
+      items.forEach((el) => {
+        el.removeEventListener("click", onClick);
+        el.removeEventListener("mouseenter", onEnter);
+        el.removeEventListener("focus", onEnter);
+      });
+      nav.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("resize", onResize);
+    });
   });
 }
 
