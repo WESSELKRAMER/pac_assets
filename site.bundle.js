@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 22:45";
+window.PAC_BUNDLE = "2026-10-21 23:20";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -77,6 +77,7 @@ function initBeforeEnterFunctions(next) {
   applyNavbarPageConfig(nextPage);
   if (has("[data-project-slug]")) initProjectFilter();
   if (has("[data-chapter]")) initProjectChapters();
+  if (has("[data-project-page]")) initProjectMediaSlider();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
@@ -3736,6 +3737,30 @@ function initHoverReveal() {
 }
 
 // Projecthoofdstukken: lege hoofdstukken verbergen en zichtbare hoofdstukken om en om spiegelen
+function initProjectMediaSlider() {
+  const page = nextPage.matches && nextPage.matches("[data-project-page]") ? nextPage : nextPage.querySelector("[data-project-page]");
+  if (!page) return;
+  const arrow = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 17 15" fill="none" class="agenda_arrow"><path d="M16.2419 7.68254L16.2231 6.57294L4.72512 6.55649C4.14211 6.55649 3.60847 6.57294 3.11715 6.60351C2.62582 6.63407 2.22853 6.67873 1.92762 6.73985L7.93871 0.79929L7.13943 6.06693e-06L-6.07261e-05 7.1395L7.13943 14.279L7.93871 13.4797L1.94408 7.52268C2.22148 7.5838 2.61407 7.62847 3.1148 7.65903C3.61552 7.68959 4.15857 7.70605 4.73922 7.7037L16.2419 7.68254Z" fill="currentColor"></path></svg>';
+  page.querySelectorAll(":scope > .section_stories:not([data-project-subs])").forEach((section) => {
+    if (section.hasAttribute("data-slider-ui")) return;
+    const list = section.querySelector(".w-dyn-list");
+    const titleRow = section.querySelector(".title_top_wrap");
+    if (!list || !titleRow || !list.querySelector(".w-dyn-item")) return;
+    section.setAttribute("data-slider-ui", "");
+    section.setAttribute("data-project-media", "");
+    list.setAttribute("data-slider", "");
+    list.setAttribute("data-slider-bleed", "");
+    list.setAttribute("data-slider-label", "Verhalen, nieuws en media");
+    const controls = document.createElement("div");
+    controls.className = "team_slider_buttons";
+    controls.setAttribute("data-slider-controls", "");
+    controls.innerHTML =
+      '<div class="team_button" data-slider-prev data-arrow-button data-arrow-direction="left" role="button" tabindex="0" aria-label="Vorige">' + arrow + "</div>" +
+      '<div class="team_button is--next" data-slider-next data-arrow-button role="button" tabindex="0" aria-label="Volgende">' + arrow + "</div>";
+    titleRow.appendChild(controls);
+  });
+}
+
 function initProjectChapters() {
   const empty = (el) => !el || el.classList.contains("w-dyn-bind-empty") || !el.textContent.trim();
   let i = 0;

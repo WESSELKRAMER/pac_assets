@@ -1809,23 +1809,29 @@ input[type="submit"] {
 
 [data-project-page] > .section_stories:not(:has(.w-dyn-item)) { display: none; }
 
-[data-project-subs] .title_top_wrap {
+[data-project-subs] .title_top_wrap,
+[data-project-media] .title_top_wrap {
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-end;
   gap: 1.5rem;
 }
-[data-project-subs] .title_top_wrap .team_slider_buttons { flex-shrink: 0; }
-[data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item {
+[data-project-subs] .title_top_wrap .team_slider_buttons,
+[data-project-media] .title_top_wrap .team_slider_buttons { flex-shrink: 0; }
+[data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item,
+[data-project-media] .pac-slider__track > .pac-slider__item {
   flex: 0 0 auto;
   width: clamp(16rem, 28vw, 28rem);
 }
 @media (max-width: 991px) {
-  [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item { width: clamp(16rem, 42vw, 22rem); }
+  [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item,
+[data-project-media] .pac-slider__track > .pac-slider__item { width: clamp(16rem, 42vw, 22rem); }
 }
 @media (max-width: 767px) {
-  [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item { width: 72vw; }
+  [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item,
+[data-project-media] .pac-slider__track > .pac-slider__item { width: 72vw; }
 }
 @media (max-width: 479px) {
-  [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item { width: 84vw; }
+  [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item,
+[data-project-media] .pac-slider__track > .pac-slider__item { width: 84vw; }
 }
