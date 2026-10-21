@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-20 14:00";
+window.PAC_BUNDLE = "2026-10-21 10:15";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -2679,6 +2679,12 @@ function initListFilters() {
       });
       const dateSource = el.hasAttribute("data-filter-date") ? el : el.querySelector("[data-filter-date]");
       const date = dateSource ? parseDate(dateSource.getAttribute("data-filter-date") || dateSource.textContent) : 0;
+      // Datumgroepen: elk item met een datum krijgt automatisch "jaar" en "maand"
+      if (date) {
+        const d = new Date(date);
+        add("jaar", String(d.getFullYear()));
+        add("maand", MONTHS_NL[d.getMonth()]);
+      }
       const titleEl = el.querySelector("[data-filter-title]");
       const searchFields = root.dataset.filterSearchFields !== "false";
       const text = searchNormalize(((titleEl || el).textContent || "") + (searchFields ? " " + labels.join(" ") : ""));
@@ -2704,7 +2710,7 @@ function initListFilters() {
       ...selects.map((s) => slug(s.getAttribute("data-filter-select")))
     ]);
 
-    const state = { filters: {}, query: "", sort: sorts[0] ? sorts[0].value || "new" : "" };
+    const state = { filters: {}, query: "", sort: sorts[0] ? sorts[0].value || "new" : "", from: 0, to: 0 };
     groups.forEach((g) => (state.filters[g] = ""));
 
     selects.forEach((select) => {
@@ -2720,11 +2726,25 @@ function initListFilters() {
         const attr = item.el.getAttribute("data-filter-" + group);
         if (attr) attr.split(/[,;|]/).forEach((v) => v.trim() && !labels.has(slug(v)) && labels.set(slug(v), v.trim()));
       });
+      const isDateGroup = group === "jaar" || group === "maand";
+      if (isDateGroup) {
+        items.forEach((item) => {
+          if (!item.date) return;
+          const d = new Date(item.date);
+          if (group === "jaar") labels.set(String(d.getFullYear()), String(d.getFullYear()));
+          else {
+            const name = MONTHS_NL[d.getMonth()];
+            labels.set(name, name.charAt(0).toUpperCase() + name.slice(1));
+          }
+        });
+      }
       Array.from(select.options).forEach((opt) => {
         if (opt.value && opt.value !== "all") opt.remove();
       });
+      const dateOrder = (a, b) =>
+        group === "jaar" ? +b[0] - +a[0] : MONTHS_NL.indexOf(a[0]) - MONTHS_NL.indexOf(b[0]);
       Array.from(labels.entries())
-        .sort((a, b) => a[1].localeCompare(b[1], "nl"))
+        .sort(isDateGroup ? dateOrder : (a, b) => a[1].localeCompare(b[1], "nl"))
         .forEach(([value, label]) => {
           const opt = document.createElement("option");
           opt.value = value;
@@ -2740,6 +2760,14 @@ function initListFilters() {
       });
       if (params.has("q")) state.query = params.get("q");
       if (params.has("sort") && sorts.length) state.sort = params.get("sort");
+      const ymd = (v) => {
+        const mt = (v || "").match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        return mt ? new Date(+mt[1], +mt[2] - 1, +mt[3]).getTime() : 0;
+      };
+      if (params.has("van")) state.from = ymd(params.get("van"));
+      if (params.has("tot")) state.to = ymd(params.get("tot"));
+      if (state.to && !state.from) state.from = state.to;
+      if (state.from && !state.to) state.to = state.from;
     }
 
     const writeUrl = () => {
@@ -2747,6 +2775,12 @@ function initListFilters() {
       const params = new URLSearchParams(location.search);
       groups.forEach((g) => (state.filters[g] ? params.set(g, state.filters[g]) : params.delete(g)));
       state.query.trim() ? params.set("q", state.query.trim()) : params.delete("q");
+      const toYmd = (t) => {
+        const d = new Date(t);
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      };
+      state.from ? params.set("van", toYmd(state.from)) : params.delete("van");
+      state.from && state.to ? params.set("tot", toYmd(state.to)) : params.delete("tot");
       sorts.length && state.sort && state.sort !== (sorts[0].options[0] || {}).value ? params.set("sort", state.sort) : params.delete("sort");
       const qs = params.toString();
       try {
@@ -2754,7 +2788,7 @@ function initListFilters() {
       } catch (e) {}
     };
 
-    const isFiltered = () => Object.values(state.filters).some(Boolean) || state.query.trim() !== "";
+    const isFiltered = () => Object.values(state.filters).some(Boolean) || state.query.trim() !== "" || !!state.from;
 
     const syncControls = () => {
       buttons.forEach((btn) => {
@@ -2777,6 +2811,7 @@ function initListFilters() {
         if (state.sort) select.value = state.sort;
       });
       if (typeof customDropdowns !== "undefined") customDropdowns.forEach((d) => d.refresh());
+      if (typeof datePickers !== "undefined") datePickers.forEach((d) => d.refresh());
       const filtered = isFiltered();
       resets.forEach((el) => {
         if (el.hasAttribute("data-filter-reset-always")) return;
@@ -2792,6 +2827,12 @@ function initListFilters() {
         for (const g of groups) {
           const want = state.filters[g];
           if (want && !(item.values[g] && item.values[g].has(want))) return false;
+        }
+        if (state.from) {
+          if (!item.date) return false;
+          const d = new Date(item.date);
+          const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+          if (day < state.from || day > (state.to || state.from)) return false;
         }
         return !q || item.text.includes(q);
       });
@@ -2884,6 +2925,8 @@ function initListFilters() {
         e.preventDefault();
         groups.forEach((g) => (state.filters[g] = ""));
         state.query = "";
+        state.from = 0;
+        state.to = 0;
         update();
       })
     );
@@ -3073,11 +3116,258 @@ function initListFilters() {
       if (select.getAttribute("data-filter-custom") !== "false" && root.getAttribute("data-filter-custom") !== "false") buildDropdown(select);
     });
 
+    // Datumprikker: [data-filter-datepicker] → uitklapkalender met periode-selectie
+    const datePickers = [];
+    const dayStart = (t) => {
+      const d = new Date(t);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    };
+    const eventDays = new Set(items.filter((i) => i.date).map((i) => dayStart(i.date)));
+    const MONTHS_SHORT = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+    const fmtDay = (t, withYear) => {
+      const d = new Date(t);
+      return d.getDate() + " " + MONTHS_SHORT[d.getMonth()] + (withYear ? " " + d.getFullYear() : "");
+    };
+    const rangeLabel = () => {
+      if (!state.from) return null;
+      const to = state.to || state.from;
+      if (to === state.from) return fmtDay(state.from, true);
+      const sameYear = new Date(state.from).getFullYear() === new Date(to).getFullYear();
+      return fmtDay(state.from, !sameYear) + " – " + fmtDay(to, true);
+    };
+
+    const buildDatePicker = (host) => {
+      const placeholder = host.getAttribute("data-filter-datepicker-label") || "Datum";
+      const id = "fdp-" + Math.random().toString(36).slice(2, 8);
+      const wrap = document.createElement("div");
+      wrap.className = "filter-dropdown filter-datepicker";
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "filter-dropdown__button";
+      button.setAttribute("aria-haspopup", "dialog");
+      button.setAttribute("aria-expanded", "false");
+      button.setAttribute("aria-controls", id);
+      const label = document.createElement("span");
+      label.className = "filter-dropdown__label";
+      button.appendChild(label);
+      button.insertAdjacentHTML(
+        "beforeend",
+        '<svg class="filter-dropdown__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
+      );
+
+      const panel = document.createElement("div");
+      panel.className = "filter-datepicker__panel";
+      panel.id = id;
+      panel.setAttribute("role", "dialog");
+      panel.setAttribute("aria-label", placeholder + " kiezen");
+      panel.setAttribute("data-lenis-prevent", "");
+      panel.hidden = true;
+
+      const arrow = (d) =>
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
+      panel.innerHTML =
+        '<div class="filter-datepicker__presets"></div>' +
+        '<div class="filter-datepicker__head">' +
+        '<button type="button" class="filter-datepicker__nav" data-dp-prev aria-label="Vorige maand">' + arrow("M15 6l-6 6 6 6") + "</button>" +
+        '<div class="filter-datepicker__title" aria-live="polite"></div>' +
+        '<button type="button" class="filter-datepicker__nav" data-dp-next aria-label="Volgende maand">' + arrow("M9 6l6 6-6 6") + "</button>" +
+        "</div>" +
+        '<div class="filter-datepicker__weekdays"><span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span></div>' +
+        '<div class="filter-datepicker__grid" role="grid"></div>' +
+        '<div class="filter-datepicker__foot"><span class="filter-datepicker__hint"></span><button type="button" class="filter-datepicker__clear">Wis datum</button></div>';
+
+      wrap.appendChild(button);
+      wrap.appendChild(panel);
+      host.appendChild(wrap);
+
+      const presetsEl = panel.querySelector(".filter-datepicker__presets");
+      const titleEl = panel.querySelector(".filter-datepicker__title");
+      const gridEl = panel.querySelector(".filter-datepicker__grid");
+      const hintEl = panel.querySelector(".filter-datepicker__hint");
+      const clearEl = panel.querySelector(".filter-datepicker__clear");
+
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      const presets = [
+        { label: "Deze maand", from: new Date(y, m, 1), to: new Date(y, m + 1, 0) },
+        { label: "Vorige maand", from: new Date(y, m - 1, 1), to: new Date(y, m, 0) },
+        { label: "Dit jaar", from: new Date(y, 0, 1), to: new Date(y, 11, 31) },
+        { label: "Vorig jaar", from: new Date(y - 1, 0, 1), to: new Date(y - 1, 11, 31) }
+      ];
+      const presetBtns = presets.map((p) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "filter-datepicker__preset";
+        b.textContent = p.label;
+        on(b, "click", () => {
+          state.from = p.from.getTime();
+          state.to = p.to.getTime();
+          pending = false;
+          view = new Date(p.from.getFullYear(), p.from.getMonth(), 1);
+          update();
+          close();
+        });
+        presetsEl.appendChild(b);
+        return { b, p };
+      });
+
+      const latest = items.reduce((max, i) => (i.date > max ? i.date : max), 0);
+      let view = (() => {
+        const base = state.from || latest || Date.now();
+        const d = new Date(base);
+        return new Date(d.getFullYear(), d.getMonth(), 1);
+      })();
+      let pending = false;
+      let hoverDay = 0;
+      let isOpen = false;
+
+      let cells = [];
+      const paint = () => {
+        const lo = pending ? Math.min(state.from, hoverDay || state.from) : state.from;
+        const hi = pending ? Math.max(state.from, hoverDay || state.from) : state.to || state.from;
+        cells.forEach((cell) => {
+          const t = +cell.dataset.day;
+          const inRange = !!lo && t >= lo && t <= hi;
+          cell.classList.toggle("is-in-range", inRange);
+          cell.classList.toggle("is-start", !!lo && t === lo);
+          cell.classList.toggle("is-end", !!lo && t === hi);
+          cell.setAttribute("aria-pressed", inRange ? "true" : "false");
+        });
+        hintEl.textContent = pending ? "Kies een einddatum" : state.from ? rangeLabel() : "Kies een begindatum";
+        clearEl.hidden = !state.from;
+        presetBtns.forEach(({ b, p }) =>
+          b.classList.toggle("is-active", !pending && state.from === p.from.getTime() && state.to === p.to.getTime())
+        );
+      };
+
+      const renderGrid = () => {
+        const vy = view.getFullYear();
+        const vm = view.getMonth();
+        titleEl.textContent = MONTHS_NL[vm].charAt(0).toUpperCase() + MONTHS_NL[vm].slice(1) + " " + vy;
+        const offset = (new Date(vy, vm, 1).getDay() + 6) % 7;
+        const today = dayStart(Date.now());
+        gridEl.innerHTML = "";
+        cells = [];
+        for (let i = 0; i < 42; i++) {
+          const d = new Date(vy, vm, 1 - offset + i);
+          const t = d.getTime();
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "filter-datepicker__day";
+          cell.textContent = d.getDate();
+          cell.dataset.day = String(t);
+          cell.setAttribute("aria-label", fmtDay(t, true) + (eventDays.has(t) ? ", met events" : ""));
+          if (d.getMonth() !== vm) cell.classList.add("is-outside");
+          if (t === today) cell.classList.add("is-today");
+          if (eventDays.has(t)) cell.classList.add("has-event");
+          gridEl.appendChild(cell);
+          cells.push(cell);
+        }
+        paint();
+      };
+
+      const refresh = () => {
+        const text = rangeLabel();
+        label.textContent = text || placeholder;
+        button.classList.toggle("is-filtered", !!state.from);
+        if (isOpen) paint();
+      };
+
+      const open = () => {
+        if (isOpen) return;
+        isOpen = true;
+        if (state.from) view = new Date(new Date(state.from).getFullYear(), new Date(state.from).getMonth(), 1);
+        renderGrid();
+        panel.hidden = false;
+        wrap.classList.add("is-open");
+        button.setAttribute("aria-expanded", "true");
+        if (!reducedMotion) gsap.fromTo(panel, { autoAlpha: 0, y: -6 }, { autoAlpha: 1, y: 0, duration: 0.25, ease: "power2.out" });
+      };
+
+      const close = (focusButton = false) => {
+        if (!isOpen) return;
+        isOpen = false;
+        if (pending) {
+          // Halve selectie: dan geldt het als één dag
+          state.to = state.from;
+          pending = false;
+          update();
+        }
+        wrap.classList.remove("is-open");
+        button.setAttribute("aria-expanded", "false");
+        const done = () => (panel.hidden = true);
+        if (reducedMotion) done();
+        else gsap.to(panel, { autoAlpha: 0, y: -6, duration: 0.18, ease: "power2.in", onComplete: done });
+        if (focusButton) button.focus({ preventScroll: true });
+      };
+
+      on(button, "click", () => (isOpen ? close() : open()));
+      on(panel.querySelector("[data-dp-prev]"), "click", () => {
+        view = new Date(view.getFullYear(), view.getMonth() - 1, 1);
+        renderGrid();
+      });
+      on(panel.querySelector("[data-dp-next]"), "click", () => {
+        view = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+        renderGrid();
+      });
+      on(gridEl, "click", (e) => {
+        const cell = e.target.closest(".filter-datepicker__day");
+        if (!cell) return;
+        const t = +cell.dataset.day;
+        if (!pending) {
+          state.from = t;
+          state.to = 0;
+          pending = true;
+          hoverDay = t;
+          paint();
+          return;
+        }
+        state.to = Math.max(state.from, t);
+        state.from = Math.min(state.from, t);
+        pending = false;
+        update();
+        close(true);
+      });
+      on(gridEl, "mouseover", (e) => {
+        if (!pending) return;
+        const cell = e.target.closest(".filter-datepicker__day");
+        if (!cell || +cell.dataset.day === hoverDay) return;
+        hoverDay = +cell.dataset.day;
+        paint();
+      });
+      on(clearEl, "click", () => {
+        state.from = 0;
+        state.to = 0;
+        pending = false;
+        update();
+        paint();
+      });
+      on(panel, "keydown", (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          close(true);
+        }
+      });
+      on(document, "pointerdown", (e) => {
+        if (isOpen && !wrap.contains(e.target)) close();
+      });
+
+      refresh();
+      const api = { refresh, wrap };
+      datePickers.push(api);
+      return api;
+    };
+
+    root.querySelectorAll("[data-filter-datepicker]").forEach((host) => buildDatePicker(host));
+
     apply(false);
 
     addCleanup(root, () => {
       clearTimeout(searchTimer);
       customDropdowns.forEach((d) => d.wrap.remove());
+      datePickers.forEach((d) => d.wrap.remove());
       if (tween) tween.kill();
       listeners.forEach((off) => off());
     });
