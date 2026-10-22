@@ -3184,6 +3184,9 @@ function initListFilters() {
 
     const state = { filters: {}, query: "", sort: sorts[0] ? sorts[0].value || "new" : "", from: 0, to: 0 };
     groups.forEach((g) => (state.filters[g] = ""));
+    const perPage = Math.max(0, Math.floor(toNumber(root.dataset.filterPaginate, 0)));
+    state.page = 1;
+    let pager = null;
 
     selects.forEach((select) => {
       if (!select.hasAttribute("data-filter-populate")) return;
@@ -3236,6 +3239,7 @@ function initListFilters() {
         const mt = (v || "").match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
         return mt ? new Date(+mt[1], +mt[2] - 1, +mt[3]).getTime() : 0;
       };
+      if (perPage && params.has(uk("pagina"))) state.page = Math.max(1, parseInt(params.get(uk("pagina")), 10) || 1);
       if (params.has(uk("van"))) state.from = ymd(params.get(uk("van")));
       if (params.has(uk("tot"))) state.to = ymd(params.get(uk("tot")));
       if (state.to && !state.from) state.from = state.to;
@@ -3254,6 +3258,7 @@ function initListFilters() {
       state.from ? params.set(uk("van"), toYmd(state.from)) : params.delete(uk("van"));
       state.from && state.to ? params.set(uk("tot"), toYmd(state.to)) : params.delete(uk("tot"));
       sorts.length && state.sort && state.sort !== (sorts[0].options[0] || {}).value ? params.set(uk("sort"), state.sort) : params.delete(uk("sort"));
+      perPage && state.page > 1 ? params.set(uk("pagina"), String(state.page)) : params.delete(uk("pagina"));
       const qs = params.toString();
       try {
         history.replaceState(history.state, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
@@ -3315,7 +3320,14 @@ function initListFilters() {
         sorted.forEach((item) => item.el.parentElement && item.el.parentElement.appendChild(item.el));
       }
 
-      const show = new Set(matches.map((m) => m.el));
+      let show = new Set(matches.map((m) => m.el));
+      if (perPage) {
+        const ordered = Array.from(show).sort((a, b) => (a.compareDocumentPosition(b) & 4 ? -1 : 1));
+        const pages = Math.max(1, Math.ceil(ordered.length / perPage));
+        state.page = Math.min(Math.max(1, state.page), pages);
+        show = new Set(ordered.slice((state.page - 1) * perPage, state.page * perPage));
+        renderPager(pages);
+      }
       if (tween) tween.progress(1);
       items.forEach((item) => (item.el.style.display = show.has(item.el) ? "" : "none"));
       empties.forEach((el) => (el.style.display = matches.length ? "none" : ""));
@@ -3343,9 +3355,56 @@ function initListFilters() {
     };
 
     const update = () => {
+      state.page = 1;
       writeUrl();
       apply(true);
     };
+
+    const goToPage = (n) => {
+      if (n === state.page) return;
+      state.page = n;
+      writeUrl();
+      apply(true);
+      const list = items[0] && (items[0].el.closest(".w-dyn-list") || items[0].el.parentElement);
+      const target = list || root;
+      const top = target.getBoundingClientRect().top + window.scrollY - (parseFloat(root.dataset.filterScrollOffset) || 140);
+      if (hasLenis && lenis) lenis.scrollTo(top, { duration: reducedMotion ? 0 : 0.8 });
+      else window.scrollTo({ top, behavior: reducedMotion ? "auto" : "smooth" });
+    };
+
+    function renderPager(pages) {
+      if (!pager) {
+        const list = items[0] && (items[0].el.closest(".w-dyn-list") || items[0].el.parentElement);
+        if (!list) return;
+        pager = document.createElement("nav");
+        pager.className = "pac-pager";
+        pager.setAttribute("aria-label", "Paginering");
+        list.insertAdjacentElement("afterend", pager);
+        pager.addEventListener("click", (e) => {
+          const b = e.target.closest("[data-page]");
+          if (!b || b.disabled) return;
+          e.preventDefault();
+          goToPage(parseInt(b.getAttribute("data-page"), 10));
+        });
+      }
+      pager.style.display = pages > 1 ? "" : "none";
+      if (pages <= 1) return (pager.innerHTML = "");
+      const cur = state.page;
+      const nums = [];
+      for (let i = 1; i <= pages; i++) {
+        if (i === 1 || i === pages || Math.abs(i - cur) <= 1) nums.push(i);
+        else if (nums[nums.length - 1] !== "…") nums.push("…");
+      }
+      const arrow = (d) => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (d < 0 ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6") + '"/></svg>';
+      let html = '<button type="button" class="pac-pager__btn is-arrow" data-page="' + (cur - 1) + '"' + (cur === 1 ? " disabled" : "") + ' aria-label="Vorige pagina">' + arrow(-1) + "</button>";
+      nums.forEach((n) => {
+        html += n === "…"
+          ? '<span class="pac-pager__gap" aria-hidden="true">…</span>'
+          : '<button type="button" class="pac-pager__btn' + (n === cur ? " is-current" : "") + '" data-page="' + n + '"' + (n === cur ? ' aria-current="page"' : "") + ">" + n + "</button>";
+      });
+      html += '<button type="button" class="pac-pager__btn is-arrow" data-page="' + (cur + 1) + '"' + (cur === pages ? " disabled" : "") + ' aria-label="Volgende pagina">' + arrow(1) + "</button>";
+      pager.innerHTML = html;
+    }
 
     const listeners = [];
     const on = (el, type, fn, opts) => {
@@ -4051,6 +4110,9 @@ function initFilterSheets() {
     const root = sheet.closest("[data-filter]") || sheet.parentElement;
     const marker = document.createComment("filter-sheet");
     sheet.parentNode.insertBefore(marker, sheet);
+    const spacer = document.createElement("div");
+    spacer.className = "pac-filter-spacer";
+    spacer.setAttribute("aria-hidden", "true");
 
     const fab = document.createElement("button");
     fab.type = "button";
@@ -4060,6 +4122,8 @@ function initFilterSheets() {
       '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filters</span><span class="pac-filter-fab__dot" aria-hidden="true"></span>';
     const backdrop = document.createElement("div");
     backdrop.className = "pac-filter-backdrop";
+    host.appendChild(fab);
+    host.appendChild(backdrop);
 
     const reset = root.querySelector("[data-filter-reset]");
     const syncDot = () => fab.classList.toggle("is-filtered", !!reset && reset.style.display !== "none");
@@ -4072,8 +4136,35 @@ function initFilterSheets() {
 
     let isOpen = false;
     let inView = false;
-    const setFab = () => fab.classList.toggle("is-visible", mq.matches && inView && !isOpen);
+    let passed = false;
+    let backTimer = null;
+
+    const checkPassed = () => {
+      if (mq.matches) return;
+      const ref = spacer.parentNode ? spacer : sheet;
+      passed = ref.getBoundingClientRect().bottom < 0;
+    };
+    const setFab = () => {
+      checkPassed();
+      const show = !isOpen && inView && (mq.matches || passed);
+      fab.classList.toggle("is-visible", show);
+    };
+
+    const moveBack = () => {
+      sheet.classList.remove("is-sheet", "is-modal");
+      if (marker.parentNode && sheet.previousSibling !== marker) marker.parentNode.insertBefore(sheet, marker.nextSibling);
+      spacer.remove();
+    };
+
     const open = () => {
+      clearTimeout(backTimer);
+      if (!mq.matches && !sheet.classList.contains("is-modal")) {
+        spacer.style.height = sheet.offsetHeight + "px";
+        marker.parentNode.insertBefore(spacer, marker.nextSibling);
+        host.appendChild(sheet);
+        sheet.classList.add("is-sheet", "is-modal");
+        void sheet.offsetWidth;
+      }
       isOpen = true;
       sheet.classList.add("is-open");
       backdrop.classList.add("is-open");
@@ -4090,26 +4181,33 @@ function initFilterSheets() {
       backdrop.classList.remove("is-open");
       document.documentElement.classList.remove("pac-sheet-open");
       if (lenis && lenis.start) lenis.start();
-      setFab();
+      if (sheet.classList.contains("is-modal")) backTimer = setTimeout(() => !isOpen && !mq.matches && moveBack(), 400);
       if (scrollToList) {
-        const target = root.querySelector("[data-filter-item]") ? root.querySelector(".w-dyn-list, [data-filter-list]") || root : root;
+        const target = root.querySelector(".w-dyn-list, [data-filter-list]") || root;
         const y = target.getBoundingClientRect().top + window.scrollY - 120;
         if (lenis && lenis.scrollTo) lenis.scrollTo(y, { duration: 0.8 });
         else window.scrollTo({ top: y, behavior: "smooth" });
       }
+      setFab();
       fab.focus({ preventScroll: true });
     };
 
     const place = () => {
+      clearTimeout(backTimer);
+      if (isOpen) {
+        isOpen = false;
+        sheet.classList.remove("is-open");
+        backdrop.classList.remove("is-open");
+        document.documentElement.classList.remove("pac-sheet-open");
+        if (lenis && lenis.start) lenis.start();
+      }
       if (mq.matches) {
+        spacer.remove();
+        sheet.classList.remove("is-modal");
+        sheet.classList.add("is-sheet");
         if (sheet.parentNode !== host) host.appendChild(sheet);
-        if (!fab.parentNode) host.appendChild(fab);
-        if (!backdrop.parentNode) host.appendChild(backdrop);
       } else {
-        close(false);
-        if (marker.parentNode && sheet.previousSibling !== marker) marker.parentNode.insertBefore(sheet, marker.nextSibling);
-        fab.remove();
-        backdrop.remove();
+        moveBack();
       }
       setFab();
     };
@@ -4123,12 +4221,22 @@ function initFilterSheets() {
     );
     io.observe(root);
 
+    let raf = 0;
+    const onScroll = () => {
+      if (raf || mq.matches) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setFab();
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
     fab.addEventListener("click", open);
     backdrop.addEventListener("click", () => close(false));
     sheet.querySelector(".pac-filter-sheet__close").addEventListener("click", () => close(false));
     sheet.querySelector(".pac-filter-sheet__apply").addEventListener("click", () => close(true));
     const onKey = (e) => {
-      if (e.key === "Escape" && isOpen) close(false);
+      if (e.key === "Escape" && isOpen && !sheet.querySelector(".filter-dropdown.is-open, .filter-datepicker.is-open")) close(false);
     };
     document.addEventListener("keydown", onKey);
     const onMq = () => place();
@@ -4138,6 +4246,9 @@ function initFilterSheets() {
     addCleanup(root, () => {
       io.disconnect();
       if (mo) mo.disconnect();
+      clearTimeout(backTimer);
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("keydown", onKey);
       mq.removeEventListener ? mq.removeEventListener("change", onMq) : mq.removeListener(onMq);
       document.documentElement.classList.remove("pac-sheet-open");
