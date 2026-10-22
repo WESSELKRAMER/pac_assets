@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 12:10";
+window.PAC_BUNDLE = "2026-10-22 14:55";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -78,6 +78,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-slug]")) initProjectFilter();
   if (has("[data-chapter]")) initProjectChapters();
   if (has("[data-project-page]")) initProjectMediaSlider();
+  if (has("[data-home-featured]")) initHomeFeatured();
   if (has("[data-status]")) initComingSoon();
   if (has('[data-pill-nav="award"]')) initAwardsNav();
   if (has('[data-pill-nav="award"]')) initAwardsEmpty();
@@ -3920,6 +3921,82 @@ function initAwardsEmpty() {
     '<p>Benieuwd naar eerdere edities? <a href="/pan-asian-awards/archief">Bekijk het archief</a>.</p>' +
     "</div></div>";
   hidden[0].parentNode.insertBefore(note, hidden[0]);
+}
+
+function initHomeFeatured() {
+  const items = Array.from(nextPage.querySelectorAll("[data-home-featured]"));
+  const cards = Array.from(nextPage.querySelectorAll(".home_grid_card")).filter(
+    (c) => !c.querySelector('a[href="/over-ons"]') && !c.hasAttribute("data-home-static")
+  );
+  if (!items.length || !cards.length) return;
+  const val = (el, name) => (el.getAttribute(name) || "").trim();
+  const types = [
+    { key: "news", path: "/nieuws-media/", label: "Nieuws" },
+    { key: "verhaal", path: "/verhalen/", label: "Verhaal" },
+    { key: "agenda", path: "/agenda/", label: "Event" }
+  ];
+  const bySlot = {};
+  items.forEach((item) => {
+    const m = val(item, "data-pos").match(/\d/);
+    if (m && !bySlot[m[0]]) bySlot[m[0]] = item;
+  });
+  cards.forEach((card, i) => {
+    const item = bySlot[String(i + 1)];
+    if (!item) return;
+    const ref = types.find((t) => val(item, "data-" + t.key + "-slug"));
+    const pick = (own, refAttr) => val(item, own) || (ref ? val(item, "data-" + ref.key + "-" + refAttr) : "");
+    const title = pick("data-title", "title");
+    const text = pick("data-text", "intro");
+    const eyebrow = val(item, "data-eyebrow") || (ref ? ref.label : "");
+    const domain = val(item, "data-domain");
+    const link = val(item, "data-link") || (ref ? ref.path + val(item, "data-" + ref.key + "-slug") : "");
+    const button = val(item, "data-button");
+    const imgs = Array.from(item.querySelectorAll("img[data-img]")).filter(
+      (im) => !im.classList.contains("w-dyn-bind-empty") && (im.getAttribute("src") || "") && !/placeholder/.test(im.getAttribute("src"))
+    );
+    const order = ["own"].concat(ref ? [ref.key] : []);
+    const img = order.map((k) => imgs.find((im) => im.getAttribute("data-img") === k)).find(Boolean);
+
+    const heading = card.querySelector(".grid_card_heading_wrap h1, .grid_card_heading_wrap h2, .grid_card_heading_wrap h3");
+    if (heading && title) heading.textContent = title;
+    const cat = card.querySelector(".category_text");
+    if (cat) {
+      cat.textContent = eyebrow;
+      cat.style.display = eyebrow ? "" : "none";
+    }
+    const para = card.querySelector(".grid_card_heading_wrap p");
+    if (para) {
+      para.textContent = text;
+      para.style.display = text ? "" : "none";
+    }
+    const tagWrap = card.querySelector(".tag_wrapper");
+    const tagText = card.querySelector(".tag_text");
+    if (tagText) tagText.textContent = domain;
+    if (tagWrap) tagWrap.style.display = domain ? "" : "none";
+    const cardImg = card.querySelector(".grid_card_img_wrapper img");
+    if (cardImg && img) {
+      cardImg.removeAttribute("srcset");
+      cardImg.removeAttribute("sizes");
+      cardImg.setAttribute("src", img.getAttribute("src"));
+      cardImg.setAttribute("alt", img.getAttribute("alt") || title);
+    }
+    const cta = card.querySelector(".grid_card_cta_wrapper");
+    if (cta) {
+      if (link) {
+        cta.setAttribute("href", link);
+        if (/^https?:\/\//.test(link) && !link.includes(location.hostname)) {
+          cta.setAttribute("target", "_blank");
+          cta.setAttribute("rel", "noopener");
+        }
+        cta.style.display = "";
+      } else if ((cta.getAttribute("href") || "#") === "#") {
+        cta.style.display = "none";
+      }
+      const ctaText = cta.querySelector(".grid_card_cta_text");
+      if (ctaText && button) ctaText.textContent = button;
+    }
+    card.setAttribute("data-home-filled", "");
+  });
 }
 
 function initProjectMediaSlider() {

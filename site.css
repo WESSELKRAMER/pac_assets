@@ -2040,3 +2040,5 @@ input[type="submit"] {
   pointer-events: none;
 }
 .pac-award-year.is-archive { opacity: .8; color: var(--awards-archive, #bd947e); border-right-color: var(--awards-archive, #bd947e); }
+
+[data-home-featured-source] { display: none !important; }
