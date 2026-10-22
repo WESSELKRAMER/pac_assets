@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 11:50";
+window.PAC_BUNDLE = "2026-10-22 11:55";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3857,6 +3857,7 @@ function initAwardsNav() {
 function initAwardsEmpty() {
   const page = nextPage.matches && nextPage.matches("[data-barba='container']") ? nextPage : nextPage.querySelector("[data-barba='container']") || nextPage;
   if (page.hasAttribute("data-awards-edition") || page.hasAttribute("data-awards-page")) return;
+  if (page.querySelector(".pac-awards-soon")) return;
   const year = (page.querySelector(".display_text_big") || {}).textContent;
   const label = ((page.querySelector('[data-pill-nav="award"] .w--current') || {}).textContent || "").trim();
   const hidden = [];
