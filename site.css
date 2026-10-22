@@ -1952,12 +1952,31 @@ form:has([data-submit-trigger]) input[type="submit"],
   left: .4rem;
   font-size: .7rem;
 }
+.pac-domain-row__eyebrow {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.35;
+}
+@media (min-width: 768px) and (max-width: 991px) {
+  .pac-domain-row .projects_item_inner_wrap { gap: 1.25rem; }
+  .pac-domain-row .projects_item_left { flex-basis: 7.5rem; width: 7.5rem; }
+  .pac-domain-row .projects_item_right { gap: 1rem; }
+  .pac-domain-row h3 { font-size: 1.35rem; }
+}
 @media (max-width: 767px) {
-  .pac-domain-row .projects_item_inner_wrap { gap: 1rem; padding-block: 1rem; }
-  .pac-domain-row .projects_item_left { flex-basis: 6.5rem; width: 6.5rem; }
+  .pac-domain-row .projects_item_inner_wrap { gap: 1rem; padding-block: 1.25rem; align-items: flex-start; }
+  .pac-domain-row .projects_item_left { flex-basis: 5.5rem; width: 5.5rem; align-self: flex-start; }
+  .pac-domain-row .projects_item_thumb_wrap { aspect-ratio: 1 / 1; border-radius: var(--_layout---radii--s, .5rem); }
   .pac-domain-row .u-line_responsive { display: none; }
-  .pac-domain-row .projects_item_right { flex-direction: column; align-items: flex-start; justify-content: center; gap: .5rem; }
-  .pac-domain-row h3 { font-size: 1.2rem; }
+  .pac-domain-row .projects_item_right { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: .75rem; }
+  .pac-domain-row .agenda_item_right_left { width: 100%; }
+  .pac-domain-row__eyebrow { margin-bottom: .25rem; font-size: .8125rem; }
+  .pac-domain-row h3 { font-size: 1.15rem; line-height: 1.2; }
+  .pac-domain-row .primary_cta { gap: .625rem; }
+  .pac-domain-row .primary_cta .cta_text { font-size: .8125rem; }
+  .pac-domain-row .primary_cta .cta_arrow_wrapper { width: 2.25rem; height: 2.25rem; padding: .6rem; }
 }
 
 @media (max-width: 991px) {
