@@ -111,7 +111,9 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-pill-nav]")) initPillNav();
   if (has(SEL.breadcrumbs + ", [data-scroll-row]")) initBreadcrumbs();
   if (has("[data-hover-reveal]")) initHoverReveal();
+  if (has("[data-filter-sheet]")) buildFilterSheets();
   if (has("[data-filter]")) initListFilters();
+  if (has(".pac-filter-sheet")) initFilterSheets();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has("[data-stack]")) initStackCards();
   if (has(SEL.bigLogo)) initBigLogoReveal();
@@ -4015,6 +4017,128 @@ function initStoryChapters() {
     const rt = panel.querySelector(".rich-text");
     c.nodes.forEach((n) => rt.appendChild(n));
     panelList.appendChild(panel);
+  });
+}
+
+function buildFilterSheets() {
+  nextPage.querySelectorAll("[data-filter-sheet]").forEach((panel) => {
+    if (panel.closest(".pac-filter-sheet")) return;
+    const sheet = document.createElement("div");
+    sheet.className = "pac-filter-sheet";
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-modal", "true");
+    sheet.setAttribute("aria-label", "Filters");
+    sheet.setAttribute("data-lenis-prevent", "");
+    sheet.innerHTML =
+      '<div class="pac-filter-sheet__head"><span class="pac-filter-sheet__title">Filters</span>' +
+      '<button type="button" class="pac-filter-sheet__close" aria-label="Sluit filters"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+      '<div class="pac-filter-sheet__body"></div>' +
+      '<div class="pac-filter-sheet__foot"><button type="button" class="pac-filter-sheet__apply">Toon <span data-filter-count data-filter-singular="resultaat" data-filter-plural="resultaten"></span></button></div>';
+    panel.parentNode.insertBefore(sheet, panel);
+    sheet.querySelector(".pac-filter-sheet__body").appendChild(panel);
+  });
+}
+
+function initFilterSheets() {
+  const mq = window.matchMedia("(max-width: 767px)");
+  const host = nextPage.matches && nextPage.matches('[data-barba="container"]') ? nextPage : nextPage.querySelector('[data-barba="container"]') || document.body;
+  nextPage.querySelectorAll(".pac-filter-sheet").forEach((sheet) => {
+    if (sheet.dataset.sheetInit === "true") return;
+    sheet.dataset.sheetInit = "true";
+    const root = sheet.closest("[data-filter]") || sheet.parentElement;
+    const marker = document.createComment("filter-sheet");
+    sheet.parentNode.insertBefore(marker, sheet);
+
+    const fab = document.createElement("button");
+    fab.type = "button";
+    fab.className = "pac-filter-fab";
+    fab.setAttribute("aria-haspopup", "dialog");
+    fab.innerHTML =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filters</span><span class="pac-filter-fab__dot" aria-hidden="true"></span>';
+    const backdrop = document.createElement("div");
+    backdrop.className = "pac-filter-backdrop";
+
+    const reset = root.querySelector("[data-filter-reset]");
+    const syncDot = () => fab.classList.toggle("is-filtered", !!reset && reset.style.display !== "none");
+    let mo = null;
+    if (reset) {
+      mo = new MutationObserver(syncDot);
+      mo.observe(reset, { attributes: true, attributeFilter: ["style"] });
+    }
+    syncDot();
+
+    let isOpen = false;
+    let inView = false;
+    const setFab = () => fab.classList.toggle("is-visible", mq.matches && inView && !isOpen);
+    const open = () => {
+      isOpen = true;
+      sheet.classList.add("is-open");
+      backdrop.classList.add("is-open");
+      document.documentElement.classList.add("pac-sheet-open");
+      if (lenis && lenis.stop) lenis.stop();
+      setFab();
+      const c = sheet.querySelector(".pac-filter-sheet__close");
+      if (c) c.focus({ preventScroll: true });
+    };
+    const close = (scrollToList) => {
+      if (!isOpen) return;
+      isOpen = false;
+      sheet.classList.remove("is-open");
+      backdrop.classList.remove("is-open");
+      document.documentElement.classList.remove("pac-sheet-open");
+      if (lenis && lenis.start) lenis.start();
+      setFab();
+      if (scrollToList) {
+        const target = root.querySelector("[data-filter-item]") ? root.querySelector(".w-dyn-list, [data-filter-list]") || root : root;
+        const y = target.getBoundingClientRect().top + window.scrollY - 120;
+        if (lenis && lenis.scrollTo) lenis.scrollTo(y, { duration: 0.8 });
+        else window.scrollTo({ top: y, behavior: "smooth" });
+      }
+      fab.focus({ preventScroll: true });
+    };
+
+    const place = () => {
+      if (mq.matches) {
+        if (sheet.parentNode !== host) host.appendChild(sheet);
+        if (!fab.parentNode) host.appendChild(fab);
+        if (!backdrop.parentNode) host.appendChild(backdrop);
+      } else {
+        close(false);
+        if (marker.parentNode && sheet.previousSibling !== marker) marker.parentNode.insertBefore(sheet, marker.nextSibling);
+        fab.remove();
+        backdrop.remove();
+      }
+      setFab();
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => (inView = e.isIntersecting));
+        setFab();
+      },
+      { rootMargin: "-30% 0px -20% 0px" }
+    );
+    io.observe(root);
+
+    fab.addEventListener("click", open);
+    backdrop.addEventListener("click", () => close(false));
+    sheet.querySelector(".pac-filter-sheet__close").addEventListener("click", () => close(false));
+    sheet.querySelector(".pac-filter-sheet__apply").addEventListener("click", () => close(true));
+    const onKey = (e) => {
+      if (e.key === "Escape" && isOpen) close(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const onMq = () => place();
+    mq.addEventListener ? mq.addEventListener("change", onMq) : mq.addListener(onMq);
+    place();
+
+    addCleanup(root, () => {
+      io.disconnect();
+      if (mo) mo.disconnect();
+      document.removeEventListener("keydown", onKey);
+      mq.removeEventListener ? mq.removeEventListener("change", onMq) : mq.removeListener(onMq);
+      document.documentElement.classList.remove("pac-sheet-open");
+    });
   });
 }
 
