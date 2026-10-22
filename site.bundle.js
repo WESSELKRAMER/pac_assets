@@ -4087,7 +4087,6 @@ function buildFilterSheets() {
     sheet.setAttribute("role", "dialog");
     sheet.setAttribute("aria-modal", "true");
     sheet.setAttribute("aria-label", "Filters");
-    sheet.setAttribute("data-lenis-prevent", "");
     sheet.innerHTML =
       '<div class="pac-filter-sheet__head"><span class="pac-filter-sheet__title">Filters</span>' +
       '<button type="button" class="pac-filter-sheet__close" aria-label="Sluit filters"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
@@ -4153,6 +4152,7 @@ function initFilterSheets() {
 
     const moveBack = () => {
       sheet.classList.remove("is-sheet", "is-modal");
+      sheet.removeAttribute("data-lenis-prevent");
       if (marker.parentNode && sheet.previousSibling !== marker) marker.parentNode.insertBefore(sheet, marker.nextSibling);
       spacer.remove();
     };
@@ -4164,6 +4164,7 @@ function initFilterSheets() {
         marker.parentNode.insertBefore(spacer, marker.nextSibling);
         host.appendChild(sheet);
         sheet.classList.add("is-sheet", "is-modal");
+        sheet.setAttribute("data-lenis-prevent", "");
         void sheet.offsetWidth;
       }
       isOpen = true;
@@ -4207,6 +4208,7 @@ function initFilterSheets() {
         spacer.remove();
         sheet.classList.remove("is-modal");
         sheet.classList.add("is-sheet");
+        sheet.setAttribute("data-lenis-prevent", "");
         if (sheet.parentNode !== host) host.appendChild(sheet);
       } else {
         moveBack();
@@ -4464,24 +4466,21 @@ function initHomeFeatured() {
     const item = bySlot[String(i + 1)];
     if (!item) return;
     const ref = types.find((t) => val(item, "data-" + t.key + "-slug"));
-    const pick = (own, refAttr) => val(item, own) || (ref ? val(item, "data-" + ref.key + "-" + refAttr) : "");
-    const title = pick("data-title", "title");
-    const text = pick("data-text", "intro");
-    const eyebrow = val(item, "data-eyebrow") || (ref ? ref.label : "");
-    const domain = val(item, "data-domain");
-    const ownA = item.querySelector("[data-own-link]");
-    const ownHref = ownA && !ownA.classList.contains("w-dyn-bind-empty") ? (ownA.getAttribute("href") || "").trim() : "";
-    const link = (ownHref && ownHref !== "#" ? ownHref : "") || val(item, "data-link") || (ref ? ref.path + val(item, "data-" + ref.key + "-slug") : "");
-    const button = val(item, "data-button");
-    const imgKeys = ["own", "news", "verhaal", "agenda"];
+    const pick = (refAttr) => (ref ? val(item, "data-" + ref.key + "-" + refAttr) : "");
+    const title = pick("title");
+    const text = pick("intro");
+    const eyebrow = ref ? ref.label : "";
+    const domain = "";
+    const link = ref ? ref.path + val(item, "data-" + ref.key + "-slug") : "";
+    const button = "";
+    const imgKeys = ["news", "verhaal", "agenda"];
     Array.from(item.querySelectorAll("[data-home-carriers] img")).forEach((im, n) => {
       if (!im.hasAttribute("data-img") && imgKeys[n]) im.setAttribute("data-img", imgKeys[n]);
     });
     const imgs = Array.from(item.querySelectorAll("img[data-img]")).filter(
       (im) => !im.classList.contains("w-dyn-bind-empty") && (im.getAttribute("src") || "") && !/placeholder/.test(im.getAttribute("src"))
     );
-    const order = ["own"].concat(ref ? [ref.key] : []);
-    const img = order.map((k) => imgs.find((im) => im.getAttribute("data-img") === k)).find(Boolean);
+    const img = ref ? imgs.find((im) => im.getAttribute("data-img") === ref.key) : null;
 
     const heading = card.querySelector(".grid_card_heading_wrap h1, .grid_card_heading_wrap h2, .grid_card_heading_wrap h3");
     if (heading && title) heading.textContent = title;
