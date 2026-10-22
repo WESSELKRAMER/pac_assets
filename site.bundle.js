@@ -3930,9 +3930,18 @@ function initAwardsEmpty() {
 function initStoryChapters() {
   const src = nextPage.querySelector("[data-chapters-source]");
   if (!src || src.dataset.chaptersBuilt === "true") return;
-  if (src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim()) return;
   const module = src.closest(".domains_module.is--scrolljack") || src.closest(".domains_module");
   if (!module) return;
+  if (src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim()) {
+    const hasTabs = Array.from(module.querySelectorAll(".domains_collection_item")).some(
+      (t) => !t.classList.contains("w-condition-invisible") && (t.querySelector("h1, h2, h3, h4") || t).textContent.trim()
+    );
+    if (!hasTabs) {
+      const outer = (module.parentElement && module.parentElement.closest(".domains_module")) || module;
+      outer.style.display = "none";
+    }
+    return;
+  }
   const tabs = Array.from(module.querySelectorAll(".domains_collection_item"));
   const panels = Array.from(module.querySelectorAll(".domain_contents_item"));
   const panelTpl = panels.find((p) => p.contains(src));
