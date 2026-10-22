@@ -4034,6 +4034,9 @@ function buildFilterSheets() {
       '<button type="button" class="pac-filter-sheet__close" aria-label="Sluit filters"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="pac-filter-sheet__body"></div>' +
       '<div class="pac-filter-sheet__foot"><button type="button" class="pac-filter-sheet__apply">Toon <span data-filter-count data-filter-singular="resultaat" data-filter-plural="resultaten"></span></button></div>';
+    Array.from(panel.querySelectorAll("h1, h2, h3, h4, h5, h6, div, p")).forEach((el) => {
+      if (!el.children.length && /^filters?$/i.test(el.textContent.trim())) el.classList.add("pac-sheet-hide");
+    });
     panel.parentNode.insertBefore(sheet, panel);
     sheet.querySelector(".pac-filter-sheet__body").appendChild(panel);
   });

@@ -2287,3 +2287,8 @@ form:has([data-submit-trigger]) input[type="submit"],
     overflow: hidden;
   }
 }
+@media (max-width: 767px) {
+  .pac-filter-sheet .pac-sheet-hide {
+    display: none !important;
+  }
+}
