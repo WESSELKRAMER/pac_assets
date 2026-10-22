@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 10:00";
+window.PAC_BUNDLE = "2026-10-22 11:20";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -79,6 +79,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-chapter]")) initProjectChapters();
   if (has("[data-project-page]")) initProjectMediaSlider();
   if (has("[data-status]")) initComingSoon();
+  if (has('[data-pill-nav="award"]')) initAwardsNav();
   initDutchDates();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
@@ -3828,6 +3829,23 @@ function toDomainRow(card) {
   h.textContent = title ? title.textContent.trim() : "";
   left.appendChild(h);
   return row;
+}
+
+function initAwardsNav() {
+  const holder = nextPage.matches && nextPage.matches("[data-awards-edition]") ? nextPage : nextPage.querySelector("[data-awards-edition]");
+  const edition = holder ? (holder.getAttribute("data-awards-edition") || "").trim() : "";
+  const path = (window.location.pathname || "").replace(/\/$/, "");
+  nextPage.querySelectorAll('[data-pill-nav="award"] a[href]').forEach((a) => {
+    const label = a.textContent.trim().toLowerCase();
+    let href = a.getAttribute("href") || "";
+    if (label === "archief") href = "/pan-asian-awards/archief";
+    else if (edition && /^\/pan-asian-awards\/[^/]+$/.test(href)) href = href.replace("/pan-asian-awards/", "/pan-asian-awards/" + edition + "/");
+    a.setAttribute("href", href);
+    const current = href.replace(/\/$/, "") === path || (edition && label === "archief" && !path);
+    a.classList.toggle("w--current", !!current);
+    if (current) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
 }
 
 function initProjectMediaSlider() {
