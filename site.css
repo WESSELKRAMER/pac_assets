@@ -2122,3 +2122,30 @@ input[type="submit"] {
 [data-barba="container"] > *:has(.filter-dropdown.is-open, .filter-datepicker.is-open) .container:has(.filter-dropdown.is-open) {
   z-index: 20;
 }
+
+@media (min-width: 992px) {
+  .home_hero_inner .grid_card_img_wrapper {
+    min-width: 0;
+    width: 100%;
+  }
+  .home_hero_inner .grid_card_img_wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+@media (min-width: 992px) and (max-width: 1440px) {
+  .home_hero_inner .grid_card_img_wrapper {
+    aspect-ratio: 3 / 2;
+  }
+  .home_hero_inner .grid_card_top_wrapper {
+    gap: 2rem;
+  }
+  .home_grid_card.is--featured {
+    height: clamp(30rem, 60svh + 6rem, 38rem + 10vh);
+    min-height: 0;
+  }
+  .home_grid_card.is--image_dark {
+    padding-bottom: 8.5rem;
+  }
+}
