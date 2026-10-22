@@ -80,6 +80,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-page]")) initProjectMediaSlider();
   if (has("[data-home-featured]")) initHomeFeatured();
   initContactLinks();
+  if (has("[data-chapters-source]")) initStoryChapters();
   if (has("[data-story-collection]")) initFeaturedStories();
   if (has("form select")) initFormSelects();
   if (has("[data-status]")) initComingSoon();
@@ -3924,6 +3925,92 @@ function initAwardsEmpty() {
     '<p>Benieuwd naar eerdere edities? <a href="/pan-asian-awards/archief">Bekijk het archief</a>.</p>' +
     "</div></div>";
   hidden[0].parentNode.insertBefore(note, hidden[0]);
+}
+
+function initStoryChapters() {
+  const src = nextPage.querySelector("[data-chapters-source]");
+  if (!src || src.dataset.chaptersBuilt === "true") return;
+  if (src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim()) return;
+  const module = src.closest(".domains_module.is--scrolljack") || src.closest(".domains_module");
+  if (!module) return;
+  const tabs = Array.from(module.querySelectorAll(".domains_collection_item"));
+  const panels = Array.from(module.querySelectorAll(".domain_contents_item"));
+  const panelTpl = panels.find((p) => p.contains(src));
+  const tabTpl = tabs[0];
+  if (!tabTpl || !panelTpl) return;
+
+  const chapters = [];
+  let cur = null;
+  Array.from(src.childNodes).forEach((n) => {
+    if (n.nodeType === 1 && n.tagName === "H2") {
+      cur = { h2: n, nodes: [n] };
+      chapters.push(cur);
+      return;
+    }
+    const meaningful = n.nodeType === 1 ? (n.textContent.replace(/‍/g, "").trim() || n.querySelector("img, iframe, video")) : n.textContent.trim();
+    if (!cur) {
+      if (!meaningful) return;
+      cur = { h2: null, nodes: [] };
+      chapters.push(cur);
+    }
+    cur.nodes.push(n);
+  });
+  if (!chapters.length) return;
+
+  chapters.forEach((c) => {
+    c.nodes.forEach((n) => n.parentNode && n.parentNode.removeChild(n));
+    let nav = "";
+    if (c.h2) {
+      const raw = c.h2.textContent.trim();
+      const parts = raw.split(/\s+\|\s+/);
+      if (parts.length > 1) {
+        nav = parts[0].trim();
+        c.h2.textContent = parts.slice(1).join(" | ").trim();
+      } else nav = raw;
+    }
+    c.nav = nav;
+  });
+
+  tabs.forEach((t) => t !== tabTpl && t.remove());
+  panels.forEach((p) => p !== panelTpl && p.remove());
+  const tabParent = tabTpl.parentNode;
+  const panelParent = panelTpl.parentNode;
+  const tabBase = tabTpl.cloneNode(true);
+  src.innerHTML = "";
+  const panelBase = panelTpl.cloneNode(true);
+  tabTpl.remove();
+  panelTpl.remove();
+
+  const clean = (el) => {
+    el.classList.remove("w-condition-invisible");
+    el.querySelectorAll(".w-condition-invisible").forEach((x) => x.classList.remove("w-condition-invisible"));
+    el.querySelectorAll(".w-dyn-bind-empty").forEach((x) => x.classList.remove("w-dyn-bind-empty"));
+  };
+
+  chapters.forEach((c, i) => {
+    const tab = tabBase.cloneNode(true);
+    clean(tab);
+    const nr = String(i + 1).padStart(2, "0");
+    const digits = tab.querySelectorAll(".domain_nmbr_wrap > div");
+    if (digits.length >= 2) {
+      digits[0].textContent = nr.charAt(0);
+      digits[1].textContent = nr.charAt(1);
+    }
+    const h = tab.querySelector("h1, h2, h3, h4");
+    if (h) h.textContent = c.nav || "Hoofdstuk " + (i + 1);
+    tabParent.appendChild(tab);
+
+    const panel = panelBase.cloneNode(true);
+    clean(panel);
+    const rt = panel.querySelector("[data-chapters-source]") || panel.querySelector(".w-richtext, .rich-text");
+    if (rt) {
+      rt.dataset.chaptersBuilt = "true";
+      rt.removeAttribute("data-chapters-source");
+      rt.classList.add("w-richtext");
+      c.nodes.forEach((n) => rt.appendChild(n));
+    }
+    panelParent.appendChild(panel);
+  });
 }
 
 function initFeaturedStories() {
