@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-21 23:25";
+window.PAC_BUNDLE = "2026-10-22 09:20";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -78,6 +78,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-slug]")) initProjectFilter();
   if (has("[data-chapter]")) initProjectChapters();
   if (has("[data-project-page]")) initProjectMediaSlider();
+  initDutchDates();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
@@ -3737,6 +3738,22 @@ function initHoverReveal() {
 }
 
 // Projecthoofdstukken: lege hoofdstukken verbergen en zichtbare hoofdstukken om en om spiegelen
+function initDutchDates() {
+  const en = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+  const nl = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+  nextPage.querySelectorAll("[data-filter-date], [data-date-nl]").forEach((el) => {
+    if (el.children.length) return;
+    const m = el.textContent.trim().match(/^([A-Za-z]+) (\d{1,2}), (\d{4})$/);
+    if (!m) return;
+    const mi = en.indexOf(m[1].toLowerCase());
+    if (mi === -1) return;
+    if (el.hasAttribute("data-filter-date") && !el.getAttribute("data-filter-date")) {
+      el.setAttribute("data-filter-date", m[3] + "-" + String(mi + 1).padStart(2, "0") + "-" + m[2].padStart(2, "0"));
+    }
+    el.textContent = m[2] + " " + nl[mi] + " " + m[3];
+  });
+}
+
 function initProjectMediaSlider() {
   const page = nextPage.matches && nextPage.matches("[data-project-page]") ? nextPage : nextPage.querySelector("[data-project-page]");
   if (!page) return;
