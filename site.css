@@ -2454,3 +2454,10 @@ html.pac-sheet-open body {
   text-align: center;
   opacity: 0.5;
 }
+
+[data-filter] .w-pagination-wrapper {
+  display: none;
+}
+[data-filter-loading][data-filter-paginate] [data-filter-item]:nth-child(n+13) {
+  display: none;
+}

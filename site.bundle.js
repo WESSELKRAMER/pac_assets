@@ -112,7 +112,10 @@ function initBeforeEnterFunctions(next) {
   if (has(SEL.breadcrumbs + ", [data-scroll-row]")) initBreadcrumbs();
   if (has("[data-hover-reveal]")) initHoverReveal();
   if (has("[data-filter-sheet]")) buildFilterSheets();
-  if (has("[data-filter]")) initListFilters();
+  if (has("[data-filter]")) {
+    preloadFilterPages();
+    initListFilters();
+  }
   if (has(".pac-filter-sheet")) initFilterSheets();
   if (has("[data-domains], .domains_module")) initDomainTabs();
   if (has("[data-stack]")) initStackCards();
@@ -3076,9 +3079,54 @@ function createDatePicker(host, opts) {
   };
 }
 
+function preloadFilterPages() {
+  const page = nextPage;
+  Array.from(page.querySelectorAll("[data-filter]")).forEach((root) => {
+    if (root.hasAttribute("data-filter-loading") || root.dataset.filterInitialized === "true") return;
+    const lists = Array.from(root.querySelectorAll(".w-dyn-list")).filter((l) => l.querySelector(":scope > .w-pagination-wrapper .w-pagination-next, :scope .w-pagination-next"));
+    if (!lists.length) return;
+    root.setAttribute("data-filter-loading", "");
+    const parser = new DOMParser();
+    const loadList = async (list) => {
+      const items = list.querySelector(".w-dyn-items");
+      let next = list.querySelector(".w-pagination-next");
+      const key = next && ((next.getAttribute("href") || "").match(/[?&]([^=&]+_page)=/) || [])[1];
+      let guard = 0;
+      while (next && items && key && guard++ < 30) {
+        const url = new URL(next.getAttribute("href"), location.href);
+        const html = await fetch(url.pathname + url.search, { credentials: "same-origin" }).then((r) => (r.ok ? r.text() : ""));
+        if (!html) break;
+        const doc = parser.parseFromString(html, "text/html");
+        const link = Array.from(doc.querySelectorAll(".w-pagination-next, .w-pagination-previous")).find((a) => (a.getAttribute("href") || "").indexOf(key + "=") !== -1);
+        const other = link ? link.closest(".w-dyn-list") : null;
+        const otherItems = other && other.querySelector(".w-dyn-items");
+        if (!otherItems) break;
+        Array.from(otherItems.children).forEach((el) => items.appendChild(document.importNode(el, true)));
+        next = other.querySelector(".w-pagination-next");
+      }
+      list.querySelectorAll(".w-pagination-wrapper").forEach((w) => w.remove());
+    };
+    Promise.all(lists.map((l) => loadList(l).catch(() => {}))).then(() => {
+      root.removeAttribute("data-filter-loading");
+      if (!root.isConnected) return;
+      const prev = nextPage;
+      nextPage = root;
+      try {
+        initDutchDates();
+        if (root.querySelector("[data-status]")) initComingSoon();
+      } catch (e) {}
+      nextPage = page;
+      initListFilters();
+      nextPage = prev;
+      if (hasLenis && lenis) lenis.resize();
+      if (hasScrollTrigger) ScrollTrigger.refresh();
+    });
+  });
+}
+
 function initListFilters() {
   const roots = Array.from(nextPage.querySelectorAll("[data-filter]")).filter(
-    (el) => el.dataset.filterInitialized !== "true"
+    (el) => el.dataset.filterInitialized !== "true" && !el.hasAttribute("data-filter-loading")
   );
   if (!roots.length) return;
 
