@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 09:20";
+window.PAC_BUNDLE = "2026-10-22 09:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -679,7 +679,7 @@ function initNavbarSub() {
 }
 
 const menuMQ = window.matchMedia("(max-width: 991px)");
-const MENU_RADIUS = "1.5rem";
+const MENU_RADIUS = "var(--_layout---radii--l, 1.3rem)";
 
 function initMobileMenu() {
   const navInner = document.querySelector(SEL.navInner);

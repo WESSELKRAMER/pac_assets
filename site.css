@@ -937,8 +937,11 @@ input[data-filter-search]:focus-visible {
     min-width: 0;
   }
   [data-breadcrumbs] > *,
+  .breadcrumb_subproject_wrap > *,
+  .breadcrumb_agenda_wrap > *,
   [data-scroll-row] > * {
     flex: 0 0 auto;
+    max-width: none;
     white-space: nowrap;
   }
   [data-scroll-row].is-scrolled:not(.is-end) {
@@ -1375,12 +1378,12 @@ input[type="submit"] {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 1rem;
     position: absolute;
     top: calc(100% + 0.75rem);
     left: 0;
     right: 0;
-    padding: 2.5rem 2rem;
+    padding: 3.25rem 2rem;
     background: var(--pac-light--500, #fff);
     border-radius: var(--_layout---radii--l, 1.3rem);
     visibility: hidden;
