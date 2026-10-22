@@ -4113,6 +4113,10 @@ function initFilterSheets() {
     const spacer = document.createElement("div");
     spacer.className = "pac-filter-spacer";
     spacer.setAttribute("aria-hidden", "true");
+    const sentinel = document.createElement("div");
+    sentinel.className = "pac-filter-sentinel";
+    sentinel.setAttribute("aria-hidden", "true");
+    sheet.parentNode.insertBefore(sentinel, sheet.nextSibling);
 
     const fab = document.createElement("button");
     fab.type = "button";
@@ -4139,14 +4143,11 @@ function initFilterSheets() {
     let passed = false;
     let backTimer = null;
 
-    const checkPassed = () => {
-      if (mq.matches) return;
-      const ref = spacer.parentNode ? spacer : sheet;
-      passed = ref.getBoundingClientRect().bottom < 0;
-    };
+    let fabShown = false;
     const setFab = () => {
-      checkPassed();
       const show = !isOpen && inView && (mq.matches || passed);
+      if (show === fabShown) return;
+      fabShown = show;
       fab.classList.toggle("is-visible", show);
     };
 
@@ -4222,15 +4223,11 @@ function initFilterSheets() {
     );
     io.observe(root);
 
-    let raf = 0;
-    const onScroll = () => {
-      if (raf || mq.matches) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        setFab();
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const sio = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (passed = !e.isIntersecting && e.boundingClientRect.top < 0));
+      setFab();
+    });
+    sio.observe(sentinel);
 
     fab.addEventListener("click", open);
     backdrop.addEventListener("click", () => close(false));
@@ -4248,8 +4245,7 @@ function initFilterSheets() {
       io.disconnect();
       if (mo) mo.disconnect();
       clearTimeout(backTimer);
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
+      sio.disconnect();
       document.removeEventListener("keydown", onKey);
       mq.removeEventListener ? mq.removeEventListener("change", onMq) : mq.removeListener(onMq);
       document.documentElement.classList.remove("pac-sheet-open");
