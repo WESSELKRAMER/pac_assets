@@ -1952,6 +1952,8 @@ form:has([data-submit-trigger]) input[type="submit"],
   left: .4rem;
   font-size: .7rem;
 }
+.pac-domain-row .agenda_item_right_left { gap: .375rem; }
+.pac-domain-row .agenda_item_right_left .pac-domain-row__eyebrow { margin-bottom: 0; }
 .pac-domain-row__eyebrow {
   display: -webkit-box;
   -webkit-box-orient: vertical;
