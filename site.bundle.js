@@ -3832,17 +3832,22 @@ function toDomainRow(card) {
 }
 
 function initAwardsNav() {
-  const holder = nextPage.matches && nextPage.matches("[data-awards-edition]") ? nextPage : nextPage.querySelector("[data-awards-edition]");
-  const edition = holder ? (holder.getAttribute("data-awards-edition") || "").trim() : "";
-  const path = (window.location.pathname || "").replace(/\/$/, "");
+  const find = (sel) => (nextPage.matches && nextPage.matches(sel) ? nextPage : nextPage.querySelector(sel));
+  const edHolder = find("[data-awards-edition]");
+  const pageHolder = find("[data-awards-page]");
+  const edition = edHolder ? (edHolder.getAttribute("data-awards-edition") || "").trim() : "";
+  const page = pageHolder ? (pageHolder.getAttribute("data-awards-page") || "").trim().toLowerCase() : "";
   nextPage.querySelectorAll('[data-pill-nav="award"] a[href]').forEach((a) => {
     const label = a.textContent.trim().toLowerCase();
     let href = a.getAttribute("href") || "";
-    if (label === "archief") href = "/pan-asian-awards/archief";
+    const isArchive = label === "archief";
+    if (isArchive) href = "/pan-asian-awards/archief";
     else if (edition && /^\/pan-asian-awards\/[^/]+$/.test(href)) href = href.replace("/pan-asian-awards/", "/pan-asian-awards/" + edition + "/");
     a.setAttribute("href", href);
-    const current = href.replace(/\/$/, "") === path || (edition && label === "archief" && !path);
-    a.classList.toggle("w--current", !!current);
+    if (!page) return;
+    const slug = href.split("/").filter(Boolean).pop() || "";
+    const current = slug === page;
+    a.classList.toggle("w--current", current);
     if (current) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   });
