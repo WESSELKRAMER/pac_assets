@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 12:08";
+window.PAC_BUNDLE = "2026-10-22 12:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3868,6 +3868,15 @@ function initAwardsNav() {
     row.appendChild(back);
     heroInner.parentNode.insertBefore(row, heroInner);
   }
+  const yearText = edition || ((nextPage.querySelector(".display_text_big") || {}).textContent || "").trim();
+  nextPage.querySelectorAll('[data-pill-nav="award"]').forEach((navEl) => {
+    if (!/^\d{4}$/.test(yearText) || navEl.querySelector(".pac-award-year")) return;
+    const y = document.createElement("span");
+    y.className = "pac-award-year" + (edition ? " is-archive" : "");
+    y.setAttribute("aria-label", "Editie " + yearText);
+    y.textContent = yearText;
+    navEl.insertBefore(y, navEl.firstChild);
+  });
   nextPage.querySelectorAll('[data-pill-nav="award"] a[href]').forEach((a) => {
     const label = a.textContent.trim().toLowerCase();
     let href = a.getAttribute("href") || "";

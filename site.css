@@ -2023,3 +2023,20 @@ input[type="submit"] {
   text-underline-offset: .2em;
   white-space: nowrap;
 }
+
+.pac-award-year {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  align-self: center;
+  margin-right: .25rem;
+  padding: 0 .9rem 0 .6rem;
+  border-right: 1px solid currentColor;
+  font-size: var(--_typesetting---body-font-small, .875rem);
+  line-height: 1;
+  letter-spacing: .04em;
+  opacity: .55;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.pac-award-year.is-archive { opacity: .8; color: var(--awards-archive, #bd947e); border-right-color: var(--awards-archive, #bd947e); }
