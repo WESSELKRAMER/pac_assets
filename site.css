@@ -2142,8 +2142,8 @@ input[type="submit"] {
     gap: 2rem;
   }
   .home_grid_card.is--featured {
-    height: clamp(30rem, 60svh + 6rem, 38rem + 10vh);
-    min-height: 0;
+    height: auto;
+    min-height: clamp(30rem, 60svh + 6rem, 38rem + 10vh);
   }
   .home_grid_card.is--image_dark {
     padding-bottom: 8.5rem;
