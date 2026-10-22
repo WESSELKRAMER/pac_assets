@@ -1170,7 +1170,8 @@ body {
   overflow-x: hidden;
 }
 
-input[type="submit"] {
+form:has([data-submit-trigger]) input[type="submit"],
+.w-form:has([data-submit-trigger]) input[type="submit"] {
   display: none;
 }
 
