@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 11:20";
+window.PAC_BUNDLE = "2026-10-22 11:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -80,6 +80,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-page]")) initProjectMediaSlider();
   if (has("[data-status]")) initComingSoon();
   if (has('[data-pill-nav="award"]')) initAwardsNav();
+  if (has('[data-pill-nav="award"]')) initAwardsEmpty();
   initDutchDates();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
@@ -3851,6 +3852,34 @@ function initAwardsNav() {
     if (current) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   });
+}
+
+function initAwardsEmpty() {
+  const page = nextPage.matches && nextPage.matches("[data-barba='container']") ? nextPage : nextPage.querySelector("[data-barba='container']") || nextPage;
+  if (page.hasAttribute("data-awards-edition") || page.hasAttribute("data-awards-page")) return;
+  const year = (page.querySelector(".display_text_big") || {}).textContent;
+  const label = ((page.querySelector('[data-pill-nav="award"] .w--current') || {}).textContent || "").trim();
+  const hidden = [];
+  page.querySelectorAll(":scope > section, :scope > [class^='section_']").forEach((section) => {
+    if (section.matches(".footer_wrapper, [data-pill-nav]") || section.querySelector("[data-pill-nav]")) return;
+    const lists = Array.from(section.querySelectorAll(".w-dyn-list")).filter((l) => !l.closest(".w-dyn-item"));
+    if (!lists.length) return;
+    if (section.querySelector(".w-dyn-item")) return;
+    if (/gerelateerde|nieuws/i.test(section.textContent) && section.querySelector(".w-dyn-empty")?.textContent.trim().length > 15) return;
+    section.style.display = "none";
+    hidden.push(section);
+  });
+  if (!hidden.length) return;
+  const note = document.createElement("section");
+  note.className = "pac-awards-soon";
+  const what = label && !/introductie/i.test(label) ? "De " + label.toLowerCase() : "Deze pagina";
+  note.innerHTML =
+    '<div class="container"><div class="pac-awards-soon__inner">' +
+    '<span class="pac-soon-tag">Coming soon</span>' +
+    "<h2>" + what + (year && /\d{4}/.test(year) ? " van " + year.trim() : "") + " wordt binnenkort bekendgemaakt.</h2>" +
+    '<p>Benieuwd naar eerdere edities? <a href="/pan-asian-awards/archief">Bekijk het archief</a>.</p>' +
+    "</div></div>";
+  hidden[0].parentNode.insertBefore(note, hidden[0]);
 }
 
 function initProjectMediaSlider() {

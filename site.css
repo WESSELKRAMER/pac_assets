@@ -1975,3 +1975,17 @@ input[type="submit"] {
   }
   .navbar:has(.nav_inner[data-menu-open="true"])::before { opacity: 1; }
 }
+
+.pac-awards-soon {
+  padding-block: var(--_layout---spacing--section-standard, 8rem);
+}
+.pac-awards-soon__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+  max-width: 48rem;
+}
+.pac-awards-soon__inner h2 { margin: 0; }
+.pac-awards-soon__inner p { margin: 0; font-size: var(--_typesetting---body-font, 1.2rem); }
+.pac-awards-soon__inner a { color: inherit; text-decoration: underline; text-underline-offset: .2em; }
