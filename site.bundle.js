@@ -80,7 +80,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-page]")) initProjectMediaSlider();
   if (has("[data-home-featured]")) initHomeFeatured();
   initContactLinks();
-  if (has("[data-chapters-source]")) initStoryChapters();
+  if (has("[data-chapters-source], .is--longread .domains_module.is--scrolljack")) initStoryChapters();
   if (has("[data-story-collection]")) initFeaturedStories();
   if (has("form select")) initFormSelects();
   if (has("[data-status]")) initComingSoon();
@@ -3929,24 +3929,21 @@ function initAwardsEmpty() {
 
 function initStoryChapters() {
   const src = nextPage.querySelector("[data-chapters-source]");
-  if (!src || src.dataset.chaptersBuilt === "true") return;
-  const module = src.closest(".domains_module.is--scrolljack") || src.closest(".domains_module");
-  if (!module) return;
-  if (src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim()) {
-    const hasTabs = Array.from(module.querySelectorAll(".domains_collection_item")).some(
-      (t) => !t.classList.contains("w-condition-invisible") && (t.querySelector("h1, h2, h3, h4") || t).textContent.trim()
-    );
-    if (!hasTabs) {
-      const outer = (module.parentElement && module.parentElement.closest(".domains_module")) || module;
-      outer.style.display = "none";
-    }
-    return;
-  }
+  const module =
+    (src && (src.closest(".domains_module.is--scrolljack") || src.closest(".domains_module"))) ||
+    nextPage.querySelector(".is--longread .domains_module.is--scrolljack");
+  if (!module || module.dataset.chaptersBuilt === "true") return;
+  const outer = (module.parentElement && module.parentElement.closest(".domains_module")) || module;
   const tabs = Array.from(module.querySelectorAll(".domains_collection_item"));
   const panels = Array.from(module.querySelectorAll(".domain_contents_item"));
-  const panelTpl = panels.find((p) => p.contains(src));
-  const tabTpl = tabs[0];
-  if (!tabTpl || !panelTpl) return;
+  const srcEmpty = !src || src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim();
+
+  if (srcEmpty) {
+    if (src) src.remove();
+    const hasTabs = tabs.some((t) => (t.querySelector("h1, h2, h3, h4") || t).textContent.trim());
+    if (!hasTabs) outer.style.display = "none";
+    return;
+  }
 
   const chapters = [];
   let cur = null;
@@ -3956,7 +3953,10 @@ function initStoryChapters() {
       chapters.push(cur);
       return;
     }
-    const meaningful = n.nodeType === 1 ? (n.textContent.replace(/‍/g, "").trim() || n.querySelector("img, iframe, video")) : n.textContent.trim();
+    const meaningful =
+      n.nodeType === 1
+        ? n.textContent.replace(/‍/g, "").trim() || n.querySelector("img, iframe, video")
+        : n.textContent.trim();
     if (!cur) {
       if (!meaningful) return;
       cur = { h2: null, nodes: [] };
@@ -3965,60 +3965,57 @@ function initStoryChapters() {
     cur.nodes.push(n);
   });
   if (!chapters.length) return;
-
   chapters.forEach((c) => {
-    c.nodes.forEach((n) => n.parentNode && n.parentNode.removeChild(n));
-    let nav = "";
-    if (c.h2) {
-      const raw = c.h2.textContent.trim();
-      const parts = raw.split(/\s+\|\s+/);
-      if (parts.length > 1) {
-        nav = parts[0].trim();
-        c.h2.textContent = parts.slice(1).join(" | ").trim();
-      } else nav = raw;
-    }
-    c.nav = nav;
+    c.nav = "";
+    if (!c.h2) return;
+    const raw = c.h2.textContent.trim();
+    const parts = raw.split(/\s+\|\s+/);
+    if (parts.length > 1) {
+      c.nav = parts[0].trim();
+      c.h2.textContent = parts.slice(1).join(" | ").trim();
+    } else c.nav = raw;
   });
 
-  tabs.forEach((t) => t !== tabTpl && t.remove());
-  panels.forEach((p) => p !== panelTpl && p.remove());
-  const tabParent = tabTpl.parentNode;
-  const panelParent = panelTpl.parentNode;
-  const tabBase = tabTpl.cloneNode(true);
-  src.innerHTML = "";
-  const panelBase = panelTpl.cloneNode(true);
-  tabTpl.remove();
-  panelTpl.remove();
+  const tabList = module.querySelector(".domains_collection_list") || (tabs[0] && tabs[0].parentNode);
+  const panelList = module.querySelector(".domain_contents_list") || (panels[0] && panels[0].parentNode);
+  if (!tabList || !panelList) return;
 
-  const clean = (el) => {
-    el.classList.remove("w-condition-invisible");
-    el.querySelectorAll(".w-condition-invisible").forEach((x) => x.classList.remove("w-condition-invisible"));
-    el.querySelectorAll(".w-dyn-bind-empty").forEach((x) => x.classList.remove("w-dyn-bind-empty"));
+  const indicator = tabs.map((t) => t.querySelector(".domain_indicator")).find(Boolean);
+  const indicatorStyle = indicator ? indicator.getAttribute("style") || "" : "";
+  const indicatorClass = indicator ? indicator.className : "domain_indicator";
+
+  tabs.forEach((t) => t.remove());
+  panels.forEach((p) => p.remove());
+  src.remove();
+  module.dataset.chaptersBuilt = "true";
+
+  const make = (html) => {
+    const t = document.createElement("div");
+    t.innerHTML = html;
+    return t.firstElementChild;
   };
 
   chapters.forEach((c, i) => {
-    const tab = tabBase.cloneNode(true);
-    clean(tab);
     const nr = String(i + 1).padStart(2, "0");
+    const tab = make(
+      '<div data-domain-tab="" class="domains_collection_item"><div class="domains_collection_item_inner"><div class="' +
+        indicatorClass +
+        '"></div><div class="domain_nmbr_wrap"><div></div><div></div></div><h3></h3></div><div data-animate-line="width" class="u-domain-line"></div></div>'
+    );
+    const ind = tab.querySelector(".domain_indicator");
+    if (ind && indicatorStyle) ind.setAttribute("style", indicatorStyle);
     const digits = tab.querySelectorAll(".domain_nmbr_wrap > div");
-    if (digits.length >= 2) {
-      digits[0].textContent = nr.charAt(0);
-      digits[1].textContent = nr.charAt(1);
-    }
-    const h = tab.querySelector("h1, h2, h3, h4");
-    if (h) h.textContent = c.nav || "Hoofdstuk " + (i + 1);
-    tabParent.appendChild(tab);
+    digits[0].textContent = nr.charAt(0);
+    digits[1].textContent = nr.charAt(1);
+    tab.querySelector("h3").textContent = c.nav || "Hoofdstuk " + (i + 1);
+    tabList.appendChild(tab);
 
-    const panel = panelBase.cloneNode(true);
-    clean(panel);
-    const rt = panel.querySelector("[data-chapters-source]") || panel.querySelector(".w-richtext, .rich-text");
-    if (rt) {
-      rt.dataset.chaptersBuilt = "true";
-      rt.removeAttribute("data-chapters-source");
-      rt.classList.add("w-richtext");
-      c.nodes.forEach((n) => rt.appendChild(n));
-    }
-    panelParent.appendChild(panel);
+    const panel = make(
+      '<div class="domain_contents_item"><div class="domain_contents_item_inner"><div class="domain_contents_item_top is--wide"><div class="rich-text w-richtext"></div></div></div></div>'
+    );
+    const rt = panel.querySelector(".rich-text");
+    c.nodes.forEach((n) => rt.appendChild(n));
+    panelList.appendChild(panel);
   });
 }
 
