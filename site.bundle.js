@@ -3953,6 +3953,10 @@ function initHomeFeatured() {
     const ownHref = ownA && !ownA.classList.contains("w-dyn-bind-empty") ? (ownA.getAttribute("href") || "").trim() : "";
     const link = (ownHref && ownHref !== "#" ? ownHref : "") || val(item, "data-link") || (ref ? ref.path + val(item, "data-" + ref.key + "-slug") : "");
     const button = val(item, "data-button");
+    const imgKeys = ["own", "news", "verhaal", "agenda"];
+    Array.from(item.querySelectorAll("[data-home-carriers] img")).forEach((im, n) => {
+      if (!im.hasAttribute("data-img") && imgKeys[n]) im.setAttribute("data-img", imgKeys[n]);
+    });
     const imgs = Array.from(item.querySelectorAll("img[data-img]")).filter(
       (im) => !im.classList.contains("w-dyn-bind-empty") && (im.getAttribute("src") || "") && !/placeholder/.test(im.getAttribute("src"))
     );
