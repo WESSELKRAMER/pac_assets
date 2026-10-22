@@ -80,6 +80,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-page]")) initProjectMediaSlider();
   if (has("[data-home-featured]")) initHomeFeatured();
   initContactLinks();
+  if (has("[data-story-collection]")) initFeaturedStories();
   if (has("form select")) initFormSelects();
   if (has("[data-status]")) initComingSoon();
   if (has('[data-pill-nav="award"]')) initAwardsNav();
@@ -3923,6 +3924,18 @@ function initAwardsEmpty() {
     '<p>Benieuwd naar eerdere edities? <a href="/pan-asian-awards/archief">Bekijk het archief</a>.</p>' +
     "</div></div>";
   hidden[0].parentNode.insertBefore(note, hidden[0]);
+}
+
+function initFeaturedStories() {
+  const featured = nextPage.querySelector("[data-featured-collection]");
+  const slug = featured ? (featured.getAttribute("data-featured-collection") || "").trim() : "";
+  const items = Array.from(nextPage.querySelectorAll(".sub_verhalen_col_list_wrapper [data-story-collection]"));
+  if (!items.length) return;
+  items.forEach((item) => {
+    if (!slug || (item.getAttribute("data-story-collection") || "").trim() !== slug) item.remove();
+  });
+  const wrap = nextPage.querySelector(".sub_verhalen_col_list_wrapper");
+  if (wrap && !wrap.querySelector("[data-story-collection]")) wrap.style.display = "none";
 }
 
 function initContactLinks() {
