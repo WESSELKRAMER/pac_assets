@@ -4223,10 +4223,13 @@ function initFilterSheets() {
     );
     io.observe(root);
 
-    const sio = new IntersectionObserver((entries) => {
-      entries.forEach((e) => (passed = !e.isIntersecting && e.boundingClientRect.top < 0));
-      setFab();
-    });
+    const sio = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => (passed = !e.isIntersecting));
+        setFab();
+      },
+      { rootMargin: "0px 0px 100000px 0px" }
+    );
     sio.observe(sentinel);
 
     fab.addEventListener("click", open);
