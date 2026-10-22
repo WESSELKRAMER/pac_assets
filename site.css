@@ -1958,3 +1958,22 @@ input[type="submit"] {
   .pac-domain-row .projects_item_right { flex-direction: column; align-items: flex-start; justify-content: center; gap: .5rem; }
   .pac-domain-row h3 { font-size: 1.2rem; }
 }
+
+@media (max-width: 991px) {
+  .navbar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100lvh;
+    z-index: -1;
+    background-color: rgba(14, 14, 14, 0.08);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  .navbar:has(.nav_inner[data-menu-open="true"])::before { opacity: 1; }
+}
