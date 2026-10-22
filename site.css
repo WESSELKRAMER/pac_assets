@@ -1897,6 +1897,7 @@ input[type="submit"] {
 .pac-domain-row { width: 100%; color: inherit; }
 .pac-domain-row .projects_item_inner_wrap {
   display: flex;
+  flex-direction: row;
   align-items: stretch;
   gap: 1.5rem;
   padding-block: 1.25rem;
@@ -1922,12 +1923,16 @@ input[type="submit"] {
 .pac-domain-row .projects_item_right {
   flex: 1 1 auto;
   min-width: 0;
+  margin: 0;
+  padding: 0;
+  flex-direction: row;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
 }
-.pac-domain-row .agenda_item_right_left { min-width: 0; }
+.pac-domain-row .agenda_item_right_left,
+.pac-domain-row .agenda_item_right_right { min-width: 0; margin: 0; padding: 0; width: auto; }
 .pac-domain-row h3 {
   margin: 0;
   font-size: var(--_typesetting---h4, 1.5rem);
@@ -1948,5 +1953,6 @@ input[type="submit"] {
   .pac-domain-row .projects_item_inner_wrap { gap: 1rem; padding-block: 1rem; }
   .pac-domain-row .projects_item_left { flex-basis: 6.5rem; width: 6.5rem; }
   .pac-domain-row .u-line_responsive { display: none; }
-  .pac-domain-row .projects_item_right { flex-direction: column; align-items: flex-start; justify-content: center; gap: .75rem; }
+  .pac-domain-row .projects_item_right { flex-direction: column; align-items: flex-start; justify-content: center; gap: .5rem; }
+  .pac-domain-row h3 { font-size: 1.2rem; }
 }
