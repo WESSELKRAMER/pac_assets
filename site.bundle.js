@@ -3940,8 +3940,7 @@ function initStoryChapters() {
 
   if (srcEmpty) {
     if (src) src.remove();
-    const hasTabs = tabs.some((t) => (t.querySelector("h1, h2, h3, h4") || t).textContent.trim());
-    if (!hasTabs) outer.style.display = "none";
+    outer.style.display = "none";
     return;
   }
 
