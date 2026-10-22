@@ -2113,3 +2113,12 @@ input[type="submit"] {
   -webkit-appearance: none;
   appearance: none;
 }
+
+[data-barba="container"] > *:has(.filter-dropdown.is-open, .filter-datepicker.is-open) {
+  position: relative;
+  z-index: 20;
+  overflow: visible;
+}
+[data-barba="container"] > *:has(.filter-dropdown.is-open, .filter-datepicker.is-open) .container:has(.filter-dropdown.is-open) {
+  z-index: 20;
+}
