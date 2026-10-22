@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 11:55";
+window.PAC_BUNDLE = "2026-10-22 12:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3837,6 +3837,13 @@ function initAwardsNav() {
   const edHolder = find("[data-awards-edition]");
   const pageHolder = find("[data-awards-page]");
   const edition = edHolder ? (edHolder.getAttribute("data-awards-edition") || "").trim() : "";
+  const heroInner = edition ? nextPage.querySelector(".section_award_hero .award_hero_inner") : null;
+  if (heroInner && !heroInner.querySelector(".pac-edition-tag")) {
+    const tag = document.createElement("span");
+    tag.className = "pac-soon-tag pac-edition-tag";
+    tag.textContent = "Archief \u00b7 Editie " + edition;
+    heroInner.insertBefore(tag, heroInner.firstChild);
+  }
   const page = pageHolder ? (pageHolder.getAttribute("data-awards-page") || "").trim().toLowerCase() : "";
   nextPage.querySelectorAll('[data-pill-nav="award"] a[href]').forEach((a) => {
     const label = a.textContent.trim().toLowerCase();

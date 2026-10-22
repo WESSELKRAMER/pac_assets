@@ -1989,3 +1989,20 @@ input[type="submit"] {
 .pac-awards-soon__inner h2 { margin: 0; }
 .pac-awards-soon__inner p { margin: 0; font-size: var(--_typesetting---body-font, 1.2rem); }
 .pac-awards-soon__inner a { color: inherit; text-decoration: underline; text-underline-offset: .2em; }
+
+[data-awards-edition] {
+  --awards-archive: var(--pac-brown--200, #bd947e);
+  --awards-archive-dark: var(--pac-brown--500, #442823);
+}
+[data-awards-edition] .section_award_hero {
+  background-image: linear-gradient(var(--awards-archive), var(--pac-light--500, #fff));
+}
+[data-awards-edition] .domain_indicator { background-color: var(--awards-archive-dark); }
+.pac-edition-tag {
+  align-self: center;
+  margin-bottom: 1.5rem;
+  background-color: var(--awards-archive-dark, #442823);
+  font-size: var(--_typesetting---body-font, 1rem);
+  padding: .5em 1.1em;
+}
+.pac-edition-tag::before { background-color: var(--awards-archive, #bd947e); }
