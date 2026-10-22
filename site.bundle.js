@@ -49,7 +49,7 @@ const SEL = {
   breadcrumbs: "[data-breadcrumbs], .breadcrumb_subproject_wrap, .breadcrumb_agenda_wrap"
 };
 
-const has = (s) => !!nextPage.querySelector(s);
+const has = (s) => !!((nextPage.matches && nextPage.matches(s)) || nextPage.querySelector(s));
 
 let staggerDefault = 0.05;
 let durationDefault = 0.6;
@@ -4606,6 +4606,22 @@ function peekRow(el) {
   el.addEventListener("wheel", stop, { once: true, passive: true });
 }
 
+function truncateCrumbs(el) {
+  const max = toNumber(el.getAttribute("data-crumb-max"), 40);
+  el.querySelectorAll(".breadcrumb_link > div, .breadcrumb_link:not(:has(> *))").forEach((node) => {
+    if (node.children.length) return;
+    const full = (node.textContent || "").replace(/\s+/g, " ").trim();
+    if (full.length <= max + 1) return;
+    let cut = full.slice(0, max);
+    const space = cut.lastIndexOf(" ");
+    if (space > max * 0.6) cut = cut.slice(0, space);
+    node.textContent = cut.replace(/[\s,.:;\-–—|/]+$/, "") + "…";
+    const link = node.closest("a") || node;
+    if (!link.getAttribute("title")) link.setAttribute("title", full);
+    if (link.tagName === "A" && !link.getAttribute("aria-label")) link.setAttribute("aria-label", full);
+  });
+}
+
 function initBreadcrumbs() {
   nextPage.querySelectorAll(SEL.breadcrumbs).forEach((el) => {
     if (!el.hasAttribute("data-breadcrumbs")) el.setAttribute("data-breadcrumbs", "");
@@ -4614,6 +4630,7 @@ function initBreadcrumbs() {
     if (el.dataset.breadcrumbsInit === "true") return;
     el.dataset.breadcrumbsInit = "true";
     const isRow = el.hasAttribute("data-scroll-row");
+    if (!isRow) truncateCrumbs(el);
     const update = () => {
       el.classList.toggle("is-end", el.scrollLeft >= el.scrollWidth - el.clientWidth - 2);
       el.classList.toggle("is-scrolled", el.scrollLeft > 2);
@@ -6185,12 +6202,16 @@ function initSliders() {
     root.classList.add("pac-slider");
     track.classList.add("pac-slider__track");
 
-    const getItems = () => {
+    const allItems = () => {
       const marked = track.querySelectorAll("[data-slider-item]");
-      return Array.from(marked.length ? marked : track.children).filter((el) => el.offsetParent !== null || el === document.activeElement);
+      return Array.from(marked.length ? marked : track.children);
+    };
+    const getItems = () => {
+      const all = allItems();
+      all.forEach((el) => el.classList.add("pac-slider__item"));
+      return all.filter((el) => el.offsetParent !== null || el === document.activeElement);
     };
     let items = getItems();
-    items.forEach((el) => el.classList.add("pac-slider__item"));
 
     const scope = root.closest("[data-slider-ui]") || root.parentElement || root;
     const find = (sel) => Array.from(root.querySelectorAll(sel)).concat(root === scope ? [] : Array.from(scope.querySelectorAll(sel))).filter((el, i, a) => a.indexOf(el) === i);
@@ -6391,8 +6412,18 @@ function initSliders() {
       items.forEach((el) => ro.observe(el));
     }
     update();
+    const refreshItems = () => {
+      items = getItems();
+      if (ro) items.forEach((el) => ro.observe(el));
+      requestUpdate();
+    };
+    requestAnimationFrame(refreshItems);
+    const lateTimer = setTimeout(refreshItems, 600);
+    window.addEventListener("load", refreshItems, { once: true });
 
     addCleanup(root, () => {
+      clearTimeout(lateTimer);
+      window.removeEventListener("load", refreshItems);
       if (tween) tween.kill();
       if (raf) cancelAnimationFrame(raf);
       if (ro) ro.disconnect();
