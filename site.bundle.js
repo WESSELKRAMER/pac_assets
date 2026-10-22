@@ -3985,6 +3985,11 @@ function initHomeFeatured() {
       cardImg.removeAttribute("sizes");
       cardImg.setAttribute("src", img.getAttribute("src"));
       cardImg.setAttribute("alt", img.getAttribute("alt") || title);
+    } else if (!cardImg && img) {
+      card.style.backgroundImage =
+        "linear-gradient(358deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.16)), url(\"" + img.getAttribute("src") + "\")";
+      card.style.backgroundSize = "auto, cover";
+      card.style.backgroundPosition = "0px 0px, 50% 0px";
     }
     const cta = card.querySelector(".grid_card_cta_wrapper");
     if (cta) {
