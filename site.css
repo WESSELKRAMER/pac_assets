@@ -2461,3 +2461,32 @@ html.pac-sheet-open body {
 [data-filter-loading][data-filter-paginate] [data-filter-item]:nth-child(n+13) {
   display: none;
 }
+
+[data-media-embed]:not(.pac-media) {
+  display: none;
+}
+.pac-media {
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+.pac-media iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: var(--_layout---radii--m, .75rem);
+  background-color: rgba(14, 14, 14, 0.04);
+}
+.pac-media.is-video iframe {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+.pac-media__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0 1.5rem;
+  border-radius: 999px;
+  background-color: var(--pac-dark--1000, #1b1c1e);
+  color: #fff;
+  text-decoration: none;
+}

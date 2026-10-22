@@ -80,6 +80,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-page]")) initProjectMediaSlider();
   if (has("[data-home-featured]")) initHomeFeatured();
   initContactLinks();
+  if (has("[data-media-embed]")) initMediaEmbeds();
   if (has("[data-chapters-source], .is--longread .domains_module.is--scrolljack")) initStoryChapters();
   if (has("[data-story-collection]")) initFeaturedStories();
   if (has("form select")) initFormSelects();
@@ -4316,6 +4317,65 @@ function initFeaturedStories() {
   });
   const wrap = nextPage.querySelector(".sub_verhalen_col_list_wrapper");
   if (wrap && !wrap.querySelector("[data-story-collection]")) wrap.style.display = "none";
+}
+
+function mediaEmbedFor(raw) {
+  let u;
+  try {
+    u = new URL(raw.trim());
+  } catch (e) {
+    return null;
+  }
+  const host = u.hostname.replace(/^www\./, "");
+  let m;
+  if (host === "open.spotify.com" && (m = u.pathname.match(/\/(episode|show|track|playlist|album)\/([A-Za-z0-9]+)/))) {
+    const tall = m[1] === "episode" || m[1] === "show";
+    return { kind: "audio", label: "Spotify", src: "https://open.spotify.com/embed/" + m[1] + "/" + m[2] + "?utm_source=generator", height: tall ? 232 : 152 };
+  }
+  if (host === "soundcloud.com" || host === "m.soundcloud.com" || host === "on.soundcloud.com") {
+    return { kind: "audio", label: "SoundCloud", src: "https://w.soundcloud.com/player/?url=" + encodeURIComponent(u.href) + "&color=%231b1c1e&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false", height: 166 };
+  }
+  if (host === "podcasts.apple.com") {
+    return { kind: "audio", label: "Apple Podcasts", src: "https://embed.podcasts.apple.com" + u.pathname + u.search, height: u.searchParams.has("i") ? 175 : 450 };
+  }
+  if (host === "youtube.com" || host === "m.youtube.com" || host === "youtu.be" || host === "youtube-nocookie.com") {
+    const id = host === "youtu.be" ? u.pathname.slice(1) : u.searchParams.get("v") || ((u.pathname.match(/\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{6,})/) || [])[1]);
+    if (id) return { kind: "video", label: "YouTube", src: "https://www.youtube-nocookie.com/embed/" + id.split(/[?&/]/)[0] + "?rel=0" };
+  }
+  if (host === "vimeo.com" || host === "player.vimeo.com") {
+    const id = (u.pathname.match(/(\d{5,})/) || [])[1];
+    if (id) return { kind: "video", label: "Vimeo", src: "https://player.vimeo.com/video/" + id };
+  }
+  return { kind: "link", label: host, href: u.href };
+}
+
+function initMediaEmbeds() {
+  nextPage.querySelectorAll("[data-media-embed]").forEach((el) => {
+    if (el.dataset.mediaInit === "true") return;
+    el.dataset.mediaInit = "true";
+    const raw = (el.getAttribute("data-media-url") || "").trim();
+    const info = raw && raw !== "#" ? mediaEmbedFor(raw) : null;
+    if (!info) {
+      el.style.display = "none";
+      return;
+    }
+    el.classList.add("pac-media", "is-" + info.kind);
+    if (info.kind === "link") {
+      el.innerHTML = '<a class="pac-media__link" href="' + info.href.replace(/"/g, "&quot;") + '" target="_blank" rel="noopener">Beluister of bekijk via ' + info.label + "</a>";
+      return;
+    }
+    const frame = document.createElement("iframe");
+    frame.src = info.src;
+    frame.loading = "lazy";
+    frame.title = info.label + " speler";
+    frame.setAttribute("frameborder", "0");
+    frame.setAttribute("allow", "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture");
+    frame.setAttribute("allowfullscreen", "");
+    if (info.height) frame.style.height = info.height + "px";
+    el.innerHTML = "";
+    el.appendChild(frame);
+    if (typeof hasScrollTrigger !== "undefined" && hasScrollTrigger) requestAnimationFrame(() => ScrollTrigger.refresh());
+  });
 }
 
 function initContactLinks() {
