@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 09:40";
+window.PAC_BUNDLE = "2026-10-22 10:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3786,6 +3786,50 @@ function initComingSoon() {
   });
 }
 
+function toDomainRow(card) {
+  const link = card.querySelector("a[href]");
+  const img = card.querySelector("img");
+  const title = card.querySelector("h1, h2, h3, h4");
+  const eyebrow = card.querySelector(".category_text");
+  const item = card.closest(".w-dyn-item");
+  const soon = card.querySelector(".pac-soon-tag");
+  const href = link ? link.getAttribute("href") : "#";
+  const arrow = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 30 30" fill="none" class="cta_arrow"><path d="M1.94818 29.9785L0 27.9632L20.5063 7.39806C21.5476 6.35679 22.5301 5.43308 23.4622 4.61014C24.3943 3.7872 25.1836 3.1574 25.8302 2.72914L4.48418 2.8551V0H29.9869V25.5027H27.1318L27.199 4.15669C26.8127 4.7613 26.1913 5.54225 25.3516 6.49115C24.5119 7.44005 23.5714 8.43933 22.5301 9.47221L1.94818 29.9785Z" fill="currentColor"></path></svg>';
+  const row = document.createElement("div");
+  row.className = "projects_item pac-domain-row";
+  row.setAttribute("data-domain-card", "");
+  row.setAttribute("data-project-domain", card.dataset.projectDomain || "");
+  if (item && item.hasAttribute("data-status")) row.setAttribute("data-status", item.getAttribute("data-status"));
+  row.innerHTML =
+    '<div class="projects_item_inner"><div class="projects_item_inner_wrap">' +
+    '<a class="projects_item_left" href="' + href + '" tabindex="-1" aria-hidden="true"><div class="projects_item_thumb_wrap"></div></a>' +
+    '<div class="u-line_responsive" data-animate-line="height"></div>' +
+    '<div class="projects_item_right"><div class="agenda_item_right_left"></div>' +
+    '<div class="agenda_item_right_right"><a data-wf--primary-cta--variant="dark" href="' + href + '" class="primary_cta w-inline-block"><div class="cta_text">Bekijk project</div><div class="cta_arrow_wrapper is--primary">' + arrow + "</div></a></div></div>" +
+    '</div><div class="u-line-hor" data-animate-line="width"></div></div>';
+  const thumb = row.querySelector(".projects_item_thumb_wrap");
+  if (img) {
+    const copy = img.cloneNode(true);
+    copy.className = "agenda_thumb";
+    thumb.appendChild(copy);
+  }
+  if (soon) {
+    thumb.classList.add("has-soon-tag");
+    thumb.appendChild(soon);
+  }
+  const left = row.querySelector(".agenda_item_right_left");
+  if (eyebrow && eyebrow.textContent.trim()) {
+    const e = document.createElement("div");
+    e.className = "pac-domain-row__eyebrow";
+    e.textContent = eyebrow.textContent.trim();
+    left.appendChild(e);
+  }
+  const h = document.createElement("h3");
+  h.textContent = title ? title.textContent.trim() : "";
+  left.appendChild(h);
+  return row;
+}
+
 function initProjectMediaSlider() {
   const page = nextPage.matches && nextPage.matches("[data-project-page]") ? nextPage : nextPage.querySelector("[data-project-page]");
   if (!page) return;
@@ -4875,7 +4919,7 @@ function initDomainTabs() {
           ? cards.filter((card) => (card.dataset.projectDomain || "").trim() === slug).slice(0, limit)
           : [];
 
-        matches.forEach((card) => target.appendChild(card));
+        matches.forEach((card) => target.appendChild(module.dataset.domainsCards === "grid" ? card : toDomainRow(card)));
 
         const empty = panel.querySelector("[data-domain-projects-empty]");
         target.classList.toggle("is-empty", matches.length === 0);
@@ -4884,6 +4928,8 @@ function initDomainTabs() {
       });
 
       source.remove();
+      initCTAAnimation();
+      if (has("[data-animate-line]")) initAnimateLines();
     };
 
     distributeProjects();
