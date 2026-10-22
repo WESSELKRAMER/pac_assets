@@ -3949,7 +3949,9 @@ function initHomeFeatured() {
     const text = pick("data-text", "intro");
     const eyebrow = val(item, "data-eyebrow") || (ref ? ref.label : "");
     const domain = val(item, "data-domain");
-    const link = val(item, "data-link") || (ref ? ref.path + val(item, "data-" + ref.key + "-slug") : "");
+    const ownA = item.querySelector("[data-own-link]");
+    const ownHref = ownA && !ownA.classList.contains("w-dyn-bind-empty") ? (ownA.getAttribute("href") || "").trim() : "";
+    const link = (ownHref && ownHref !== "#" ? ownHref : "") || val(item, "data-link") || (ref ? ref.path + val(item, "data-" + ref.key + "-slug") : "");
     const button = val(item, "data-button");
     const imgs = Array.from(item.querySelectorAll("img[data-img]")).filter(
       (im) => !im.classList.contains("w-dyn-bind-empty") && (im.getAttribute("src") || "") && !/placeholder/.test(im.getAttribute("src"))
