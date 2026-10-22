@@ -4183,7 +4183,8 @@ function initFilterSheets() {
       if (lenis && lenis.start) lenis.start();
       if (sheet.classList.contains("is-modal")) backTimer = setTimeout(() => !isOpen && !mq.matches && moveBack(), 400);
       if (scrollToList) {
-        const target = root.querySelector(".w-dyn-list, [data-filter-list]") || root;
+        const first = root.querySelector("[data-filter-item]");
+        const target = root.querySelector("[data-filter-list]") || (first && (first.closest(".w-dyn-list") || first.parentElement)) || root;
         const y = target.getBoundingClientRect().top + window.scrollY - 120;
         if (lenis && lenis.scrollTo) lenis.scrollTo(y, { duration: 0.8 });
         else window.scrollTo({ top: y, behavior: "smooth" });

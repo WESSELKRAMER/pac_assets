@@ -2333,6 +2333,21 @@ html.pac-sheet-open body {
     width: auto;
     padding: 0 1.75rem;
   }
+  .pac-filter-sheet.is-modal .filters_wrapper {
+    flex-wrap: wrap;
+  }
+  .pac-filter-sheet.is-modal .stories_filters_wrap,
+  .pac-filter-sheet.is-modal .filters_wrapper_type,
+  .pac-filter-sheet.is-modal .filters_wrapper_vert,
+  .pac-filter-sheet.is-modal .filter_wrapper_top {
+    min-width: 0;
+    align-items: flex-start;
+  }
+  .pac-filter-sheet.is-modal .stories_filters_wrap .w-dyn-list,
+  .pac-filter-sheet.is-modal .filters_wrapper_type .w-dyn-list {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
 }
 .pac-pager {
   display: flex;
