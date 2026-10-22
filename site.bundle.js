@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 09:30";
+window.PAC_BUNDLE = "2026-10-22 09:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -78,6 +78,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-project-slug]")) initProjectFilter();
   if (has("[data-chapter]")) initProjectChapters();
   if (has("[data-project-page]")) initProjectMediaSlider();
+  if (has("[data-status]")) initComingSoon();
   initDutchDates();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
@@ -3751,6 +3752,37 @@ function initDutchDates() {
       el.setAttribute("data-filter-date", m[3] + "-" + String(mi + 1).padStart(2, "0") + "-" + m[2].padStart(2, "0"));
     }
     el.textContent = m[2] + " " + nl[mi] + " " + m[3];
+  });
+}
+
+function initComingSoon() {
+  const isSoon = (el) => (el.getAttribute("data-status") || "").trim().toLowerCase() === "coming soon";
+  const makeTag = (extra) => {
+    const tag = document.createElement("span");
+    tag.className = "pac-soon-tag" + (extra ? " " + extra : "");
+    tag.textContent = "Coming soon";
+    return tag;
+  };
+  nextPage.querySelectorAll("[data-status]").forEach((el) => {
+    if (!isSoon(el) || el.dataset.soonInit === "true") return;
+    el.dataset.soonInit = "true";
+    el.classList.add("is-soon");
+    if (el.hasAttribute("data-project-hero")) {
+      const titleWrap = el.querySelector(".stories_inner_top") || el.querySelector("h1")?.parentElement;
+      if (titleWrap) titleWrap.insertBefore(makeTag("is-hero"), titleWrap.firstChild);
+      const intro = el.querySelector(".stories_inner_bottom") || titleWrap;
+      if (intro) {
+        const note = document.createElement("p");
+        note.className = "pac-soon-note";
+        note.textContent = "Aan deze pagina wordt nog gewerkt. Binnenkort lees je hier meer.";
+        intro.appendChild(note);
+      }
+      return;
+    }
+    const img = el.querySelector("img");
+    const holder = (img && img.parentElement) || el;
+    holder.classList.add("has-soon-tag");
+    holder.appendChild(makeTag());
   });
 }
 

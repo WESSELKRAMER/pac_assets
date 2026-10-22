@@ -1839,3 +1839,41 @@ input[type="submit"] {
   [data-project-subs] .stories_grid.pac-slider__track > .pac-slider__item,
 [data-project-media] .pac-slider__track > .pac-slider__item { width: 84vw; }
 }
+
+.has-soon-tag { position: relative; }
+.pac-soon-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.4em 0.85em;
+  border-radius: var(--_layout---radii--pill, 999px);
+  background-color: var(--pac-dark--900, #1b1c1e);
+  color: var(--pac-green--100, #fdfff7);
+  font-family: var(--_typography---body--font);
+  font-size: var(--_typesetting---body-font-small, 0.875rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.pac-soon-tag::before {
+  content: "";
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  background-color: var(--pac-green--500, #b2ce73);
+}
+.has-soon-tag > .pac-soon-tag {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 2;
+}
+.pac-soon-tag.is-hero {
+  align-self: flex-start;
+  margin-bottom: 1.25rem;
+}
+.pac-soon-note {
+  margin: 1.5rem 0 0;
+  font-size: var(--_typesetting---body-font, 1.2rem);
+  opacity: 0.7;
+}
