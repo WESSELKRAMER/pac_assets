@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 11:45";
+window.PAC_BUNDLE = "2026-10-22 11:50";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3860,8 +3860,8 @@ function initAwardsEmpty() {
   const year = (page.querySelector(".display_text_big") || {}).textContent;
   const label = ((page.querySelector('[data-pill-nav="award"] .w--current') || {}).textContent || "").trim();
   const hidden = [];
-  page.querySelectorAll(":scope > section, :scope > [class^='section_']").forEach((section) => {
-    if (section.matches(".footer_wrapper, [data-pill-nav]") || section.querySelector("[data-pill-nav]")) return;
+  Array.from(page.children).forEach((section) => {
+    if (section.matches(".footer_wrapper, .award_nav, .section_award_hero, [data-pill-nav], .pac-awards-soon") || section.querySelector("[data-pill-nav]")) return;
     const lists = Array.from(section.querySelectorAll(".w-dyn-list")).filter((l) => !l.closest(".w-dyn-item"));
     if (!lists.length) return;
     if (section.querySelector(".w-dyn-item")) return;
