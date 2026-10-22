@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 12:00";
+window.PAC_BUNDLE = "2026-10-22 12:05";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3843,6 +3843,29 @@ function initAwardsNav() {
     tag.className = "pac-soon-tag pac-edition-tag";
     tag.textContent = "Archief \u00b7 Editie " + edition;
     heroInner.insertBefore(tag, heroInner.firstChild);
+    const labels = { awards: "Introductie", shortlist: "Shortlist", longlist: "Longlist", jury: "Jury", photowall: "Photowall" };
+    const home = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 26 27" fill="none" class="home_icon"><path fill="currentColor" d="M25.1447 9.06182C24.9647 7.64482 23.8877 6.19082 22.3277 5.26482C20.9027 4.43282 19.5077 3.59082 18.1607 2.77782C16.7537 1.92782 15.3977 1.11082 14.1157 0.367816C13.2817 -0.116184 12.3247 -0.122184 11.4897 0.347816C10.0807 1.14182 8.58571 2.02982 7.02971 2.95182C5.75471 3.70982 4.43871 4.49182 3.08871 5.26982C1.51671 6.18982 0.428713 7.64982 0.248713 9.08182C-0.230287 12.9388 -0.0172869 16.8508 0.886713 20.7258C1.38871 22.7038 3.47371 24.8178 5.45871 25.3488C7.86071 25.9408 10.2787 26.2368 12.6977 26.2368C15.1167 26.2368 17.5347 25.9408 19.9367 25.3488C19.9427 25.3478 19.9497 25.3458 19.9557 25.3438C21.9227 24.8178 24.0077 22.7028 24.5137 20.7068C25.4137 16.8448 25.6267 12.9278 25.1447 9.06182ZM16.8127 22.7818C16.7057 23.4628 16.1777 24.0148 15.4917 24.0838C13.6357 24.2718 11.7777 24.2728 9.92471 24.0878C9.23871 24.0188 8.70971 23.4668 8.60271 22.7858C8.27771 20.7168 8.36271 18.6478 8.85771 16.5778C9.01171 15.9368 9.50471 15.4238 10.1247 15.1978C11.8467 14.5698 13.5677 14.5698 15.2897 15.1978C15.9097 15.4238 16.4027 15.9368 16.5567 16.5778C17.0527 18.6458 17.1377 20.7138 16.8127 22.7818Z"></path></svg>';
+    const sep = '<div class="breadcrumb_link"><div>/</div></div>';
+    const crumb = (href, text, current) =>
+      '<a href="' + href + '" class="breadcrumb_link w-inline-block' + (current ? " is--current" : "") + '"' + (current ? ' aria-current="page"' : "") + "><div>" + text + "</div></a>";
+    const nav = document.createElement("nav");
+    nav.className = "breadcrumb_subproject_wrap pac-awards-crumbs";
+    nav.setAttribute("aria-label", "Kruimelpad");
+    nav.innerHTML =
+      '<a href="/" class="breadcrumb_link is--icon w-inline-block" aria-label="Home">' + home + "</a>" + sep +
+      crumb("/pan-asian-awards/awards", "Pan Asian Awards") + sep +
+      crumb("/pan-asian-awards/archief", "Archief") + sep +
+      crumb("/pan-asian-awards/" + edition + "/awards", edition, page === "awards") +
+      (page && page !== "awards" ? sep + crumb("/pan-asian-awards/" + edition + "/" + page, labels[page] || page, true) : "");
+    const back = document.createElement("a");
+    back.className = "pac-awards-current";
+    back.href = "/pan-asian-awards/" + (page || "awards");
+    back.textContent = "Naar de huidige editie \u2192";
+    const row = document.createElement("div");
+    row.className = "pac-awards-crumbs-row";
+    row.appendChild(nav);
+    row.appendChild(back);
+    heroInner.parentNode.insertBefore(row, heroInner);
   }
   const page = pageHolder ? (pageHolder.getAttribute("data-awards-page") || "").trim().toLowerCase() : "";
   nextPage.querySelectorAll('[data-pill-nav="award"] a[href]').forEach((a) => {

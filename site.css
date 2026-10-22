@@ -2006,3 +2006,20 @@ input[type="submit"] {
   padding: .5em 1.1em;
 }
 .pac-edition-tag::before { background-color: var(--awards-archive, #bd947e); }
+
+.pac-awards-crumbs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.pac-awards-crumbs-row .breadcrumb_subproject_wrap { margin: 0; }
+.pac-awards-current {
+  font-size: var(--_typesetting---body-font-small, .875rem);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+  white-space: nowrap;
+}
