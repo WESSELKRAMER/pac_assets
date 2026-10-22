@@ -3923,6 +3923,22 @@ function initAwardsEmpty() {
   hidden[0].parentNode.insertBefore(note, hidden[0]);
 }
 
+const homeFeaturedDomainCache = {};
+function homeFeaturedDomain(url) {
+  if (!homeFeaturedDomainCache[url]) {
+    homeFeaturedDomainCache[url] = fetch(url, { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.text() : ""))
+      .then((html) => {
+        if (!html) return "";
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const el = doc.querySelector("[data-page-domain]");
+        return el ? (el.getAttribute("data-page-domain") || "").trim() : "";
+      })
+      .catch(() => "");
+  }
+  return homeFeaturedDomainCache[url];
+}
+
 function initHomeFeatured() {
   const items = Array.from(nextPage.querySelectorAll("[data-home-featured]"));
   const cards = Array.from(nextPage.querySelectorAll(".home_grid_card")).filter(
@@ -3979,6 +3995,13 @@ function initHomeFeatured() {
     const tagText = card.querySelector(".tag_text");
     if (tagText) tagText.textContent = domain;
     if (tagWrap) tagWrap.style.display = domain ? "" : "none";
+    if (!domain && ref && link && link.charAt(0) === "/") {
+      homeFeaturedDomain(link).then((d) => {
+        if (!d) return;
+        if (tagText) tagText.textContent = d;
+        if (tagWrap) tagWrap.style.display = "";
+      });
+    }
     const cardImg = card.querySelector(".grid_card_img_wrapper img");
     if (cardImg && img) {
       cardImg.removeAttribute("srcset");
