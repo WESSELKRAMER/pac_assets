@@ -2490,3 +2490,8 @@ html.pac-sheet-open body {
   color: #fff;
   text-decoration: none;
 }
+[data-filter-count-bar] {
+  margin-bottom: 1.5rem;
+  font-size: var(--_typesetting---body-font-small, .875rem);
+  opacity: .7;
+}
