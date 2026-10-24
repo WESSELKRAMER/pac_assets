@@ -4730,6 +4730,31 @@ function truncateCrumbs(el) {
   });
 }
 
+// Breadcrumbs: letters schuiven per crumb gemaskeerd omhoog in, home-icoon schaalt mee in
+function animateCrumbs(el) {
+  if (reducedMotion || !hasSplitText || el.hasAttribute("data-crumb-static")) return;
+  const texts = Array.from(el.querySelectorAll(".breadcrumb_link > div, .breadcrumb_link:not(:has(> *))"))
+    .filter((node) => !node.children.length && (node.textContent || "").trim());
+  const icon = el.querySelector(".breadcrumb_link.is--icon");
+  if (!texts.length) return;
+
+  const delay = toNumber(el.getAttribute("data-crumb-delay"), 0.25);
+  const splits = texts.map((node) => SplitText.create(node, { type: "words, chars", mask: "chars", charsClass: "crumb-char" }));
+  const chars = splits.flatMap((s) => s.chars);
+
+  const tl = gsap.timeline({
+    delay,
+    onComplete: () => splits.forEach((s) => s.revert())
+  });
+  if (icon) tl.from(icon, { autoAlpha: 0, scale: 0.6, duration: 0.5, ease: "back.out(2)" }, 0);
+  tl.from(chars, { yPercent: 110, duration: 0.6, stagger: 0.012, ease: "expo.out" }, icon ? 0.08 : 0);
+
+  addCleanup(el, () => {
+    tl.kill();
+    splits.forEach((s) => s.revert());
+  });
+}
+
 function initBreadcrumbs() {
   nextPage.querySelectorAll(SEL.breadcrumbs).forEach((el) => {
     if (!el.hasAttribute("data-breadcrumbs")) el.setAttribute("data-breadcrumbs", "");
@@ -4738,7 +4763,10 @@ function initBreadcrumbs() {
     if (el.dataset.breadcrumbsInit === "true") return;
     el.dataset.breadcrumbsInit = "true";
     const isRow = el.hasAttribute("data-scroll-row");
-    if (!isRow) truncateCrumbs(el);
+    if (!isRow) {
+      truncateCrumbs(el);
+      animateCrumbs(el);
+    }
     const update = () => {
       el.classList.toggle("is-end", el.scrollLeft >= el.scrollWidth - el.clientWidth - 2);
       el.classList.toggle("is-scrolled", el.scrollLeft > 2);
