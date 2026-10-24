@@ -4730,7 +4730,7 @@ function truncateCrumbs(el) {
   });
 }
 
-// Breadcrumbs: letters schuiven per crumb gemaskeerd omhoog in, home-icoon schaalt mee in
+// Breadcrumbs: letters schuiven per crumb gemaskeerd omhoog in, home-icoon schaalt mee in (blijft volledig dekkend)
 function animateCrumbs(el) {
   if (reducedMotion || !hasSplitText || el.hasAttribute("data-crumb-static")) return;
   const texts = Array.from(el.querySelectorAll(".breadcrumb_link > div, .breadcrumb_link:not(:has(> *))"))
@@ -4746,7 +4746,7 @@ function animateCrumbs(el) {
     delay,
     onComplete: () => splits.forEach((s) => s.revert())
   });
-  if (icon) tl.from(icon, { autoAlpha: 0, scale: 0.6, duration: 0.5, ease: "back.out(2)" }, 0);
+  if (icon) tl.from(icon, { scale: 0.6, duration: 0.5, ease: "back.out(2)", clearProps: "scale" }, 0);
   tl.from(chars, { yPercent: 110, duration: 0.6, stagger: 0.012, ease: "expo.out" }, icon ? 0.08 : 0);
 
   addCleanup(el, () => {
