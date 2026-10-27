@@ -122,7 +122,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-stack]")) initStackCards();
   if (has(SEL.bigLogo)) initBigLogoReveal();
   if (has(SEL.marqueeTrack)) initLogoMarquee();
-  if (has(".partners_logos")) initPartnerOrder();
+  if (has(".partners_logos, .partners_pills")) initPartnerOrder();
   if (has(SEL.footerLink)) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
   if (has("[data-slider], .stories-swiper")) initSliders();
@@ -6219,8 +6219,8 @@ function initBigLogoReveal() {
 }
 
 function initPartnerOrder() {
-  // Sorteer partnerlogo's op CMS-veld Volgorde (data-order); lege waarden achteraan
-  (nextPage || document).querySelectorAll(".partners_logos").forEach((list) => {
+  // Sorteer partnerlogo's en community-pillen op CMS-veld Volgorde (data-order); lege waarden achteraan
+  (nextPage || document).querySelectorAll(".partners_logos, .partners_pills").forEach((list) => {
     const items = Array.from(list.children).filter((el) => el.hasAttribute("data-order"));
     const num = (el) => {
       const n = parseFloat(el.getAttribute("data-order"));
