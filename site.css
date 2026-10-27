@@ -2813,3 +2813,6 @@ html.pac-sheet-open body {
 .logo-marquee_track>*,[data-marquee-track]>*{flex:0 0 auto}
 .section_partners .logo-marquee{padding-bottom:0}
 @media (max-width:767px){.section_partners .logo-marquee_track{gap:2.5rem}}
+
+/* Accordion: laatste item altijd afgeronde onderhoeken (wrap kan hoger zijn dan de items) */
+.what_right_wrap > .faq_item:last-child{border-bottom-left-radius:inherit;border-bottom-right-radius:inherit;overflow:hidden}
