@@ -2770,3 +2770,27 @@ html.pac-sheet-open body {
     text-align: left;
   }
 }
+
+.logo-marquee .logo-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 5rem;
+}
+.logo-marquee .logo-item img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 11rem;
+  max-height: 5rem;
+  object-fit: contain;
+}
+@media (max-width: 767px) {
+  .logo-marquee .logo-item {
+    height: 3.5rem;
+  }
+  .logo-marquee .logo-item img {
+    max-width: 8rem;
+    max-height: 3.5rem;
+  }
+}
