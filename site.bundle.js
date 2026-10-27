@@ -6870,7 +6870,7 @@ function initPhotowall() {
       document.removeEventListener("keydown", onKey);
       const finish = () => {
         gsap.set(box, { display: "none" });
-        if (lenis) lenis.start();
+        if (lenis && !overlayOpen) lenis.start();
         if (lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
       };
       if (reducedMotion) finish();
@@ -6898,6 +6898,152 @@ function initPhotowall() {
       if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
     };
 
+    // Preview-modus (data-photowall-mode="preview"): slider met de eerste foto's + knop die de volledige wall in een overlay opent
+    let overlay = null;
+    let overlayOpen = false;
+    let closeOverlay = () => {};
+    let previewCleanup = () => {};
+    if (wall.dataset.photowallMode === "preview") {
+      const inner = grid.parentElement;
+      const previewCount = Math.max(3, Math.round(toNumber(wall.dataset.photowallPreview, 10)));
+      const title = wall.dataset.photowallTitle || "Foto's";
+      const arrowSvg = (d) => '<svg viewBox="0 0 24 24" width="100%" fill="none"><path d="' + d + '" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+      const preview = document.createElement("div");
+      preview.className = "photowall_preview";
+      preview.innerHTML =
+        '<div class="photowall_preview_head"><h2 class="photowall_preview_title"></h2><div class="photowall_preview_controls">' +
+        '<button type="button" class="photowall_preview_arrow" data-pw-scroll="-1" aria-label="Vorige foto\'s">' + arrowSvg("M15 5l-7 7 7 7") + "</button>" +
+        '<button type="button" class="photowall_preview_arrow" data-pw-scroll="1" aria-label="Volgende foto\'s">' + arrowSvg("M9 5l7 7-7 7") + "</button>" +
+        "</div></div>" +
+        '<div class="photowall_preview_track" data-lenis-prevent></div>' +
+        '<button type="button" class="photowall_preview_all"></button>';
+      preview.querySelector(".photowall_preview_title").textContent = title;
+      preview.querySelector(".photowall_preview_all").textContent = "Bekijk alle " + all.length + " foto's";
+      const track = preview.querySelector(".photowall_preview_track");
+      all.slice(0, previewCount).forEach((p, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "photowall_preview_item";
+        b.dataset.index = String(i);
+        b.setAttribute("aria-label", "Bekijk foto " + (i + 1) + " van " + all.length);
+        const img = document.createElement("img");
+        img.src = p.src;
+        if (p.srcset) {
+          img.srcset = p.srcset;
+          img.sizes = "(max-width: 767px) 70vw, 30vw";
+        }
+        img.alt = p.alt;
+        img.loading = "lazy";
+        img.decoding = "async";
+        b.appendChild(img);
+        track.appendChild(b);
+      });
+      inner.insertBefore(preview, inner.firstChild);
+
+      overlay = document.createElement("div");
+      overlay.className = "photowall_overlay";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", title);
+      overlay.setAttribute("aria-hidden", "true");
+      overlay.innerHTML =
+        '<div class="photowall_overlay_head"><span class="photowall_overlay_title"></span>' +
+        '<button type="button" class="photowall_lightbox_btn is--close photowall_overlay_close" aria-label="Sluit foto\'s">' + arrowSvg("M6 6l12 12M18 6L6 18") + "</button></div>" +
+        '<div class="photowall_overlay_body" data-lenis-prevent></div>';
+      overlay.querySelector(".photowall_overlay_title").textContent = title + " (" + all.length + ")";
+      const body = overlay.querySelector(".photowall_overlay_body");
+      if (filtersWrap) body.appendChild(filtersWrap);
+      body.appendChild(grid);
+      wall.insertBefore(overlay, box);
+
+      const showAll = () => {
+        if (list === all) return;
+        activeAlbum = -1;
+        list = all;
+        if (filtersWrap) filtersWrap.querySelectorAll(".photowall_filter").forEach((el) => {
+          const on = el.dataset.album === "-1";
+          el.classList.toggle("is-active", on);
+          el.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        reset();
+      };
+      const openOverlay = (trigger) => {
+        if (overlayOpen) return;
+        overlayOpen = true;
+        overlay.__trigger = trigger || document.activeElement;
+        overlay.setAttribute("aria-hidden", "false");
+        gsap.killTweensOf(overlay);
+        gsap.set(overlay, { display: "flex" });
+        body.scrollTop = 0;
+        if (reducedMotion) gsap.set(overlay, { autoAlpha: 1 });
+        else gsap.fromTo(overlay, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out" });
+        document.documentElement.classList.add("pac-sheet-open");
+        if (lenis) lenis.stop();
+        overlay.querySelector(".photowall_overlay_close").focus({ preventScroll: true });
+        if (hasScrollTrigger) requestAnimationFrame(() => ScrollTrigger.refresh());
+      };
+      closeOverlay = () => {
+        if (!overlayOpen) return;
+        overlayOpen = false;
+        overlay.setAttribute("aria-hidden", "true");
+        const finish = () => {
+          gsap.set(overlay, { display: "none" });
+          document.documentElement.classList.remove("pac-sheet-open");
+          if (lenis) lenis.start();
+          const t = overlay.__trigger;
+          if (t && t.isConnected) t.focus({ preventScroll: true });
+        };
+        if (reducedMotion) finish();
+        else gsap.to(overlay, { autoAlpha: 0, y: 24, duration: 0.3, ease: "power2.in", onComplete: finish });
+      };
+
+      const onPreviewClick = (e) => {
+        const scrollBtn = e.target.closest("[data-pw-scroll]");
+        if (scrollBtn) {
+          const dir = parseInt(scrollBtn.dataset.pwScroll, 10) || 1;
+          track.scrollBy({ left: dir * track.clientWidth * 0.8, behavior: reducedMotion ? "auto" : "smooth" });
+          return;
+        }
+        if (e.target.closest(".photowall_preview_all")) return openOverlay(e.target.closest(".photowall_preview_all"));
+        const item = e.target.closest(".photowall_preview_item");
+        if (!item) return;
+        showAll();
+        open(parseInt(item.dataset.index, 10) || 0, item);
+      };
+      const syncArrows = () => {
+        const max = track.scrollWidth - track.clientWidth - 2;
+        preview.querySelectorAll("[data-pw-scroll]").forEach((b) => {
+          b.disabled = b.dataset.pwScroll === "-1" ? track.scrollLeft <= 2 : track.scrollLeft >= max;
+        });
+        preview.classList.toggle("is-static", max <= 0);
+      };
+      const onOverlayClick = (e) => {
+        if (e.target.closest(".photowall_overlay_close")) closeOverlay();
+      };
+      const onOverlayKey = (e) => {
+        if (e.key === "Escape" && overlayOpen && !isOpen) closeOverlay();
+      };
+      preview.addEventListener("click", onPreviewClick);
+      track.addEventListener("scroll", syncArrows, { passive: true });
+      window.addEventListener("resize", syncArrows);
+      overlay.addEventListener("click", onOverlayClick);
+      document.addEventListener("keydown", onOverlayKey);
+      requestAnimationFrame(syncArrows);
+      track.querySelectorAll("img").forEach((img) => img.addEventListener("load", syncArrows, { once: true }));
+      previewCleanup = () => {
+        preview.removeEventListener("click", onPreviewClick);
+        track.removeEventListener("scroll", syncArrows);
+        window.removeEventListener("resize", syncArrows);
+        overlay.removeEventListener("click", onOverlayClick);
+        document.removeEventListener("keydown", onOverlayKey);
+        if (overlayOpen) {
+          document.documentElement.classList.remove("pac-sheet-open");
+          if (lenis) lenis.start();
+        }
+      };
+    }
+
     grid.addEventListener("click", onGridClick);
     box.addEventListener("click", onBoxClick);
     box.addEventListener("pointerdown", onDown);
@@ -6908,6 +7054,7 @@ function initPhotowall() {
 
     addCleanup(wall, () => {
       close();
+      previewCleanup();
       document.removeEventListener("keydown", onKey);
       grid.removeEventListener("click", onGridClick);
       box.removeEventListener("click", onBoxClick);

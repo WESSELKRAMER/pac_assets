@@ -2504,3 +2504,171 @@ html.pac-sheet-open body {
   font-size: var(--_typesetting---body-font-small, .875rem);
   opacity: .7;
 }
+
+.photowall_preview {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+.photowall_preview_head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.photowall_preview_title {
+  margin: 0;
+}
+.photowall_preview_controls {
+  display: flex;
+  gap: 0.5rem;
+}
+.photowall_preview.is-static .photowall_preview_controls {
+  display: none;
+}
+.photowall_preview_arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0.85rem;
+  border: 1px solid var(--pac-dark--900, #1b1c1e);
+  border-radius: var(--_layout---radii--pill, 999px);
+  background-color: transparent;
+  color: var(--pac-dark--900, #1b1c1e);
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+}
+.photowall_preview_arrow:hover:not(:disabled) {
+  background-color: var(--pac-dark--900, #1b1c1e);
+  color: var(--pac-light--500, #fff);
+}
+.photowall_preview_arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.photowall_preview_track {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.photowall_preview_track::-webkit-scrollbar {
+  display: none;
+}
+.photowall_preview_item {
+  flex: 0 0 auto;
+  height: 22rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--_layout---radii--m, 0.75rem);
+  overflow: hidden;
+  background-color: var(--pac-beige--500, #f2e3d4);
+  cursor: zoom-in;
+  scroll-snap-align: start;
+}
+.photowall_preview_item img {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  transition: transform 0.9s cubic-bezier(0.625, 0.05, 0, 1);
+}
+@media (hover: hover) {
+  .photowall_preview_item:hover img {
+    transform: scale(1.04);
+  }
+}
+.photowall_preview_item:focus-visible,
+.photowall_preview_all:focus-visible {
+  outline: 2px solid var(--pac-dark--900, #1b1c1e);
+  outline-offset: 2px;
+}
+.photowall_preview_all {
+  align-self: flex-start;
+  padding: 0.9rem 1.5rem;
+  border: 0;
+  border-radius: var(--_layout---radii--pill, 999px);
+  background-color: var(--pac-dark--900, #1b1c1e);
+  color: var(--pac-light--500, #fff);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+.photowall_preview_all:hover {
+  opacity: 0.85;
+}
+
+.photowall_overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999990;
+  display: none;
+  flex-direction: column;
+  background-color: var(--pac-light--500, #f8f5f0);
+  opacity: 0;
+  visibility: hidden;
+}
+.photowall_overlay_head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 5.5rem;
+  padding: 1.5rem 6rem 1.5rem 2rem;
+  border-bottom: 1px solid rgba(27, 28, 30, 0.12);
+  font-size: 1.25rem;
+}
+.photowall_overlay .photowall_overlay_close {
+  top: 50%;
+  right: 1.5rem;
+  transform: translateY(-50%);
+  border-color: rgba(27, 28, 30, 0.25);
+  color: var(--pac-dark--900, #1b1c1e);
+}
+.photowall_overlay .photowall_overlay_close:hover {
+  background-color: var(--pac-dark--900, #1b1c1e);
+  color: var(--pac-light--500, #fff);
+}
+.photowall_overlay_body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.photowall_overlay_body .photowall_filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 767px) {
+  .photowall_preview_item {
+    height: 15rem;
+  }
+  .photowall_preview_track {
+    gap: 0.5rem;
+  }
+  .photowall_overlay_head {
+    min-height: 4.5rem;
+    padding: 1rem 5rem 1rem 1rem;
+    font-size: 1rem;
+  }
+  .photowall_overlay .photowall_overlay_close {
+    right: 1rem;
+  }
+  .photowall_overlay_body {
+    padding: 1rem;
+  }
+}
