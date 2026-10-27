@@ -4097,7 +4097,7 @@ function initAwardsTemplate() {
   if (!page || page.dataset.awardsBuilt === "true") return;
   page.dataset.awardsBuilt = "true";
 
-  const val = (k) => ((page.querySelector('[data-edition-field="' + k + '"]') || {}).textContent || "").trim();
+  const val = (k) => ((page.querySelector('[data-edition-field="' + k + '"] .award_edition_value') || {}).textContent || "").trim();
   const flag = (k) => {
     const el = page.querySelector('[data-edition-field="' + k + '"] .award_edition_value');
     return !!el && !el.classList.contains("w-condition-invisible");
