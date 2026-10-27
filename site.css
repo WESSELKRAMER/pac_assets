@@ -2849,13 +2849,13 @@ html.pac-sheet-open body {
 .samenwerken_zone > .blob_wrap{-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 86%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 86%,transparent 100%)}
 .samenwerken_zone .section_intro,.samenwerken_zone .section_what_we_do{background-color:transparent}
 
-/* Accordion Sectie – variant Oranje */
-.faq_item.is--green.w-variant-8d59135c-cdaf-3984-d082-f0055a9ea987{background-color:rgb(240,150,118)}
+/* Accordion Sectie – variant Oranje (licht → donker) */
+.faq_item.is--green.w-variant-8d59135c-cdaf-3984-d082-f0055a9ea987{background-color:rgb(252,232,223)}
 .faq_item.is--pink.w-variant-8d59135c-cdaf-3984-d082-f0055a9ea987{background-color:rgb(246,193,173)}
-.faq_item.is--orange.w-variant-8d59135c-cdaf-3984-d082-f0055a9ea987{background-color:rgb(222,82,46)}
-.faq_item.is--beige.w-variant-8d59135c-cdaf-3984-d082-f0055a9ea987{background-color:rgb(251,228,218)}
-/* Accordion Sectie – variant Groen */
-.faq_item.is--green.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(178,206,115)}
+.faq_item.is--orange.w-variant-8d59135c-cdaf-3984-d082-f0055a9ea987{background-color:rgb(237,138,104)}
+.faq_item.is--beige.w-variant-8d59135c-cdaf-3984-d082-f0055a9ea987{background-color:rgb(222,82,46)}
+/* Accordion Sectie – variant Groen (licht → donker) */
+.faq_item.is--green.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(236,243,218)}
 .faq_item.is--pink.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(212,228,175)}
-.faq_item.is--orange.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(146,180,78)}
-.faq_item.is--beige.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(234,242,214)}
+.faq_item.is--orange.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(178,206,115)}
+.faq_item.is--beige.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(140,172,74)}
