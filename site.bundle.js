@@ -81,6 +81,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-chapter]")) initProjectChapters();
   initExternalLinks();
   if (has("[data-project-page]")) initProjectMediaSlider();
+  if (has("[data-stories-slider]")) initStoriesSliders();
   if (has("[data-home-featured]")) initHomeFeatured();
   initContactLinks();
   if (has("[data-media-embed]")) initMediaEmbeds();
@@ -5100,29 +5101,38 @@ function initHomeFeatured() {
   });
 }
 
+const SLIDER_ARROW = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 17 15" fill="none" class="agenda_arrow"><path d="M16.2419 7.68254L16.2231 6.57294L4.72512 6.55649C4.14211 6.55649 3.60847 6.57294 3.11715 6.60351C2.62582 6.63407 2.22853 6.67873 1.92762 6.73985L7.93871 0.79929L7.13943 6.06693e-06L-6.07261e-05 7.1395L7.13943 14.279L7.93871 13.4797L1.94408 7.52268C2.22148 7.5838 2.61407 7.62847 3.1148 7.65903C3.61552 7.68959 4.15857 7.70605 4.73922 7.7037L16.2419 7.68254Z" fill="currentColor"></path></svg>';
+
+// Zet een sectie met een CMS-lijst om naar de kaartenslider (zelfde opbouw als "Gerelateerde verhalen" op projecten).
+function buildStoriesSlider(section, label) {
+  if (section.hasAttribute("data-slider-ui")) return;
+  const list = section.querySelector(".w-dyn-list");
+  const titleRow = section.querySelector(".title_top_wrap, .title_wrap");
+  if (!list || !list.querySelector(".w-dyn-item")) return;
+  section.setAttribute("data-slider-ui", "");
+  section.setAttribute("data-project-media", "");
+  list.setAttribute("data-slider", "");
+  list.setAttribute("data-slider-bleed", "");
+  list.setAttribute("data-slider-label", label || "Verhalen, nieuws en media");
+  if (section.querySelector("[data-slider-prev], [data-slider-next]") || !titleRow) return;
+  const controls = document.createElement("div");
+  controls.className = "team_slider_buttons";
+  controls.setAttribute("data-slider-controls", "");
+  controls.innerHTML =
+    '<div class="team_button" data-slider-prev data-arrow-button data-arrow-direction="left" role="button" tabindex="0" aria-label="Vorige">' + SLIDER_ARROW + "</div>" +
+    '<div class="team_button is--next" data-slider-next data-arrow-button role="button" tabindex="0" aria-label="Volgende">' + SLIDER_ARROW + "</div>";
+  titleRow.appendChild(controls);
+}
+
 function initProjectMediaSlider() {
   const page = nextPage.matches && nextPage.matches("[data-project-page]") ? nextPage : nextPage.querySelector("[data-project-page]");
   if (!page) return;
-  const arrow = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 17 15" fill="none" class="agenda_arrow"><path d="M16.2419 7.68254L16.2231 6.57294L4.72512 6.55649C4.14211 6.55649 3.60847 6.57294 3.11715 6.60351C2.62582 6.63407 2.22853 6.67873 1.92762 6.73985L7.93871 0.79929L7.13943 6.06693e-06L-6.07261e-05 7.1395L7.13943 14.279L7.93871 13.4797L1.94408 7.52268C2.22148 7.5838 2.61407 7.62847 3.1148 7.65903C3.61552 7.68959 4.15857 7.70605 4.73922 7.7037L16.2419 7.68254Z" fill="currentColor"></path></svg>';
-  page.querySelectorAll(":scope > :is(.section_stories, .section_common):not([data-project-subs])").forEach((section) => {
-    if (section.hasAttribute("data-slider-ui")) return;
-    const list = section.querySelector(".w-dyn-list");
-    const titleRow = section.querySelector(".title_top_wrap, .title_wrap");
-    if (!list || !list.querySelector(".w-dyn-item")) return;
-    section.setAttribute("data-slider-ui", "");
-    section.setAttribute("data-project-media", "");
-    list.setAttribute("data-slider", "");
-    list.setAttribute("data-slider-bleed", "");
-    list.setAttribute("data-slider-label", "Verhalen, nieuws en media");
-    if (section.querySelector("[data-slider-prev], [data-slider-next]") || !titleRow) return;
-    const controls = document.createElement("div");
-    controls.className = "team_slider_buttons";
-    controls.setAttribute("data-slider-controls", "");
-    controls.innerHTML =
-      '<div class="team_button" data-slider-prev data-arrow-button data-arrow-direction="left" role="button" tabindex="0" aria-label="Vorige">' + arrow + "</div>" +
-      '<div class="team_button is--next" data-slider-next data-arrow-button role="button" tabindex="0" aria-label="Volgende">' + arrow + "</div>";
-    titleRow.appendChild(controls);
-  });
+  page.querySelectorAll(":scope > :is(.section_stories, .section_common):not([data-project-subs])").forEach((section) => buildStoriesSlider(section));
+}
+
+// Losse secties als slider: [data-stories-slider] op de sectie (optioneel met een label als waarde, voor screenreaders)
+function initStoriesSliders() {
+  nextPage.querySelectorAll("[data-stories-slider]").forEach((section) => buildStoriesSlider(section, section.getAttribute("data-stories-slider")));
 }
 
 // Uitgaande links altijd in een nieuw tabblad
