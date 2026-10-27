@@ -2985,3 +2985,9 @@ h1:not([data-split]), h2:not([data-split]), h3:not([data-split]) { hyphens: auto
 .flex_img_wrap.has-video:hover .pac-video__play { transform: scale(1.08); }
 .pac-flexvideo__frame { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; border: 0; }
 .flex_img_wrap.is-playing img { visibility: hidden; }
+
+/* Flex-items mogen niet uitzetten door één lang woord (anders denkt de afbreek-code dat het past) */
+.flex_text_wrap > * { min-width: 0; max-width: 100%; }
+
+/* Awards: gekantelde winnaarskaarten (3D) maakten de pagina ~16px te breed */
+.section_awards { overflow-x: clip; }
