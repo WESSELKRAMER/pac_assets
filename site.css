@@ -2866,3 +2866,10 @@ html.pac-sheet-open body {
 .section_404 > .blob_wrap{-webkit-mask-image:linear-gradient(180deg,#000 70%,transparent);mask-image:linear-gradient(180deg,#000 70%,transparent)}
 .error_pill:hover{background-color:rgb(27,28,30);color:#fff}
 @media (max-width:767px){.section_404{padding-top:8rem;padding-bottom:5rem}.error_bg_text .display_text_big{font-size:58vw}}
+
+/* Samenwerken mobiel: minder lucht tussen intro en accordion binnen een kleurzone */
+@media (max-width:767px){
+  .samenwerken_zone .section_what_we_do .what_we_do_inner{padding-top:0;padding-bottom:0}
+  .samenwerken_zone .section_what_we_do > .u-sec-spacer:first-child{height:3rem}
+  .samenwerken_zone .section_what_we_do > .u-sec-spacer:last-child{height:4rem}
+}
