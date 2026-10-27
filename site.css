@@ -2741,5 +2741,10 @@ html.pac-sheet-open body {
 }
 .pac-filter-sheet.is-sheet :is(.filter-dropdown, .filter-datepicker) {
   flex-wrap: wrap;
+  align-content: flex-start;
   row-gap: 0.5rem;
+}
+.pac-filter-sheet.is-sheet .filter-dropdown__button {
+  flex: 1 1 100%;
+  height: auto;
 }
