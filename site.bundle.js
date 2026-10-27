@@ -6627,8 +6627,19 @@ function initPhotowall() {
         album: i
       }));
       const slug = (el.querySelector("[data-photowall-slug]")?.textContent || "").trim();
-      return { name, credit, slug, label: credit || name || "Album " + (i + 1), photos };
+      const refs = Array.from(el.querySelectorAll("[data-photowall-ref]")).map((n) => (n.textContent || "").trim()).filter(Boolean);
+      return { name, credit, slug, refs, label: credit || name || "Album " + (i + 1), photos };
     });
+
+    // Project- en subprojectpagina's: alleen albums die naar deze pagina verwijzen (data-photowall-for = slug van de pagina)
+    if (wall.hasAttribute("data-photowall-for")) {
+      const forSlug = (wall.getAttribute("data-photowall-for") || "").trim();
+      albums = forSlug ? albums.filter((a) => a.refs.includes(forSlug)) : [];
+      if (!albums.length) {
+        wall.style.display = "none";
+        return;
+      }
+    }
 
     const base = (wall.dataset.photowallBase || "/awards-photowall/").replace(/\/?$/, "/");
     const parsePhotos = (html, album, i) => {
@@ -6665,7 +6676,12 @@ function initPhotowall() {
     Promise.all(albums.map(loadAlbum)).then(() => {
       grid.classList.remove("is-loading");
       if (!wall.isConnected) return;
-      startPhotowall(albums.filter((a) => a.photos.length));
+      const filled = albums.filter((a) => a.photos.length);
+      if (!filled.length && wall.hasAttribute("data-photowall-for")) {
+        wall.style.display = "none";
+        return;
+      }
+      startPhotowall(filled);
     });
 
     function startPhotowall(albums) {
