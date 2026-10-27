@@ -2941,3 +2941,18 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
 h1:not([data-split]), h2:not([data-split]), h3:not([data-split]) { hyphens: auto; -webkit-hyphens: auto; hyphenate-limit-chars: 10 4 4; }
 /* Kaarten die direct op elkaar volgen: kleinere tussenruimte, zodat het één raster wordt */
 [data-project-page] > [data-chapter].is-no-image:has(+ [data-chapter].is-no-image) { padding-bottom: 1.5rem; }
+
+/* Videoraster in hoofdstukken */
+[data-chapter].has-videos .flex_text_wrap { max-width: none; }
+.pac-videos { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem 1.25rem; }
+@media (min-width: 568px) { .pac-videos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 992px) { .pac-videos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.pac-videos > .pac-video { margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+.pac-videos > .pac-video::before { content: none; display: none; }
+.pac-video__thumb, .pac-video__frame { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0; margin: 0 0 .4rem; border-radius: .9rem; overflow: hidden; background: #000; cursor: pointer; }
+.pac-video__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+.pac-video__thumb:hover img, .pac-video__thumb:focus-visible img { transform: scale(1.04); }
+.pac-video__play { position: absolute; left: 50%; top: 50%; width: 3.5rem; height: 3.5rem; margin: -1.75rem 0 0 -1.75rem; border-radius: 50%; background: var(--pac-light--500, #fff); box-shadow: 0 .25rem 1rem rgba(0,0,0,.25); }
+.pac-video__play::after { content: ""; position: absolute; left: 54%; top: 50%; transform: translate(-50%, -50%); border-style: solid; border-width: .55rem 0 .55rem .9rem; border-color: transparent transparent transparent currentColor; color: var(--pac-dark--500, #1a1a1a); }
+.pac-video__title { font-weight: 600; line-height: 1.25; }
+.pac-video__meta { font-size: .875em; opacity: .7; line-height: 1.3; }

@@ -5181,7 +5181,12 @@ function initProjectChapterSource() {
     const title = sec.querySelector("[data-chapter-title]");
     if (title) { title.textContent = ch.title; title.setAttribute("data-chapter-title", n); title.classList.remove("w-dyn-bind-empty"); }
     const text = sec.querySelector("[data-chapter-text]");
-    if (text) { text.innerHTML = body.innerHTML; text.setAttribute("data-chapter-text", n); text.classList.remove("w-dyn-bind-empty"); }
+    if (text) {
+      text.innerHTML = body.innerHTML;
+      text.setAttribute("data-chapter-text", n);
+      text.classList.remove("w-dyn-bind-empty");
+      if (buildVideoLists(text)) sec.classList.add("has-videos");
+    }
     const imgWrap = sec.querySelector(".flex_img_wrap");
     const img = imgWrap && imgWrap.querySelector("img");
     if (img) {
@@ -5210,6 +5215,61 @@ function initProjectChapterSource() {
   pairTextChapters();
 }
 
+// Lijst met YouTube-links in een hoofdstuk -> raster met videokaarten (klik = afspelen op de plek zelf)
+function buildVideoLists(root) {
+  let found = false;
+  root.querySelectorAll("ul").forEach((ul) => {
+    const items = Array.from(ul.children).filter((li) => li.tagName === "LI");
+    if (!items.length) return;
+    const parsed = items.map((li) => {
+      const a = li.querySelector("a[href]");
+      const id = a ? pacYoutubeId(a.getAttribute("href")) : "";
+      return id ? { li, a, id } : null;
+    });
+    if (parsed.some((p) => !p)) return;
+    found = true;
+    ul.classList.add("pac-videos");
+    parsed.forEach(({ li, a, id }) => {
+      const title = a.textContent.trim();
+      const meta = li.textContent.replace(a.textContent, "").replace(/^\s*[–—-]\s*/, "").trim();
+      li.className = "pac-video";
+      li.innerHTML = "";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pac-video__thumb";
+      btn.setAttribute("aria-label", "Speel video: " + title);
+      const img = document.createElement("img");
+      img.src = "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+      img.alt = "";
+      img.loading = "lazy";
+      const play = document.createElement("span");
+      play.className = "pac-video__play";
+      play.setAttribute("aria-hidden", "true");
+      btn.append(img, play);
+      btn.addEventListener("click", () => {
+        const frame = document.createElement("iframe");
+        frame.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0&playsinline=1";
+        frame.title = title;
+        frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
+        frame.setAttribute("allowfullscreen", "");
+        frame.className = "pac-video__frame";
+        btn.replaceWith(frame);
+      });
+      const t = document.createElement("span");
+      t.className = "pac-video__title";
+      t.textContent = title;
+      li.append(btn, t);
+      if (meta) {
+        const m = document.createElement("span");
+        m.className = "pac-video__meta";
+        m.textContent = meta;
+        li.appendChild(m);
+      }
+    });
+  });
+  return found;
+}
+
 // Hoofdstukken zonder foto worden kaarten in de themakleur; twee op rij komen naast elkaar te staan.
 function pairTextChapters() {
   const hero = nextPage.querySelector("[data-project-theme]");
@@ -5220,8 +5280,8 @@ function pairTextChapters() {
   for (let i = 0; i < sections.length; i++) {
     const a = sections[i];
     const b = sections[i + 1];
-    if (!a.classList.contains("is-no-image")) continue;
-    if (!b || !b.classList.contains("is-no-image") || a.nextElementSibling !== b) continue;
+    if (!a.classList.contains("is-no-image") || a.classList.contains("has-videos")) continue;
+    if (!b || !b.classList.contains("is-no-image") || b.classList.contains("has-videos") || a.nextElementSibling !== b) continue;
     const innerA = a.querySelector(".flex_content_inner");
     const wrapB = b.querySelector(".flex_text_wrap");
     if (!innerA || !wrapB) continue;
