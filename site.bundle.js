@@ -122,6 +122,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-stack]")) initStackCards();
   if (has(SEL.bigLogo)) initBigLogoReveal();
   if (has(SEL.marqueeTrack)) initLogoMarquee();
+  if (has(".partners_logos")) initPartnerOrder();
   if (has(SEL.footerLink)) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
   if (has("[data-slider], .stories-swiper")) initSliders();
@@ -6217,6 +6218,28 @@ function initBigLogoReveal() {
   });
 }
 
+function initPartnerOrder() {
+  // Sorteer partnerlogo's op CMS-veld Volgorde (data-order); lege waarden achteraan
+  (nextPage || document).querySelectorAll(".partners_logos").forEach((list) => {
+    const items = Array.from(list.children).filter((el) => el.hasAttribute("data-order"));
+    const num = (el) => {
+      const n = parseFloat(el.getAttribute("data-order"));
+      return isNaN(n) ? Infinity : n;
+    };
+    items
+      .map((el, i) => ({ el, i, n: num(el) }))
+      .sort((a, b) => a.n - b.n || a.i - b.i)
+      .forEach(({ el }) => list.appendChild(el));
+    // Items zonder logo overslaan
+    list.querySelectorAll("img").forEach((img) => {
+      if (!img.getAttribute("src") || img.classList.contains("w-dyn-bind-empty")) {
+        const item = img.closest(".partners_logo_item");
+        if (item) item.remove();
+      }
+    });
+  });
+}
+
 function initLogoMarquee() {
   nextPage.querySelectorAll(SEL.marqueeTrack).forEach((track) => {
     if (track.dataset.marqueeInitialized === "true") return;
@@ -6225,6 +6248,10 @@ function initLogoMarquee() {
     const wrapper = track.parentElement;
     if (!wrapper) return;
 
+    [...track.children].forEach((child) => {
+      const img = child.querySelector("img");
+      if (img && (!img.getAttribute("src") || img.classList.contains("w-dyn-bind-empty"))) child.remove();
+    });
     const originals = [...track.children].map((child) => child.cloneNode(true));
     if (!originals.length) return;
     if (reducedMotion) return;

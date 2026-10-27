@@ -2789,3 +2789,23 @@ html.pac-sheet-open body {
     width: 9.375rem;
   }
 }
+
+/* Samenwerken – WhatsApp aanmeldformulier: checkbox */
+.wa_checkbox.w-checkbox{display:flex;align-items:flex-start;gap:.75rem;margin:0 0 1.5rem;padding:0;cursor:pointer}
+.wa_checkbox .w-checkbox-input{flex:none;float:none;width:1.125rem;height:1.125rem;margin:.2em 0 0}
+.wa_checkbox .w-form-label{flex:1 1 auto;min-width:0;font-weight:inherit;line-height:1.4;cursor:pointer}
+
+/* Samenwerken – partners */
+.section_partners .partners_block{margin-bottom:4rem}
+.section_partners .partners_block:last-child{margin-bottom:0}
+.partners_logos{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1rem}
+.partners_logo_item{display:flex;align-items:center;justify-content:center;aspect-ratio:250/196;background:#fff;border-radius:.75rem;overflow:hidden}
+.partners_logo_item img{display:block;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
+.partners_logos > [data-type]:not([data-type="Partner"]),
+.partners_pills > [data-type]:not([data-type="Community-partner"]){display:none}
+.partners_pills{display:flex;flex-wrap:wrap;gap:.5rem}
+.partners_pill{display:inline-flex;align-items:center;padding:.6rem 1.1rem;border:1px solid currentColor;border-radius:999px;line-height:1.2}
+.partners_more{margin:1.5rem 0 0;opacity:.6}
+@media (max-width:991px){.partners_logos{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:767px){.partners_logos{grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}.section_partners .partners_block{margin-bottom:3rem}}
+@media (max-width:479px){.partners_logos{grid-template-columns:repeat(2,minmax(0,1fr))}}
