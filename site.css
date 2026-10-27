@@ -2754,11 +2754,8 @@ html.pac-sheet-open body {
   font-size: var(--_typesetting---body-font-small, 0.875rem);
   opacity: 0.6;
 }
-:has(> .pac-agenda-note) {
-  flex-wrap: wrap;
-}
-.pac-agenda-note {
-  flex: 0 0 100%;
-  width: 100%;
-  grid-column: 1 / -1;
+.month_year_wrapper:has(> .pac-agenda-note) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
