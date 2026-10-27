@@ -2939,3 +2939,5 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
 
 /* Lange woorden in koppen zonder split-animatie: logisch afbreken (NL-woordenboek), alleen als het niet past */
 h1:not([data-split]), h2:not([data-split]), h3:not([data-split]) { hyphens: auto; -webkit-hyphens: auto; hyphenate-limit-chars: 10 4 4; }
+/* Kaarten die direct op elkaar volgen: kleinere tussenruimte, zodat het één raster wordt */
+[data-project-page] > [data-chapter].is-no-image:has(+ [data-chapter].is-no-image) { padding-bottom: 1.5rem; }
