@@ -2908,3 +2908,5 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
   [data-chapter].is-no-image .flex_content_inner { flex-direction: row; }
   [data-chapter].is-no-image .flex_text_wrap { padding-left: 0; padding-right: 0; }
 }
+/* SplitText: een gesplitste regel mag nooit zelf nog eens afbreken (voorkomt losse woordjes als "de" door subpixel-afronding) */
+[data-split] .line { white-space: nowrap; }
