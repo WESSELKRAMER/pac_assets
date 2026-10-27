@@ -299,7 +299,7 @@ html.lenis body { height: auto; }
   pointer-events: none;
 }
 
-.blob {
+:where(.blob) {
   background-image: radial-gradient(circle, var(--blob-color, var(--pac-green--500, #b2ce73)) 0%, transparent 70%);
 }
 
