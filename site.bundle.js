@@ -138,6 +138,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-pac-modal-open]")) initPacModals();
   if (has(".section_404")) init404();
   if (has("form[data-pac-form]")) initPacForms();
+  if (has("[data-flex-video]")) initFlexVideos();
 }
 
 function initAfterEnterFunctions(next) {
@@ -5644,6 +5645,69 @@ function initFilterLinks() {
 }
 
 // Achtergrondvideo uit dezelfde YouTube-link als de pop-up (gedempt, loop, niet klikbaar)
+// Flex Content met video: prop "Video link" (data-flex-video op .flex_img_wrap).
+// Leeg = gewone afbeelding. Ingevuld = thumbnail + afspeelknop; pas na klik laadt de (nocookie) iframe.
+// Een eigen afbeelding in het component wordt de poster; staat de standaardafbeelding er nog, dan de YouTube-still.
+const FLEX_DEFAULT_IMG = "6a042b72c212a62e6022ee57";
+function pacVimeoId(url) {
+  const m = (url || "").match(/vimeo\.com\/(?:video\/|channels\/[\w-]+\/|groups\/[\w-]+\/videos\/|showcase\/\d+\/video\/)?(\d{6,})/);
+  return m ? m[1] : "";
+}
+function initFlexVideos() {
+  nextPage.querySelectorAll("[data-flex-video]").forEach((wrap) => {
+    if (wrap.dataset.flexVideoReady === "true") return;
+    const url = (wrap.getAttribute("data-flex-video") || "").trim();
+    if (!url) return;
+    const yt = pacYoutubeId(url);
+    const vm = yt ? "" : pacVimeoId(url);
+    if (!yt && !vm) return;
+    wrap.dataset.flexVideoReady = "true";
+    wrap.classList.add("has-video");
+
+    let img = wrap.querySelector("img");
+    const src = img ? img.getAttribute("src") || "" : "";
+    const ownPoster = img && src && !img.classList.contains("w-dyn-bind-empty") && src.indexOf(FLEX_DEFAULT_IMG) === -1;
+    if (!img) {
+      img = document.createElement("img");
+      img.alt = "";
+      wrap.appendChild(img);
+    }
+    if (!ownPoster) {
+      img.removeAttribute("srcset");
+      img.removeAttribute("sizes");
+      img.classList.remove("w-dyn-bind-empty");
+      img.src = yt ? "https://i.ytimg.com/vi/" + yt + "/maxresdefault.jpg" : "https://vumbnail.com/" + vm + ".jpg";
+      if (yt) img.addEventListener("error", function fb() { img.removeEventListener("error", fb); img.src = "https://i.ytimg.com/vi/" + yt + "/hqdefault.jpg"; });
+    }
+
+    const title = (wrap.closest(".flex_content_inner")?.querySelector("h2, h3")?.textContent || "").trim() || "Video";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pac-flexvideo__btn";
+    btn.setAttribute("aria-label", "Speel video: " + title);
+    const play = document.createElement("span");
+    play.className = "pac-video__play";
+    play.setAttribute("aria-hidden", "true");
+    btn.appendChild(play);
+    wrap.appendChild(btn);
+
+    const onClick = () => {
+      const frame = document.createElement("iframe");
+      frame.src = yt
+        ? "https://www.youtube-nocookie.com/embed/" + yt + "?autoplay=1&rel=0&playsinline=1"
+        : "https://player.vimeo.com/video/" + vm + "?autoplay=1&dnt=1";
+      frame.title = title;
+      frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
+      frame.setAttribute("allowfullscreen", "");
+      frame.className = "pac-flexvideo__frame";
+      wrap.appendChild(frame);
+      wrap.classList.add("is-playing");
+      btn.remove();
+    };
+    btn.addEventListener("click", onClick);
+  });
+}
+
 function pacYoutubeId(url) {
   if (!url) return "";
   let u = url;

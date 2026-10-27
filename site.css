@@ -2975,3 +2975,13 @@ h1:not([data-split]), h2:not([data-split]), h3:not([data-split]) { hyphens: auto
   font-size: clamp(2.5rem, 1.75rem + 3.2vw, 5.25rem);
   line-height: 1.02;
 }
+
+/* Flex Content met video (prop "Video link") */
+.flex_img_wrap.has-video { aspect-ratio: 16 / 9; display: block !important; background: #000; }
+.flex_img_wrap.has-video img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.pac-flexvideo__btn { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; padding: 0; margin: 0; border: 0; background: transparent; cursor: pointer; }
+.pac-flexvideo__btn:hover ~ img, .flex_img_wrap.has-video:hover img { transform: scale(1.03); }
+.flex_img_wrap.has-video .pac-video__play { width: 4.5rem; height: 4.5rem; margin: -2.25rem 0 0 -2.25rem; transition: transform .3s ease; }
+.flex_img_wrap.has-video:hover .pac-video__play { transform: scale(1.08); }
+.pac-flexvideo__frame { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; border: 0; }
+.flex_img_wrap.is-playing img { visibility: hidden; }
