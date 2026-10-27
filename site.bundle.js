@@ -81,6 +81,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-home-featured]")) initHomeFeatured();
   initContactLinks();
   if (has("[data-media-embed]")) initMediaEmbeds();
+  if (has("[data-story-color]")) initStoryColor();
   if (has("[data-chapters-source], .is--longread .domains_module.is--scrolljack")) initStoryChapters();
   if (has("[data-story-collection]")) initFeaturedStories();
   if (has("form select")) initFormSelects();
@@ -3945,6 +3946,16 @@ function toDomainRow(card) {
   h.textContent = title ? title.textContent.trim() : "";
   left.appendChild(h);
   return row;
+}
+
+function initStoryColor() {
+  nextPage.querySelectorAll("[data-story-color]").forEach((src) => {
+    const bg = getComputedStyle(src).backgroundColor;
+    if (!bg || bg === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(bg)) return;
+    const scope = src.closest(".page_wrapper") || src.parentElement;
+    scope.style.setProperty("--story-color", bg);
+    scope.classList.add("has-story-color");
+  });
 }
 
 function initAwardsNav() {

@@ -2725,3 +2725,6 @@ html.pac-sheet-open body {
     flex: 0 0 auto;
   }
 }
+
+.has-story-color .domain_indicator { background-color: var(--story-color); }
+[data-story-color] { display: none; }
