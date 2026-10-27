@@ -139,6 +139,7 @@ function initBeforeEnterFunctions(next) {
 
 function initAfterEnterFunctions(next) {
   nextPage = next || document;
+  fixAwardsCurrent();
 
   if (hasLenis) {
     lenis.resize();
@@ -4230,8 +4231,17 @@ function initAwardsTemplate() {
   }
 }
 
+// Webflow zet w--current op basis van het pad (zonder ?tab=); corrigeer dat
+function fixAwardsCurrent() {
+  const page = nextPage.matches && nextPage.matches("[data-awards-template]") ? nextPage : nextPage.querySelector("[data-awards-template]");
+  if (!page) return;
+  page.querySelectorAll('[data-pill-nav="award"] a').forEach((a) => {
+    a.classList.toggle("w--current", a.getAttribute("aria-current") === "page");
+  });
+}
+
 function initAwardsNav() {
-  const find =(sel) => (nextPage.matches && nextPage.matches(sel) ? nextPage : nextPage.querySelector(sel));
+  const find = (sel) => (nextPage.matches && nextPage.matches(sel) ? nextPage : nextPage.querySelector(sel));
   const edHolder = find("[data-awards-edition]");
   const pageHolder = find("[data-awards-page]");
   const edition = edHolder ? (edHolder.getAttribute("data-awards-edition") || "").trim() : "";
@@ -5212,7 +5222,8 @@ function initPillNav() {
     nav.insertBefore(pill, nav.firstChild);
 
     const currentIndex = () => {
-      const i = items.findIndex((el) => el.classList.contains("w--current") || el.getAttribute("aria-current") === "page");
+      let i = items.findIndex((el) => el.getAttribute("aria-current") === "page");
+      if (i === -1) i = items.findIndex((el) => el.classList.contains("w--current"));
       return i === -1 ? 0 : i;
     };
     let active = currentIndex();
