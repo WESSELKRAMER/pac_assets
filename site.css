@@ -2936,3 +2936,6 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
   [data-chapter].is-no-image.is-pair .flex_content_inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; align-items: stretch; }
   [data-chapter].is-no-image .flex_text_wrap { padding: 3rem; }
 }
+
+/* Lange woorden in koppen zonder split-animatie: logisch afbreken (NL-woordenboek), alleen als het niet past */
+h1:not([data-split]), h2:not([data-split]), h3:not([data-split]) { hyphens: auto; -webkit-hyphens: auto; hyphenate-limit-chars: 10 4 4; }

@@ -1582,7 +1582,7 @@ function initMaskTextScrollReveal() {
         ? heading.dataset.splitReveal
         : "lines";
 
-      fitLongestWord(heading);
+      const fitted = fitLongestWord(heading);
       const isImmediate = heading.dataset.splitImmediate === "true";
       const config = splitConfig[type];
 
@@ -1674,6 +1674,11 @@ function initMaskTextScrollReveal() {
         }
       });
 
+      if (fitted) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = fitted;
+        heading.setAttribute("aria-label", tmp.textContent.trim());
+      }
       const recheck = () => scheduleCheck(instance);
       // Breedte veranderd na het splitsen (bijv. hero-afbeelding laadt later): regels opnieuw controleren
       let lastW = heading.offsetWidth;
@@ -1699,25 +1704,80 @@ function initMaskTextScrollReveal() {
   });
 }
 
-// Lange woorden (bijv. "Empathiebeweging") passen soms niet in de kolom: verklein dan de koptekst tot het langste woord past.
+// Lange woorden (bijv. "Empathiebeweging") passen soms niet in de kolom.
+// Dan breken we het woord af op een logische plek (Nederlands afbreekwoordenboek van de browser: "Empathie-beweging"),
+// zo gebalanceerd mogelijk. Lukt dat niet, dan wordt de kop als laatste redmiddel iets kleiner.
 function fitLongestWord(el) {
+  if (el.dataset.fitOriginal) el.innerHTML = el.dataset.fitOriginal;
+  else el.dataset.fitOriginal = el.innerHTML;
   el.style.removeProperty("font-size");
   const width = el.clientWidth;
   if (!width) return;
-  const words = (el.textContent || "").split(/\s+/).filter(Boolean);
-  if (!words.length) return;
   const cs = getComputedStyle(el);
-  const probe = document.createElement("span");
-  probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0;";
-  ["fontFamily", "fontSize", "fontWeight", "fontStyle", "letterSpacing", "textTransform", "fontFeatureSettings"].forEach((k) => (probe.style[k] = cs[k]));
+  const lang = el.closest("[lang]")?.getAttribute("lang") || "nl";
+  const probe = document.createElement("div");
+  probe.setAttribute("lang", lang);
+  probe.style.cssText = "position:absolute;visibility:hidden;left:-9999px;top:0;white-space:nowrap;";
+  ["fontFamily", "fontSize", "fontWeight", "fontStyle", "letterSpacing", "textTransform", "fontFeatureSettings", "lineHeight"].forEach((k) => (probe.style[k] = cs[k]));
   document.body.appendChild(probe);
-  let widest = 0;
-  words.forEach((w) => { probe.textContent = w; widest = Math.max(widest, probe.getBoundingClientRect().width); });
+  const measure = (t) => { probe.textContent = t; return probe.getBoundingClientRect().width; };
+
+  // Mogelijke afbreekpunten van een woord volgens de browser (hyphens: auto op een zeer smalle kolom)
+  const breakPoints = (word) => {
+    probe.style.whiteSpace = "normal";
+    probe.style.width = "1px";
+    probe.style.hyphens = "auto";
+    probe.style.webkitHyphens = "auto";
+    probe.textContent = word;
+    const node = probe.firstChild;
+    const range = document.createRange();
+    const points = [];
+    let lastTop = null;
+    for (let i = 0; i < word.length; i++) {
+      range.setStart(node, i);
+      range.setEnd(node, i + 1);
+      const rects = range.getClientRects();
+      const r = rects[rects.length - 1];
+      if (!r) continue;
+      if (lastTop !== null && r.top > lastTop + 1) points.push(i);
+      lastTop = r.top;
+    }
+    probe.style.cssText = "position:absolute;visibility:hidden;left:-9999px;top:0;white-space:nowrap;";
+    ["fontFamily", "fontSize", "fontWeight", "fontStyle", "letterSpacing", "textTransform", "fontFeatureSettings", "lineHeight"].forEach((k) => (probe.style[k] = cs[k]));
+    return points.filter((i) => i >= 3 && word.length - i >= 3);
+  };
+
+  const words = (el.textContent || "").split(/\s+/).filter(Boolean);
+  const splits = new Map();
+  let widestLeft = 0;
+  words.forEach((w) => {
+    if (measure(w) <= width) return;
+    const clean = w.replace(/[^\p{L}\p{N}]+$/u, "");
+    const tail = w.slice(clean.length);
+    const options = breakPoints(clean)
+      .map((i) => ({ a: clean.slice(0, i) + "-", b: clean.slice(i) + tail }))
+      .filter((o) => measure(o.a) <= width && measure(o.b) <= width)
+      .sort((x, y) => Math.abs(measure(x.a) - measure(x.b)) - Math.abs(measure(y.a) - measure(y.b)));
+    if (options.length) splits.set(w, options[0]);
+    else widestLeft = Math.max(widestLeft, measure(w));
+  });
   probe.remove();
-  if (widest <= width) return;
-  const size = parseFloat(cs.fontSize);
-  const scale = Math.max(0.5, (width / widest) * 0.97);
-  el.style.fontSize = (size * scale).toFixed(2) + "px";
+
+  if (splits.size) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((n) => {
+      let t = n.nodeValue;
+      splits.forEach((o, w) => { t = t.split(w).join(o.a + " " + o.b); });
+      n.nodeValue = t;
+    });
+  }
+  if (widestLeft > width) {
+    const size = parseFloat(cs.fontSize);
+    el.style.fontSize = (size * Math.max(0.5, (width / widestLeft) * 0.97)).toFixed(2) + "px";
+  }
+  return splits.size ? el.dataset.fitOriginal : null;
 }
 
 function initHighlightText() {
