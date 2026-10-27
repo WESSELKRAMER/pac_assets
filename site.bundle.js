@@ -3209,13 +3209,13 @@ function initListFilters() {
       return { el, index, values, date, text };
     });
 
-    const buttons = Array.from(root.querySelectorAll("[data-filter-button]"));
-    const selects = Array.from(root.querySelectorAll("[data-filter-select]"));
-    const searches = Array.from(root.querySelectorAll("[data-filter-search]"));
-    const sorts = Array.from(root.querySelectorAll("[data-filter-sort]"));
-    const counts = Array.from(root.querySelectorAll("[data-filter-count]"));
-    const resets = Array.from(root.querySelectorAll("[data-filter-reset]"));
-    const empties = Array.from(root.querySelectorAll("[data-filter-empty]"));
+    const buttons = filterScopeAll(root, "[data-filter-button]");
+    const selects = filterScopeAll(root, "[data-filter-select]");
+    const searches = filterScopeAll(root, "[data-filter-search]");
+    const sorts = filterScopeAll(root, "[data-filter-sort]");
+    const counts = filterScopeAll(root, "[data-filter-count]");
+    const resets = filterScopeAll(root, "[data-filter-reset]");
+    const empties = filterScopeAll(root, "[data-filter-empty]");
     const activeClass = root.dataset.filterActiveClass || "is-active";
     const useUrl = root.dataset.filterUrl !== "false";
     // Eigen URL-voorvoegsel per filter, bv. data-filter-url-key="afgelopen" → ?afgelopen-van=…
@@ -3661,7 +3661,7 @@ function initListFilters() {
       return api;
     };
 
-    root.querySelectorAll("[data-filter-mobile-dropdown]").forEach((group) => {
+    filterScopeAll(root, "[data-filter-mobile-dropdown]").forEach((group) => {
       const groupButtons = buttons.filter((btn) => group.contains(btn));
       if (!groupButtons.length) return;
       const g = slug(group.getAttribute("data-filter-mobile-dropdown") || groupButtons[0].getAttribute("data-filter-button"));
@@ -3700,7 +3700,7 @@ function initListFilters() {
     const datePickers = [];
     const filterEventDays = new Set(items.filter((i) => i.date).map((i) => dpDayStart(i.date)));
     const latestDate = items.reduce((max, i) => (i.date > max ? i.date : max), 0);
-    root.querySelectorAll("[data-filter-datepicker]").forEach((host) => {
+    filterScopeAll(root, "[data-filter-datepicker]").forEach((host) => {
       const presetType = host.getAttribute("data-filter-datepicker-presets") || "past";
       datePickers.push(
         createDatePicker(host, {
@@ -4144,9 +4144,22 @@ function buildFilterSheets() {
     Array.from(panel.querySelectorAll("h1, h2, h3, h4, h5, h6, div, p")).forEach((el) => {
       if (!el.children.length && /^filters?$/i.test(el.textContent.trim())) el.classList.add("pac-sheet-hide");
     });
+    // Koppel het sheet aan zijn filter: op mobiel verhuist het sheet uit [data-filter] naar de pagina-wrapper
+    const owner = panel.closest("[data-filter]");
+    if (owner) {
+      (owner.__pacSheets = owner.__pacSheets || []).push(sheet);
+      sheet.__pacRoot = owner;
+    }
     panel.parentNode.insertBefore(sheet, panel);
     sheet.querySelector(".pac-filter-sheet__body").appendChild(panel);
   });
+}
+
+// Alle elementen binnen een filter, inclusief een eventueel verhuisd filter-sheet
+function filterScopeAll(root, sel) {
+  const found = new Set(root.querySelectorAll(sel));
+  (root.__pacSheets || []).forEach((sheet) => sheet.querySelectorAll(sel).forEach((el) => found.add(el)));
+  return Array.from(found);
 }
 
 function initFilterSheets() {
@@ -4155,7 +4168,7 @@ function initFilterSheets() {
   nextPage.querySelectorAll(".pac-filter-sheet").forEach((sheet) => {
     if (sheet.dataset.sheetInit === "true") return;
     sheet.dataset.sheetInit = "true";
-    const root = sheet.closest("[data-filter]") || sheet.parentElement;
+    const root = sheet.__pacRoot || sheet.closest("[data-filter]") || sheet.parentElement;
     const marker = document.createComment("filter-sheet");
     sheet.parentNode.insertBefore(marker, sheet);
     const spacer = document.createElement("div");
@@ -4177,7 +4190,7 @@ function initFilterSheets() {
     host.appendChild(fab);
     host.appendChild(backdrop);
 
-    const reset = root.querySelector("[data-filter-reset]");
+    const reset = filterScopeAll(root, "[data-filter-reset]")[0];
     const syncDot = () => fab.classList.toggle("is-filtered", !!reset && reset.style.display !== "none");
     let mo = null;
     if (reset) {

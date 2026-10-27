@@ -367,6 +367,15 @@ html.lenis body { height: auto; }
   clip: rect(0 0 0 0);
   overflow: hidden;
 }
+.js :is([data-filter]:not([data-filter-custom="false"]), .pac-filter-sheet) select:is([data-filter-select], [data-filter-sort]):not(.filter-dropdown__native):not([data-filter-custom="false"]) {
+  visibility: hidden;
+}
+.wf-design-mode select[data-filter-select],
+.wf-design-mode select[data-filter-sort],
+.w-editor select[data-filter-select],
+.w-editor select[data-filter-sort] {
+  visibility: visible !important;
+}
 .filter-dropdown__button {
   display: flex;
   align-items: center;
