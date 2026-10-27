@@ -128,6 +128,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-slider], .stories-swiper")) initSliders();
   if (has("[data-photowall]")) initPhotowall();
   if (has("[data-pac-modal-open]")) initPacModals();
+  if (has("form[data-pac-form]")) initPacForms();
 }
 
 function initAfterEnterFunctions(next) {
@@ -6680,6 +6681,130 @@ function initSliders() {
       track.removeEventListener("touchstart", onWheelOrTouch);
       prevBtns.forEach((b) => b.removeEventListener("click", onPrev));
       nextBtns.forEach((b) => b.removeEventListener("click", onNext));
+    });
+  });
+}
+
+// Webflow-formulieren + Cloudflare Turnstile die ook na Barba-overgangen blijven werken.
+// Forms krijgen in Webflow data-wf-no-turnstile (Webflow slaat dan zijn eigen Turnstile-init over, die na een
+// Barba-overgang nooit meer afgaat) + data-pac-form. Wij renderen Turnstile zelf; het token zit als hidden input
+// (cf-turnstile-response) in het formulier, zodat Webflow's eigen submit-handler het gewoon meestuurt.
+let turnstilePromise = null;
+function whenTurnstile() {
+  if (window.turnstile && typeof window.turnstile.render === "function") return Promise.resolve(window.turnstile);
+  if (turnstilePromise) return turnstilePromise;
+  turnstilePromise = new Promise((resolve, reject) => {
+    const started = Date.now();
+    const poll = () => {
+      if (window.turnstile && typeof window.turnstile.render === "function") return resolve(window.turnstile);
+      if (Date.now() - started > 15000) return reject(new Error("Turnstile niet geladen"));
+      setTimeout(poll, 100);
+    };
+    if (!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
+      const sc = document.createElement("script");
+      sc.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      sc.async = true;
+      document.head.appendChild(sc);
+    }
+    poll();
+  }).catch((err) => {
+    turnstilePromise = null;
+    throw err;
+  });
+  return turnstilePromise;
+}
+
+function initPacForms() {
+  const siteKey =
+    document.querySelector("[data-turnstile-sitekey]")?.getAttribute("data-turnstile-sitekey") || "";
+
+  nextPage.querySelectorAll("form[data-pac-form]").forEach((form) => {
+    if (form.dataset.pacFormReady === "true") return;
+    form.dataset.pacFormReady = "true";
+
+    const wrapper = form.closest(".w-form");
+    const btn = form.querySelector('input[type="submit"], button[type="submit"]');
+    const key = form.getAttribute("data-turnstile-sitekey") || siteKey;
+    if (!key) return; // geen botbescherming actief: Webflow doet alles zelf
+
+    form.querySelectorAll(".pac-turnstile, .cf-turnstile").forEach((el) => el.remove());
+    const holder = document.createElement("div");
+    holder.className = "pac-turnstile";
+    form.appendChild(holder);
+
+    let widgetId = null;
+    let token = "";
+    let rendered = false;
+
+    const setReady = (ready) => {
+      if (btn) {
+        btn.disabled = !ready;
+        btn.classList.toggle("w-form-loading", !ready);
+      }
+      if (wrapper) wrapper.classList.toggle("w-form-loading", !ready);
+    };
+
+    const reset = () => {
+      token = "";
+      setReady(false);
+      if (window.turnstile && widgetId !== null) {
+        try { window.turnstile.reset(widgetId); } catch (e) {}
+      }
+    };
+
+    const render = () => {
+      if (rendered) return;
+      rendered = true;
+      setReady(false);
+      whenTurnstile()
+        .then((ts) => {
+          if (!holder.isConnected) return;
+          widgetId = ts.render(holder, {
+            sitekey: key,
+            callback: (t) => {
+              token = t;
+              setReady(true);
+            },
+            "expired-callback": reset,
+            "error-callback": () => {
+              token = "";
+              setReady(false);
+              setTimeout(() => holder.isConnected && reset(), 3000);
+            },
+          });
+        })
+        .catch(() => setReady(true)); // Turnstile onbereikbaar: niet blokkeren, server beslist
+    };
+
+    // Pas renderen als het formulier bijna in beeld is (zoals Webflow)
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            io.disconnect();
+            render();
+          }
+        },
+        { rootMargin: "300px" }
+      );
+      io.observe(form);
+      addCleanup(form, () => io.disconnect());
+    } else render();
+
+    // Na een mislukte verzending wil Turnstile een nieuw token: opnieuw ophalen
+    const fail = wrapper && wrapper.querySelector(".w-form-fail");
+    if (fail && "MutationObserver" in window) {
+      const mo = new MutationObserver(() => {
+        if (getComputedStyle(fail).display !== "none") reset();
+      });
+      mo.observe(fail, { attributes: true, attributeFilter: ["style"] });
+      addCleanup(form, () => mo.disconnect());
+    }
+
+    addCleanup(form, () => {
+      if (window.turnstile && widgetId !== null) {
+        try { window.turnstile.remove(widgetId); } catch (e) {}
+      }
     });
   });
 }

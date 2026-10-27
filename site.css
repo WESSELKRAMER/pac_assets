@@ -2795,15 +2795,13 @@ html.pac-sheet-open body {
 .wa_checkbox .w-checkbox-input{flex:none;float:none;width:1.125rem;height:1.125rem;margin:.2em 0 0}
 .wa_checkbox .w-form-label{flex:1 1 auto;min-width:0;font-weight:inherit;line-height:1.4;cursor:pointer}
 
-/* Samenwerken – partners */
-.section_partners .partners_block{margin-bottom:4rem}
+/* Samenwerken – partners (logo's + community-pillen, beide als marquee) */
+.section_partners .partners_block{margin-bottom:7rem}
 .section_partners .partners_block:last-child{margin-bottom:0}
-.section_partners .logo-marquee{overflow:hidden}
-.partners_pills_list > .partners_pills > [data-type]:not([data-type="Community-partner"]){display:none}
-.partners_pills{display:flex;flex-wrap:wrap;gap:.5rem}
-.partners_pill{display:inline-flex;align-items:center;padding:.6rem 1.1rem;border:1px solid currentColor;border-radius:999px;line-height:1.2}
-.partners_more{margin:1.5rem 0 0;opacity:.6}
-@media (max-width:767px){.section_partners .partners_block{margin-bottom:3rem}}
+.section_partners .logo-marquee{overflow:hidden;padding-bottom:0}
+.partners_pills_list .logo-marquee_track{gap:.75rem;align-items:center}
+.partners_pill{display:inline-flex;align-items:center;white-space:nowrap;padding:.75rem 1.25rem;border:1px solid currentColor;border-radius:999px;line-height:1.2}
+@media (max-width:767px){.section_partners .partners_block{margin-bottom:4.5rem}.partners_pills_list .logo-marquee_track{gap:.5rem}}
 
 /* Formulier-meldingen pas tonen als Webflow ze activeert (inline display) */
 .w-form-done.contact_success,.w-form-fail.contact_error{display:none}
@@ -2812,7 +2810,7 @@ html.pac-sheet-open body {
 .logo-marquee_track,[data-marquee-track]{display:flex;flex-wrap:nowrap;gap:4rem;width:max-content}
 .logo-marquee_track>*,[data-marquee-track]>*{flex:0 0 auto}
 .section_partners .logo-marquee{padding-bottom:0}
-@media (max-width:767px){.section_partners .logo-marquee_track{gap:2.5rem}}
+@media (max-width:767px){.partners_logos_list .logo-marquee_track{gap:2.5rem}}
 
 /* Accordion: laatste item altijd afgeronde onderhoeken (wrap kan hoger zijn dan de items) */
 .what_right_wrap > .faq_item:last-child{border-bottom-left-radius:inherit;border-bottom-right-radius:inherit;overflow:hidden}
@@ -2835,3 +2833,7 @@ html.pac-sheet-open body {
 .pac_modal_panel .w-richtext li{margin-bottom:.35rem}
 .wa_rules_link{color:inherit;text-decoration:underline;text-underline-offset:.2em}
 @media (max-width:767px){.pac_modal{padding:1rem;align-items:flex-end}.pac_modal_panel{padding:2rem 1.5rem;max-height:calc(100dvh - 6rem)}.pac_modal_close{top:1rem;right:1rem}}
+
+/* Turnstile-container in formulieren (meestal onzichtbaar) */
+.pac-turnstile{margin-top:.75rem}
+.pac-turnstile:empty{display:none}
