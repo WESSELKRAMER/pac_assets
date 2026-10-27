@@ -2773,12 +2773,12 @@ html.pac-sheet-open body {
 
 .logo-marquee .logo-item img {
   display: block;
-  width: 10rem;
+  width: 12.5rem;
   height: auto;
   mix-blend-mode: multiply;
 }
 @media (max-width: 767px) {
   .logo-marquee .logo-item img {
-    width: 7.5rem;
+    width: 9.375rem;
   }
 }
