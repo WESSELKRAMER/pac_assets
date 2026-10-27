@@ -4006,6 +4006,14 @@ function initAwardsNav() {
     if (current) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   });
+  if (edition) {
+    nextPage.querySelectorAll(".section_awards a[href], .section_about_video a[href]").forEach((a) => {
+      const href = a.getAttribute("href") || "";
+      if (/^\/pan-asian-awards\/(awards|longlist|shortlist|jury|photowall)\/?$/.test(href)) {
+        a.setAttribute("href", href.replace("/pan-asian-awards/", "/pan-asian-awards/" + edition + "/"));
+      }
+    });
+  }
 }
 
 function initAwardsEmpty() {
