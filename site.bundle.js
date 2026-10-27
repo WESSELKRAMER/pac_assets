@@ -5558,8 +5558,11 @@ function initProjectFilter() {
   // Verhalen bij dit subproject: elk verhaal heeft een verborgen lijstje met zijn subproject-slugs
   nextPage.querySelectorAll("[data-project-verhalen] [data-verhaal-item]").forEach((item) => {
     const subs = Array.from(item.querySelectorAll("[data-verhaal-sub]"), (el) => (el.getAttribute("data-verhaal-sub") || "").trim());
-    if (!subs.includes(slug)) item.remove();
-    else item.querySelectorAll(".filter_data").forEach((el) => el.remove());
+    if (!subs.includes(slug)) { item.remove(); return; }
+    item.querySelectorAll(".filter_data").forEach((el) => el.remove());
+    const vSlug = (item.getAttribute("data-verhaal-item") || "").trim();
+    const a = item.querySelector("a");
+    if (a && vSlug && (a.getAttribute("href") || "#") === "#") a.setAttribute("href", "/verhalen/" + vSlug);
   });
 }
 
