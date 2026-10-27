@@ -108,6 +108,7 @@ function initBeforeEnterFunctions(next) {
   if (has(SEL.floatingImg)) initFloatingImages();
   if (has("[data-image-reveal]")) initImageReveal();
   if (has("[data-wipe-reveal]")) initWipeReveal();
+  if (has("[data-yt-bg]")) initYoutubeBg();
   if (has("[data-open-video]")) initVideoPopup();
   if (has("[data-team-slider]")) initTeamSlider();
   if (has("[data-gallery]")) initGalleries();
@@ -5311,6 +5312,65 @@ function initFilterLinks() {
       url.searchParams.set(group, value);
       link.setAttribute("href", url.pathname + url.search + url.hash);
     } catch (e) {}
+  });
+}
+
+// Achtergrondvideo uit dezelfde YouTube-link als de pop-up (gedempt, loop, niet klikbaar)
+function pacYoutubeId(url) {
+  if (!url) return "";
+  let u = url;
+  try { u = decodeURIComponent(url); } catch (e) {}
+  const m = u.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?(?:.*&)?v=|shorts\/|v\/))([\w-]{11})/);
+  return m ? m[1] : "";
+}
+
+function initYoutubeBg() {
+  nextPage.querySelectorAll("[data-yt-bg]").forEach((bg) => {
+    if (bg.dataset.ytInit === "true") return;
+    bg.dataset.ytInit = "true";
+    const scope = bg.closest(".section_about_video") || bg.parentElement;
+    const frame = scope && scope.querySelector("[data-popup-video] iframe, .video_pop_up iframe");
+    const id = frame ? pacYoutubeId(frame.getAttribute("data-video-src") || frame.getAttribute("src") || "") : "";
+    if (!id) return;
+    bg.classList.add("pac-yt-bg");
+
+    const poster = document.createElement("img");
+    poster.className = "pac-yt-bg__poster";
+    poster.alt = "";
+    poster.decoding = "async";
+    poster.addEventListener("load", () => {
+      if (poster.naturalWidth <= 120 && !poster.dataset.fallback) {
+        poster.dataset.fallback = "1";
+        poster.src = "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+      }
+    });
+    poster.src = "https://i.ytimg.com/vi/" + id + "/maxresdefault.jpg";
+    bg.appendChild(poster);
+
+    if (reducedMotion) return;
+    let iframe = null;
+    const load = () => {
+      if (iframe) return;
+      iframe = document.createElement("iframe");
+      iframe.className = "pac-yt-bg__frame";
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.setAttribute("tabindex", "-1");
+      iframe.title = "";
+      iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+      iframe.src =
+        "https://www.youtube-nocookie.com/embed/" + id +
+        "?autoplay=1&mute=1&loop=1&playlist=" + id +
+        "&controls=0&disablekb=1&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&fs=0&showinfo=0";
+      iframe.addEventListener("load", () => setTimeout(() => bg.classList.add("is-playing"), 1200));
+      bg.appendChild(iframe);
+    };
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) { load(); io.disconnect(); }
+      }, { rootMargin: "300px 0px" });
+      io.observe(bg);
+      addCleanup(bg, () => io.disconnect());
+    } else load();
   });
 }
 
