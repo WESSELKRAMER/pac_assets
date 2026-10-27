@@ -2754,13 +2754,27 @@ html.pac-sheet-open body {
   font-size: var(--_typesetting---body-font-small, 0.875rem);
   opacity: 0.6;
 }
-.agenda_top + .pac-agenda-note {
-  margin: 0.75rem 0 1.25rem;
+.agenda_top:has(> .pac-agenda-note) > .agenda_top_inner {
+  padding-bottom: 0;
+}
+.agenda_top > .pac-agenda-note {
+  margin: 0 0 1.5rem;
   text-align: right;
 }
-@media (max-width: 479px) {
-  .agenda_top + .pac-agenda-note {
+@media (max-width: 991px) {
+  .agenda_top > .pac-agenda-note {
+    margin: -2rem 0 1rem;
     text-align: left;
+  }
+}
+@media (max-width: 767px) {
+  .agenda_top > .pac-agenda-note {
+    margin: -1.25rem 0 0;
+  }
+}
+@media (max-width: 479px) {
+  .agenda_top > .pac-agenda-note {
+    margin: 1rem 0 2rem;
   }
 }
 

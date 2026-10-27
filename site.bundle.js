@@ -2581,7 +2581,9 @@ function initAgendaMonths() {
       n.setAttribute("data-agenda-note", "");
       n.setAttribute("aria-live", "polite");
       const top = labels[0].closest(".agenda_top");
-      if (top) top.insertAdjacentElement("afterend", n);
+      const line = top && Array.from(top.children).find((el) => el.classList.contains("u-line-hor"));
+      if (line) line.insertAdjacentElement("beforebegin", n);
+      else if (top) top.insertAdjacentElement("afterend", n);
       else labels[0].insertAdjacentElement("afterend", n);
       notes = [n];
     }
