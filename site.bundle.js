@@ -3451,7 +3451,7 @@ function initListFilters() {
       if (state.to && !state.from) state.from = state.to;
       if (state.from && !state.to) state.to = state.from;
       // Binnengekomen via een link met filters (bijv. ?type=column): straks naar de filtersectie scrollen
-      if (groups.map(uk).concat([uk("q"), uk("sort"), uk("pagina"), uk("van"), uk("tot")]).some((k) => params.has(k))) {
+      if (Array.from(groups, uk).concat([uk("q"), uk("sort"), uk("pagina"), uk("van"), uk("tot")]).some((k) => params.has(k))) {
         root.dataset.filterDeeplink = "true";
       }
     }
