@@ -4040,7 +4040,11 @@ function initAwardsRedirect() {
   const val = (page.getAttribute("data-awards-redirect") || "").trim();
   const parts = val.split(":");
   const edition = parts.length > 1 ? parts[0] : "";
-  const tab = (parts.length > 1 ? parts[1] : parts[0]) || "awards";
+  let tab = (parts.length > 1 ? parts[1] : parts[0]) || "awards";
+  try {
+    const q = (new URL(pacNextHref, window.location.origin).searchParams.get("tab") || "").toLowerCase();
+    if (AWARDS_TABS.includes(q)) tab = q;
+  } catch (e) {}
   const reveal = () => page.classList.add("is-redirect-failed");
   const go = (slug) => {
     if (!slug) return reveal();
@@ -4076,7 +4080,7 @@ function initAwardsArchive() {
 
 // Herschrijf links naar de oude award-pagina's naar de editie-pagina's
 function initAwardsLinks() {
-  const re = /^\/pan-asian-awards\/(?:(\d{4})\/)?(awards|longlist|shortlist|jury|photowall)\/?$/;
+  const re = /^\/pan-asian-awards\/(?:(\d{4})\/)?(awards|longlist|shortlist|jury|photowall)\/?(?:\?tab=(\w+))?$/;
   const links = Array.from(document.querySelectorAll('a[href^="/pan-asian-awards/"]')).filter((a) => re.test(a.getAttribute("href") || ""));
   if (!links.length) return;
   const apply = (current) => {
@@ -4084,7 +4088,7 @@ function initAwardsLinks() {
       const m = (a.getAttribute("href") || "").match(re);
       if (!m) return;
       const slug = m[1] || current;
-      if (slug) a.setAttribute("href", awardsEditionUrl(slug, m[2]));
+      if (slug) a.setAttribute("href", awardsEditionUrl(slug, m[3] && AWARDS_TABS.includes(m[3]) ? m[3] : m[2]));
     });
   };
   const needsCurrent = links.some((a) => !(a.getAttribute("href") || "").match(re)[1]);
