@@ -5125,6 +5125,7 @@ function initProjectChapters() {
     const isEmpty = empty(title) && empty(text) && !hasImg;
     chapter.classList.toggle("is-empty", isEmpty);
     if (isEmpty) return;
+    if (chapter.classList.contains("is-no-image")) { chapter.classList.remove("is-reverse"); return; }
     chapter.classList.toggle("is-reverse", i % 2 === 1);
     i++;
   });

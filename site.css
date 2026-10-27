@@ -2903,3 +2903,8 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
 
 /* Hoofdstuk-sjabloon: alleen als bron voor JS-klonen */
 [data-chapter-template] { display: none !important; }
+/* Hoofdstuk zonder foto: altijd links, telt niet mee in de afwisseling */
+@media (min-width: 992px) {
+  [data-chapter].is-no-image .flex_content_inner { flex-direction: row; }
+  [data-chapter].is-no-image .flex_text_wrap { padding-left: 0; padding-right: 0; }
+}
