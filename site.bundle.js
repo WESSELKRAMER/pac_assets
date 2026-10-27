@@ -5221,13 +5221,16 @@ function buildVideoLists(root) {
   root.querySelectorAll("ul").forEach((ul) => {
     const items = Array.from(ul.children).filter((li) => li.tagName === "LI");
     if (!items.length) return;
-    const spotify = (href) => {
-      const m = (href || "").match(/open\.spotify\.com\/(?:embed\/)?(episode|show|track|playlist)\/([A-Za-z0-9]+)/);
-      return m ? m[1] + "/" + m[2] : "";
+    const audioSrc = (href) => {
+      const h = href || "";
+      const m = h.match(/open\.spotify\.com\/(?:embed\/)?(episode|show|track|playlist)\/([A-Za-z0-9]+)/);
+      if (m) return { src: "https://open.spotify.com/embed/" + m[1] + "/" + m[2] + "?utm_source=generator", h: 152 };
+      if (/(^|\/\/)(api\.|www\.|m\.)?soundcloud\.com\//.test(h)) return { src: "https://w.soundcloud.com/player/?url=" + encodeURIComponent(h) + "&color=%23000000&visual=false&show_artwork=true", h: 166 };
+      return null;
     };
     const audio = items.map((li) => {
       const a = li.querySelector("a[href]");
-      const id = a ? spotify(a.getAttribute("href")) : "";
+      const id = a ? audioSrc(a.getAttribute("href")) : null;
       return id ? { li, a, id } : null;
     });
     if (!audio.some((p) => !p)) {
@@ -5238,8 +5241,9 @@ function buildVideoLists(root) {
         li.className = "pac-audio";
         li.innerHTML = "";
         const frame = document.createElement("iframe");
-        frame.src = "https://open.spotify.com/embed/" + id + "?utm_source=generator";
-        frame.title = title || "Spotify";
+        frame.src = id.src;
+        frame.style.height = id.h + "px";
+        frame.title = title || "Audio";
         frame.loading = "lazy";
         frame.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
         frame.className = "pac-audio__frame";
