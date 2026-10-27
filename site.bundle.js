@@ -5203,7 +5203,7 @@ function initProjectChapterSource() {
   const chapters = [];
   let cur = null;
   Array.from(src.childNodes).forEach((n) => {
-    if (n.nodeType === 1 && n.tagName === "H2") { cur = { title: n.textContent.trim(), nodes: [] }; chapters.push(cur); return; }
+    if (n.nodeType === 1 && n.tagName === "H2") { const parts = n.textContent.trim().split(/\s+\|\s+/); cur = { title: (parts.length > 1 ? parts.slice(1).join(" | ") : parts[0]).trim(), nodes: [] }; chapters.push(cur); return; }
     if (n.nodeType === 3 && !n.textContent.trim()) return;
     if (!cur) { cur = { title: "", nodes: [] }; chapters.push(cur); }
     cur.nodes.push(n);
