@@ -2908,5 +2908,9 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
   [data-chapter].is-no-image .flex_content_inner { flex-direction: row; }
   [data-chapter].is-no-image .flex_text_wrap { padding-left: 0; padding-right: 0; }
 }
-/* SplitText: een gesplitste regel mag nooit zelf nog eens afbreken (voorkomt losse woordjes als "de" door subpixel-afronding) */
-[data-split] .line { white-space: nowrap; }
+/* Hero (horizontaal): vaste verhouding tekst/beeld i.p.v. breedte op basis van inhoud.
+   Voorkomt dat de intro na het splitsen in regels smaller wordt en losse woordjes ("de") krijgt. */
+@media (min-width: 992px) {
+  .stories_hero_inner.is--hor > .stories_hero_text_wrap { flex: 2 1 0; min-width: 0; }
+  .stories_hero_inner.is--hor > .stories_hero_img_wrap { flex: 3 1 0; min-width: 0; }
+}

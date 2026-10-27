@@ -1638,6 +1638,8 @@ function initMaskTextScrollReveal() {
           const release = () => {
             heading.setAttribute("data-split-done", "");
             [...(inst.masks || []), ...(inst.lines || [])].forEach((el) => (el.style.overflow = "visible"));
+            checks = 0;
+            scheduleCheck(inst);
           };
 
           if (played) {
@@ -1672,6 +1674,16 @@ function initMaskTextScrollReveal() {
       });
 
       const recheck = () => scheduleCheck(instance);
+      // Breedte veranderd na het splitsen (bijv. hero-afbeelding laadt later): regels opnieuw controleren
+      let lastW = heading.offsetWidth;
+      const ro = typeof ResizeObserver === "function" ? new ResizeObserver(() => {
+        const w = heading.offsetWidth;
+        if (Math.abs(w - lastW) < 1) return;
+        lastW = w;
+        checks = 0;
+        recheck();
+      }) : null;
+      if (ro) ro.observe(heading);
       if (document.readyState !== "complete") window.addEventListener("load", recheck, { once: true });
       document.fonts.addEventListener?.("loadingdone", recheck);
 
@@ -1679,6 +1691,7 @@ function initMaskTextScrollReveal() {
         clearTimeout(checkTimer);
         window.removeEventListener("load", recheck);
         document.fonts.removeEventListener?.("loadingdone", recheck);
+        if (ro) ro.disconnect();
         instance.revert();
       });
     });
