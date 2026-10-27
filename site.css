@@ -2821,3 +2821,17 @@ html.pac-sheet-open body {
 @media (min-width:992px){.wa_form_inner{align-items:start}.wa_form_body{position:sticky;top:9.5rem}}
 .wa_form_visual{aspect-ratio:16/10}
 .wa_form_badge svg{display:block;width:100%;height:100%}
+
+/* Popup (zelfde taal als photowall-lightbox) */
+.pac_modal_source{display:none}
+.pac_modal{position:fixed;inset:0;z-index:9999999;display:none;align-items:center;justify-content:center;padding:1.5rem;opacity:0;visibility:hidden}
+.pac_modal_backdrop{position:absolute;inset:0;background-color:var(--pac-dark--900,#1b1c1e);opacity:.94;cursor:pointer}
+.pac_modal_panel{position:relative;z-index:1;width:100%;max-width:42rem;max-height:calc(100vh - 8rem);max-height:calc(100dvh - 8rem);overflow-y:auto;overscroll-behavior:contain;padding:3rem;border-radius:var(--_layout---radii--l,1.3rem);background-color:var(--pac-light--500,#fff);color:var(--pac-dark--900,#1b1c1e)}
+.pac_modal_panel .pac_modal_title{margin-top:0;margin-bottom:1.5rem}
+.pac_modal_panel .w-richtext > :first-child{margin-top:0}
+.pac_modal_panel .w-richtext > :last-child{margin-bottom:0}
+.pac_modal_panel .w-richtext h4{margin-top:1.75rem;margin-bottom:.5rem}
+.pac_modal_panel .w-richtext ul{padding-left:1.25rem;margin-bottom:0}
+.pac_modal_panel .w-richtext li{margin-bottom:.35rem}
+.wa_rules_link{color:inherit;text-decoration:underline;text-underline-offset:.2em}
+@media (max-width:767px){.pac_modal{padding:1rem;align-items:flex-end}.pac_modal_panel{padding:2rem 1.5rem;max-height:calc(100dvh - 6rem)}.pac_modal_close{top:1rem;right:1rem}}

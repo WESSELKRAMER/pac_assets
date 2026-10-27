@@ -127,6 +127,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-blob-section]")) initCursorBlob();
   if (has("[data-slider], .stories-swiper")) initSliders();
   if (has("[data-photowall]")) initPhotowall();
+  if (has("[data-pac-modal-open]")) initPacModals();
 }
 
 function initAfterEnterFunctions(next) {
@@ -6679,6 +6680,95 @@ function initSliders() {
       track.removeEventListener("touchstart", onWheelOrTouch);
       prevBtns.forEach((b) => b.removeEventListener("click", onPrev));
       nextBtns.forEach((b) => b.removeEventListener("click", onNext));
+    });
+  });
+}
+
+// Popups met content uit Webflow: verborgen bron [data-pac-modal="naam"] + trigger [data-pac-modal-open="naam"]
+// Stijl en animatie zoals de photowall-lightbox.
+function initPacModals() {
+  const scope = nextPage || document;
+  scope.querySelectorAll("[data-pac-modal-open]").forEach((trigger) => {
+    if (trigger.dataset.pacModalBound === "true") return;
+    trigger.dataset.pacModalBound = "true";
+    const name = trigger.getAttribute("data-pac-modal-open");
+    const source = scope.querySelector('[data-pac-modal="' + name + '"]') || document.querySelector('[data-pac-modal="' + name + '"]');
+    if (!source) return;
+
+    let box = null;
+    let panel = null;
+    let isOpen = false;
+    let lastFocus = null;
+
+    const build = () => {
+      box = document.createElement("div");
+      box.className = "pac_modal";
+      box.setAttribute("role", "dialog");
+      box.setAttribute("aria-modal", "true");
+      box.setAttribute("aria-hidden", "true");
+      const title = source.querySelector("h1, h2, h3, h4");
+      if (title) box.setAttribute("aria-label", title.textContent.trim());
+      box.innerHTML =
+        '<div class="pac_modal_backdrop" data-pac-modal-close></div>' +
+        '<div class="pac_modal_panel" data-lenis-prevent></div>' +
+        '<button type="button" class="photowall_lightbox_btn is--close pac_modal_close" data-pac-modal-close aria-label="Sluiten"><svg viewBox="0 0 24 24" width="100%" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>';
+      panel = box.querySelector(".pac_modal_panel");
+      [...source.children].forEach((child) => panel.appendChild(child.cloneNode(true)));
+      document.body.appendChild(box);
+      box.addEventListener("click", (e) => {
+        if (e.target.closest("[data-pac-modal-close]")) close();
+      });
+    };
+
+    const onKey = (e) => {
+      if (isOpen && e.key === "Escape") close();
+    };
+
+    const open = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation(); // trigger in een checkbox-label: niet aan/uit vinken
+      }
+      if (!box) build();
+      lastFocus = trigger;
+      isOpen = true;
+      box.setAttribute("aria-hidden", "false");
+      gsap.killTweensOf([box, panel]);
+      gsap.set(box, { display: "flex" });
+      panel.scrollTop = 0;
+      if (reducedMotion) gsap.set(box, { autoAlpha: 1 });
+      else {
+        gsap.fromTo(box, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, ease: "power2.out" });
+        gsap.fromTo(panel, { y: 24, scale: 0.97 }, { y: 0, scale: 1, duration: 0.6, ease: "osmo" });
+      }
+      if (lenis) lenis.stop();
+      document.addEventListener("keydown", onKey);
+      box.querySelector(".pac_modal_close").focus({ preventScroll: true });
+    };
+
+    const close = () => {
+      if (!isOpen) return;
+      isOpen = false;
+      box.setAttribute("aria-hidden", "true");
+      document.removeEventListener("keydown", onKey);
+      const finish = () => {
+        gsap.set(box, { display: "none" });
+        if (lenis) lenis.start();
+        if (lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
+      };
+      if (reducedMotion) finish();
+      else {
+        gsap.to(panel, { y: 12, duration: 0.25, ease: "power2.in" });
+        gsap.to(box, { autoAlpha: 0, duration: 0.25, ease: "power2.in", onComplete: finish });
+      }
+    };
+
+    trigger.addEventListener("click", open);
+    addCleanup(trigger, () => {
+      trigger.removeEventListener("click", open);
+      document.removeEventListener("keydown", onKey);
+      if (box) box.remove();
+      if (isOpen && lenis) lenis.start();
     });
   });
 }
