@@ -4410,7 +4410,7 @@ function initFormSelects() {
   const params = new URLSearchParams(location.search);
   const wanted = (params.get("onderwerp") || "").trim().toLowerCase();
   nextPage.querySelectorAll("form select").forEach((select) => {
-    if (select.classList.contains("filter-dropdown__native") || select.closest("[data-filter]")) return;
+    if (select.classList.contains("filter-dropdown__native") || select.closest("[data-filter], .pac-filter-sheet, [data-filter-sheet]") || select.matches("[data-filter-select], [data-filter-sort]")) return;
     if (select.getAttribute("data-custom-select") === "false") return;
 
     if (wanted && /onderwerp|subject/i.test(select.name + " " + select.id)) {
