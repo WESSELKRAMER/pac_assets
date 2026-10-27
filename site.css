@@ -2837,3 +2837,7 @@ html.pac-sheet-open body {
 /* Turnstile-container in formulieren (meestal onzichtbaar) */
 .pac-turnstile{margin-top:.75rem}
 .pac-turnstile:empty{display:none}
+
+/* Sectie Intro: content boven de volgende blob */
+.section_intro > .container,.section_intro > .u-sec-spacer{position:relative;z-index:1}
+.section_intro > .blob{pointer-events:none}
