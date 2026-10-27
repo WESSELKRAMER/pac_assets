@@ -1774,10 +1774,17 @@ function fitLongestWord(el) {
     const clean = w.replace(/[^\p{L}\p{N}]+$/u, "");
     const tail = w.slice(clean.length);
     const options = breakPoints(clean)
-      .map((i) => ({ a: clean.slice(0, i) + "-", b: clean.slice(i) + tail }))
+      .map((i) => ({ i, a: clean.slice(0, i) + "-", b: clean.slice(i) + tail }))
       .filter((o) => measure(o.a) <= width && measure(o.b) <= width)
-      .sort((x, y) => Math.abs(measure(x.a) - measure(x.b)) - Math.abs(measure(y.a) - measure(y.b)));
-    if (options.length) splits.set(w, options[0]);
+      .map((o) => ({ ...o, diff: Math.abs(measure(o.a) - measure(o.b)) }))
+      .sort((x, y) => x.diff - y.diff);
+    // Bijna even gebalanceerd? Dan liever later afbreken: in Nederlandse samenstellingen komt het hoofddeel
+    // achteraan ("Nootmuskaat-verhalen" i.p.v. "Nootmus-kaatverhalen").
+    if (options.length) {
+      const tol = options[0].diff + width * 0.08;
+      const best = options.filter((o) => o.diff <= tol).sort((x, y) => y.i - x.i)[0];
+      splits.set(w, best);
+    }
     else widestLeft = Math.max(widestLeft, measure(w));
   });
   probe.remove();
