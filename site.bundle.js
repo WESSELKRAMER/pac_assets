@@ -1779,18 +1779,24 @@ function fitLongestWord(el) {
     if (measure(w) <= width) return;
     const clean = w.replace(/[^\p{L}\p{N}]+$/u, "");
     const tail = w.slice(clean.length);
-    const options = breakPoints(clean)
-      .map((i) => ({ i, a: clean.slice(0, i) + (/[-‐–]$/.test(clean.slice(0, i)) ? "" : "-"), b: clean.slice(i) + tail }))
-      .filter((o) => measure(o.a) <= width && measure(o.b) <= width)
-      .map((o) => ({ ...o, diff: Math.abs(measure(o.a) - measure(o.b)) }))
-      .sort((x, y) => x.diff - y.diff);
-    // Bijna even gebalanceerd? Dan liever later afbreken: in Nederlandse samenstellingen komt het hoofddeel
-    // achteraan ("Nootmuskaat-verhalen" i.p.v. "Nootmus-kaatverhalen").
-    if (options.length) {
-      const tol = options[0].diff + width * 0.08;
-      const best = options.filter((o) => o.diff <= tol).sort((x, y) => y.i - x.i)[0];
-      splits.set(w, best);
+    const fits = (o) => measure(o.a) <= width && measure(o.b) <= width;
+    const make = (i) => ({ i, a: clean.slice(0, i) + (/[-‐–]$/.test(clean.slice(0, i)) ? "" : "-"), b: clean.slice(i) + tail });
+    // 1. Bestaand koppelteken ("Pride-|ambassadeur") en 2. hoofdletter midden in een woord ("Film|Forward|Fika")
+    const natural = [];
+    for (let i = 2; i < clean.length - 1; i++) {
+      if (/[-‐–]/.test(clean[i - 1])) natural.push(i);
+      else if (/\p{Lu}/u.test(clean[i]) && /\p{Ll}/u.test(clean[i - 1])) natural.push(i);
     }
+    const pick = (list) => {
+      const opts = list.map(make).filter(fits).map((o) => ({ ...o, diff: Math.abs(measure(o.a) - measure(o.b)) })).sort((x, y) => x.diff - y.diff);
+      if (!opts.length) return null;
+      // Bijna even gebalanceerd? Dan liever later afbreken: in Nederlandse samenstellingen komt het hoofddeel
+      // achteraan ("Nootmuskaat-verhalen" i.p.v. "Nootmus-kaatverhalen").
+      const tol = opts[0].diff + width * 0.08;
+      return opts.filter((o) => o.diff <= tol).sort((x, y) => y.i - x.i)[0];
+    };
+    const best = pick(natural) || pick(breakPoints(clean));
+    if (best) splits.set(w, best);
     else widestLeft = Math.max(widestLeft, measure(w));
   });
   probe.remove();
