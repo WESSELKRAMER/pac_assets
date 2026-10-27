@@ -5296,7 +5296,7 @@ function buildStoriesSlider(section, label) {
 function initProjectMediaSlider() {
   const page = nextPage.matches && nextPage.matches("[data-project-page]") ? nextPage : nextPage.querySelector("[data-project-page]");
   if (!page) return;
-  page.querySelectorAll(":scope > :is(.section_stories, .section_common):not([data-project-subs])").forEach((section) => buildStoriesSlider(section));
+  page.querySelectorAll(":scope > :is(.section_stories, .section_common):not([data-project-subs]):not([data-stories-slider])").forEach((section) => buildStoriesSlider(section));
 }
 
 // Losse secties als slider: [data-stories-slider] op de sectie (optioneel met een label als waarde, voor screenreaders)
