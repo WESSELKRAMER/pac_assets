@@ -2706,3 +2706,22 @@ html.pac-sheet-open body {
   width: 0.5em;
   height: 0.5em;
 }
+
+@media (min-width: 992px) and (max-width: 1439px) {
+  .agenda_item_left {
+    column-gap: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .agenda_item_left .agenda_thumb_wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+    max-width: 12rem;
+  }
+  .agenda_item_left .agenda_thumb {
+    width: 100%;
+  }
+  .agenda_item_left .agenda_date_wrap {
+    flex: 0 0 auto;
+  }
+}
