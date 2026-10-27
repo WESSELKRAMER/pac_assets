@@ -4131,7 +4131,7 @@ function initAwardsTemplate() {
 
   // Winnaars pas tonen als ze bekend zijn
   if (panel && tab === "awards") {
-    if (!winnersOn) panel.querySelectorAll(".section_awards").forEach((s) => s.remove());
+    if (!winnersOn) panel.querySelectorAll(".winners_list").forEach((w) => { const sec = w.closest(".section_awards"); if (sec) sec.remove(); });
     panel.querySelectorAll(".w-video.w-dyn-bind-empty, .w-embed-youtubevideo.w-dyn-bind-empty").forEach((v) => {
       const sec = Array.from(panel.children).find((c) => c.contains(v));
       if (sec) sec.remove();
@@ -4187,8 +4187,10 @@ function initAwardsTemplate() {
   });
 
   // Interne ?tab= links (CTA's) volledig maken
-  page.querySelectorAll('a[href^="?tab="]').forEach((a) => {
-    const key = (a.getAttribute("href") || "").replace("?tab=", "").toLowerCase();
+  page.querySelectorAll('a[href*="?tab="]').forEach((a) => {
+    const href = a.getAttribute("href") || "";
+    if (!/^(https?:\/\/)?\?tab=/.test(href)) return;
+    const key = href.split("?tab=")[1].toLowerCase();
     a.setAttribute("href", awardsEditionUrl(slug, available.includes(key) ? key : "awards"));
   });
 
