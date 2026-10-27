@@ -2755,7 +2755,18 @@ html.pac-sheet-open body {
   opacity: 0.6;
 }
 .month_year_wrapper:has(> .pac-agenda-note) {
-  display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: flex-end;
+}
+.month_year_wrapper > .pac-agenda-note {
+  text-align: right;
+}
+@media (max-width: 479px) {
+  .month_year_wrapper:has(> .pac-agenda-note) {
+    align-items: flex-start;
+  }
+  .month_year_wrapper > .pac-agenda-note {
+    text-align: left;
+  }
 }
