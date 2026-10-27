@@ -2859,3 +2859,10 @@ html.pac-sheet-open body {
 .faq_item.is--pink.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(212,228,175)}
 .faq_item.is--orange.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(178,206,115)}
 .faq_item.is--beige.w-variant-8bfadfb3-47ce-f2ad-8614-5b08db34f451{background-color:rgb(140,172,74)}
+
+/* 404 */
+.error_bg_text .display_text_big{font-size:clamp(11rem,42vw,46rem);line-height:.8;letter-spacing:-.06em;color:rgb(226,238,196);mix-blend-mode:multiply;white-space:nowrap}
+.section_404 > .blob_wrap .blob{opacity:.75}
+.section_404 > .blob_wrap{-webkit-mask-image:linear-gradient(180deg,#000 70%,transparent);mask-image:linear-gradient(180deg,#000 70%,transparent)}
+.error_pill:hover{background-color:rgb(27,28,30);color:#fff}
+@media (max-width:767px){.section_404{padding-top:8rem;padding-bottom:5rem}.error_bg_text .display_text_big{font-size:58vw}}

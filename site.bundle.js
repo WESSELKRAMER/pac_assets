@@ -128,6 +128,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-slider], .stories-swiper")) initSliders();
   if (has("[data-photowall]")) initPhotowall();
   if (has("[data-pac-modal-open]")) initPacModals();
+  if (has(".section_404")) init404();
   if (has("form[data-pac-form]")) initPacForms();
 }
 
@@ -6815,6 +6816,27 @@ function initPacForms() {
         try { window.turnstile.remove(widgetId); } catch (e) {}
       }
     });
+  });
+}
+
+// 404: grote achtergrondtekst beweegt subtiel tegen de muis in
+function init404() {
+  nextPage.querySelectorAll(".section_404").forEach((section) => {
+    const bg = section.querySelector(".error_bg_text");
+    if (!bg || reducedMotion || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    const xTo = gsap.quickTo(bg, "x", { duration: 1.8, ease: "power3.out" });
+    const yTo = gsap.quickTo(bg, "yPercent", { duration: 1.8, ease: "power3.out" });
+    gsap.set(bg, { yPercent: -50, y: 0, transform: "none" });
+    gsap.set(bg, { yPercent: -50 });
+    const onMove = (e) => {
+      const r = section.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width - 0.5;
+      const ny = (e.clientY - r.top) / r.height - 0.5;
+      xTo(nx * -60);
+      yTo(-50 + ny * -6);
+    };
+    section.addEventListener("mousemove", onMove);
+    addCleanup(section, () => section.removeEventListener("mousemove", onMove));
   });
 }
 
