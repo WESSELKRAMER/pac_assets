@@ -122,7 +122,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-stack]")) initStackCards();
   if (has(SEL.bigLogo)) initBigLogoReveal();
   if (has(SEL.marqueeTrack)) initLogoMarquee();
-  if (has(".partners_logos, .partners_pills")) initPartnerOrder();
+  if (has(".partners_pills")) initPartnerOrder();
   if (has(SEL.footerLink)) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
   if (has("[data-slider], .stories-swiper")) initSliders();
@@ -6220,7 +6220,7 @@ function initBigLogoReveal() {
 
 function initPartnerOrder() {
   // Sorteer partnerlogo's en community-pillen op CMS-veld Volgorde (data-order); lege waarden achteraan
-  (nextPage || document).querySelectorAll(".partners_logos, .partners_pills").forEach((list) => {
+  (nextPage || document).querySelectorAll(".partners_pills").forEach((list) => {
     const items = Array.from(list.children).filter((el) => el.hasAttribute("data-order"));
     const num = (el) => {
       const n = parseFloat(el.getAttribute("data-order"));
@@ -6252,6 +6252,23 @@ function initLogoMarquee() {
       const img = child.querySelector("img");
       if (img && (!img.getAttribute("src") || img.classList.contains("w-dyn-bind-empty"))) child.remove();
     });
+    // Optioneel: alleen items van een bepaald CMS-type tonen (data-marquee-type) en sorteren op data-order
+    const onlyType = track.dataset.marqueeType;
+    if (onlyType) {
+      [...track.children].forEach((child) => {
+        if (child.hasAttribute("data-type") && child.getAttribute("data-type") !== onlyType) child.remove();
+      });
+    }
+    if ([...track.children].some((child) => child.hasAttribute("data-order"))) {
+      const num = (el) => {
+        const n = parseFloat(el.getAttribute("data-order"));
+        return isNaN(n) ? Infinity : n;
+      };
+      [...track.children]
+        .map((el, i) => ({ el, i, n: num(el) }))
+        .sort((a, b) => a.n - b.n || a.i - b.i)
+        .forEach(({ el }) => track.appendChild(el));
+    }
     const originals = [...track.children].map((child) => child.cloneNode(true));
     if (!originals.length) return;
     if (reducedMotion) return;
