@@ -2922,7 +2922,9 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
   max-width: 56rem;
   padding: 1.75rem 1.5rem;
   border-radius: 1.3rem;
-  background-color: color-mix(in srgb, var(--chapter-card, var(--pac-beige--500, #f2e3d4)) 35%, var(--pac-light--500, #fff));
+  background-color: color-mix(in srgb, var(--chapter-card, var(--pac-beige--500, #f2e3d4)) 55%, var(--pac-light--500, #fff));
+  justify-content: flex-start;
+  align-self: stretch;
 }
 [data-chapter].is-no-image.is-pair .flex_text_wrap { max-width: none; }
 [data-chapter].is-no-image .flex_text_wrap > :last-child,
