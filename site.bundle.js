@@ -8,6 +8,7 @@ let nextPage = document;
 let pacNextHref = window.location.href;
 let onceFunctionsInitialized = false;
 let isTransitioning = false;
+let pacIntroDelay = 0; // extra vertraging voor intro-animaties zolang de pageloader speelt
 
 const hasLenis = typeof window.Lenis !== "undefined";
 const hasScrollTrigger = typeof window.ScrollTrigger !== "undefined";
@@ -201,6 +202,129 @@ function markFirstLoadHeadings(container) {
   });
 }
 
+// Pageloader: alleen bij binnenkomst op de site (eenmalig per bezoek) of bij een refresh.
+// De beslissing valt al in de head code (html.pac-loader-on); hier bouwen en animeren we hem.
+CustomEase.create("pacDraw", "0.7, 0, 0.16, 1");
+CustomEase.create("pacFly", "0.72, 0, 0.18, 1");
+function buildPageLoader() {
+  const html = document.documentElement;
+  const done = () => {
+    html.classList.remove("pac-loader-on");
+    try { document.cookie = "pac_loader=1; path=/; SameSite=Lax"; } catch (e) {}
+  };
+  if (!html.classList.contains("pac-loader-on")) return null;
+  const navLogo = document.querySelector(SEL.logoWrap);
+  const navSvg = navLogo && navLogo.querySelector("svg");
+  if (reducedMotion || !navSvg) { done(); return null; }
+
+  const letters = Array.from(navSvg.querySelectorAll("path")).filter((pth) => !pth.matches(SEL.logoCircle));
+  if (letters.length < 3) { done(); return null; }
+  // Volgorde in het logo: [A-streep, A, P-stok, P-boog, C]
+  const groups = letters.length === 5
+    ? [[letters[2], letters[3]], [letters[1], letters[0]], [letters[4]]]
+    : letters.map((l) => [l]);
+
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs) => {
+    const n = document.createElementNS(NS, tag);
+    Object.entries(attrs || {}).forEach(([k, v]) => n.setAttribute(k, v));
+    return n;
+  };
+
+  const root = document.createElement("div");
+  root.className = "pac-loader";
+  root.setAttribute("aria-hidden", "true");
+  const bg = document.createElement("div");
+  bg.className = "pac-loader__bg";
+  const wrap = document.createElement("div");
+  wrap.className = "pac-loader__logo";
+
+  const svg = el("svg", { viewBox: "0 0 86 86", fill: "none" });
+  const clipId = "pacLoaderClip";
+  const defs = el("defs");
+  const clip = el("clipPath", { id: clipId });
+  clip.appendChild(el("rect", { x: "0", y: "31.5", width: "86", height: "23" }));
+  defs.appendChild(clip);
+  svg.appendChild(defs);
+  // Ring als lijn, zodat hij getekend kan worden (zelfde maat als de gevulde ring in het logo)
+  const ring = el("circle", {
+    cx: "43", cy: "43", r: "41.9967", stroke: "currentColor", "stroke-width": "2.0066",
+    fill: "none", pathLength: "1", transform: "rotate(-90 43 43)", class: "pac-loader__ring"
+  });
+  svg.appendChild(ring);
+  const letterWrap = el("g", { "clip-path": "url(#" + clipId + ")" });
+  const letterGroups = groups.map((paths) => {
+    const g = el("g");
+    paths.forEach((pth) => {
+      const c = pth.cloneNode(true);
+      c.removeAttribute("class");
+      c.removeAttribute("style");
+      c.removeAttribute("transform");
+      g.appendChild(c);
+    });
+    letterWrap.appendChild(g);
+    return g;
+  });
+  svg.appendChild(letterWrap);
+  wrap.appendChild(svg);
+  root.append(bg, wrap);
+  document.body.appendChild(root);
+  html.classList.remove("pac-loader-on");
+  html.classList.add("pac-loader-active");
+
+  // Scrollen blokkeren zolang de loader er staat
+  const block = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const blockKeys = (e) => { if ([" ", "ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End"].includes(e.key)) block(e); };
+  window.addEventListener("wheel", block, { capture: true, passive: false });
+  window.addEventListener("touchmove", block, { capture: true, passive: false });
+  window.addEventListener("keydown", blockKeys, { capture: true });
+  const unblock = () => {
+    window.removeEventListener("wheel", block, { capture: true });
+    window.removeEventListener("touchmove", block, { capture: true });
+    window.removeEventListener("keydown", blockKeys, { capture: true });
+  };
+
+  gsap.set(navLogo, { visibility: "hidden" });
+  gsap.set(ring, { attr: { "stroke-dasharray": "1 1", "stroke-dashoffset": 1 } });
+  gsap.set(letterGroups, { y: 24 });
+  pacIntroDelay = 0.85;
+
+  const finish = () => {
+    unblock();
+    gsap.set(navLogo, { clearProps: "visibility" });
+    root.remove();
+    html.classList.remove("pac-loader-active");
+    pacIntroDelay = 0;
+    done();
+  };
+
+  const tl = gsap.timeline({ paused: true, onComplete: finish });
+  tl.to(ring, { attr: { "stroke-dashoffset": 0 }, duration: 0.72, ease: "pacDraw" }, 0);
+  tl.to(letterGroups, { y: 0, duration: 0.58, stagger: 0.07, ease: "osmo" }, 0.1);
+
+  // Daarna vliegt het logo naar zijn plek in de navbar
+  tl.add(() => {
+    const from = wrap.getBoundingClientRect();
+    const to = navSvg.getBoundingClientRect();
+    if (!to.width) {
+      gsap.to(wrap, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
+      return;
+    }
+    const navColor = getComputedStyle(navSvg).color;
+    gsap.to(wrap, {
+      x: to.left - from.left,
+      y: to.top - from.top,
+      scale: to.width / from.width,
+      color: navColor,
+      duration: 0.55,
+      ease: "pacFly"
+    });
+  }, 0.7);
+  tl.to(bg, { autoAlpha: 0, duration: 0.45, ease: "power2.inOut" }, 0.78);
+  tl.to({}, { duration: 0.01 }, 1.24);
+  return tl;
+}
+
 function runPageOnceAnimation(next) {
   const tl = gsap.timeline();
 
@@ -385,9 +509,12 @@ barba.init({
       sync: true,
 
       async once(data) {
+        const loader = buildPageLoader();
         initOnceFunctions();
         markFirstLoadHeadings(data.next.container);
         initBeforeEnterFunctions(document);
+        // Pas starten na het zware init-werk, zodat de eerste frames niet haperen
+        if (loader) requestAnimationFrame(() => requestAnimationFrame(() => loader.play()));
 
         return runPageOnceAnimation(data.next.container);
       },
@@ -1111,7 +1238,7 @@ function initLoadFade() {
   });
 
   groups.forEach((list, parent) => {
-    const delay = toNumber(parent.dataset.loadDelay, isFirstLoad ? 0.1 : 0.35);
+    const delay = toNumber(parent.dataset.loadDelay, isFirstLoad ? 0.1 + pacIntroDelay : 0.35);
     const stagger = toNumber(parent.dataset.loadStagger, 0.12);
     const duration = toNumber(parent.dataset.loadDuration, 1);
 
@@ -1627,7 +1754,7 @@ function initMaskTextScrollReveal() {
 
       const duration = toNumber(heading.dataset.splitDuration, config.duration);
       const stagger = toNumber(heading.dataset.splitStagger, config.stagger);
-      const delay = toNumber(heading.dataset.splitDelay, isImmediate ? 0.2 : 0);
+      const delay = toNumber(heading.dataset.splitDelay, isImmediate ? 0.2 + (nextPage === document ? pacIntroDelay : 0) : 0);
       const ease = heading.dataset.splitEase || "expo.out";
       const start = heading.dataset.splitStart || "top 80%";
 
@@ -2194,7 +2321,7 @@ function initImageReveal() {
     const immediate = (source.dataset.revealImmediate || list[0].dataset.revealImmediate) === "true";
     const baseDelay = toNumber(
       source.dataset.revealDelay ?? list[0].dataset.revealDelay,
-      immediate ? (isFirstLoad ? 0.2 : 0.5) : 0
+      immediate ? (isFirstLoad ? 0.2 + pacIntroDelay : 0.5) : 0
     );
     const start = source.dataset.revealStart || list[0].dataset.revealStart || "top 85%";
 
