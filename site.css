@@ -2817,6 +2817,7 @@ html.pac-sheet-open body {
 /* Accordion: laatste item altijd afgeronde onderhoeken (wrap kan hoger zijn dan de items) */
 .what_right_wrap > .faq_item:last-child{border-bottom-left-radius:inherit;border-bottom-right-radius:inherit;overflow:hidden}
 
-/* Samenwerken – WhatsApp-formulier: linkerkolom blijft in beeld tijdens invullen */
-@media (min-width:992px){.wa_form_inner{align-items:start}.wa_form_intro{position:sticky;top:7rem}}
+/* Samenwerken – WhatsApp-formulier: formulier blijft in beeld naast de (langere) linkerkolom */
+@media (min-width:992px){.wa_form_inner{align-items:start}.wa_form_body{position:sticky;top:7rem}}
+.wa_form_visual{aspect-ratio:16/10}
 .wa_form_badge svg{display:block;width:100%;height:100%}
