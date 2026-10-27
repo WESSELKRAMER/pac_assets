@@ -298,30 +298,35 @@ function buildPageLoader() {
     done();
   };
 
-  const tl = gsap.timeline({ paused: true, onComplete: finish });
+  const tl = gsap.timeline({ paused: true });
   tl.to(ring, { attr: { "stroke-dashoffset": 0 }, duration: 0.72, ease: "pacDraw" }, 0);
   tl.to(letterGroups, { y: 0, duration: 0.58, stagger: 0.07, ease: "osmo" }, 0.1);
 
-  // Daarna vliegt het logo naar zijn plek in de navbar
-  tl.add(() => {
+  // Daarna vliegt het logo naar zijn plek in de navbar (waarden worden pas bij de start gemeten)
+  let fly = null;
+  const measure = () => {
+    if (fly) return fly;
     const from = wrap.getBoundingClientRect();
     const to = navSvg.getBoundingClientRect();
-    if (!to.width) {
-      gsap.to(wrap, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
-      return;
-    }
-    const navColor = getComputedStyle(navSvg).color;
-    gsap.to(wrap, {
-      x: to.left - from.left,
-      y: to.top - from.top,
-      scale: to.width / from.width,
-      color: navColor,
-      duration: 0.55,
-      ease: "pacFly"
-    });
+    fly = to.width && from.width
+      ? { x: to.left - from.left, y: to.top - from.top, s: to.width / from.width, c: getComputedStyle(navSvg).color, ok: true }
+      : { x: 0, y: 0, s: 1, c: getComputedStyle(wrap).color, ok: false };
+    return fly;
+  };
+  tl.to(wrap, {
+    x: () => measure().x,
+    y: () => measure().y,
+    scale: () => measure().s,
+    color: () => measure().c,
+    autoAlpha: () => (measure().ok ? 1 : 0),
+    duration: 0.55,
+    ease: "pacFly"
   }, 0.7);
   tl.to(bg, { autoAlpha: 0, duration: 0.45, ease: "power2.inOut" }, 0.78);
-  tl.to({}, { duration: 0.01 }, 1.24);
+  // Korte haperingen (bijv. afbeeldingen die decoderen) niet laten doorschieten
+  const play = tl.play.bind(tl);
+  tl.play = (...a) => { gsap.ticker.lagSmoothing(250, 33); return play(...a); };
+  tl.eventCallback("onComplete", () => { gsap.ticker.lagSmoothing(0); finish(); });
   return tl;
 }
 
