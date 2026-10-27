@@ -2748,3 +2748,9 @@ html.pac-sheet-open body {
   flex: 1 1 100%;
   height: auto;
 }
+
+.pac-agenda-note {
+  margin: 0.5rem 0 0;
+  font-size: var(--_typesetting---body-font-small, 0.875rem);
+  opacity: 0.6;
+}

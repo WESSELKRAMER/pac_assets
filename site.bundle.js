@@ -2568,6 +2568,22 @@ function initAgendaMonths() {
     let winStart = null;
     let tl = null;
 
+    const noteFor = (a, b) => {
+      const names = [];
+      for (let k = a; k <= b; k++) names.push(MONTHS[k % 12]);
+      const list = names.length > 1 ? names.slice(0, -1).join(", ") + " en " + names[names.length - 1] : names[0];
+      return "Toont nu evenementen in " + list;
+    };
+    let notes = Array.from(root.querySelectorAll("[data-agenda-note]"));
+    if (!notes.length && labels[0]) {
+      const n = document.createElement("p");
+      n.className = "pac-agenda-note";
+      n.setAttribute("data-agenda-note", "");
+      n.setAttribute("aria-live", "polite");
+      labels[0].insertAdjacentElement("afterend", n);
+      notes = [n];
+    }
+
     const setLabel = (key) => labels.forEach((el) => (el.textContent = labelOf(key)));
 
     const updateButtons = () => {
@@ -2590,7 +2606,7 @@ function initAgendaMonths() {
     };
 
     // Wissel naar een set zichtbare items met een label (maand of periode)
-    const transition = (show, labelText, animate) => {
+    const transition = (show, labelText, animate, noteText = "") => {
       if (tl) tl.progress(1);
       const showSet = new Set(show);
       const visibleNow = items.filter((item) => item.el.style.display !== "none").map((item) => item.el);
@@ -2599,6 +2615,7 @@ function initAgendaMonths() {
         items.forEach((item) => (item.el.style.display = showSet.has(item.el) ? "" : "none"));
         empties.forEach((el) => (el.style.display = show.length ? "none" : ""));
         labels.forEach((el) => (el.textContent = labelText));
+        notes.forEach((el) => (el.textContent = noteText));
         updateButtons();
         refreshLayout();
       };
@@ -2649,7 +2666,7 @@ function initAgendaMonths() {
       range.to = 0;
       root.removeAttribute("data-agenda-range");
       root.dataset.agendaCurrent = String(key);
-      transition(items.filter((item) => item.key >= key && item.key <= end).map((item) => item.el), spanLabel(key, end), animate);
+      transition(items.filter((item) => item.key >= key && item.key <= end).map((item) => item.el), spanLabel(key, end), animate, noteFor(key, end));
       refreshPickers();
     };
 
@@ -2662,7 +2679,7 @@ function initAgendaMonths() {
         })
         .map((item) => item.el);
       root.setAttribute("data-agenda-range", "true");
-      transition(show, dpRangeLabel(range.from, range.to), animate);
+      transition(show, dpRangeLabel(range.from, range.to), animate, "Toont nu evenementen in de gekozen periode");
     };
 
     const onPrev = (e) => {
