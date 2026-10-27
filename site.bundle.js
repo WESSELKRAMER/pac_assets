@@ -161,15 +161,35 @@ function scrollToDeepLinkedFilter() {
   const root = nextPage.querySelector('[data-filter][data-filter-deeplink="true"]');
   if (!root) return;
   delete root.dataset.filterDeeplink;
-  const panel = root.querySelector("[data-filter-sheet]") || nextPage.querySelector("[data-filter-sheet]");
-  const visible = panel && panel.getClientRects().length && !panel.closest(".pac-filter-sheet.is-modal");
-  const target = (visible && (panel.closest("section, [class^='section_'], [class*=' section_']") || panel)) || root;
   const offset = parseFloat(root.dataset.filterScrollOffset) || 120;
-  setTimeout(() => {
-    const y = Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
-    if (hasLenis && lenis) lenis.scrollTo(y, { duration: reducedMotion ? 0 : 1.1 });
+  const target = () => {
+    const panel = root.querySelector("[data-filter-sheet]") || nextPage.querySelector("[data-filter-sheet]");
+    const sheet = panel && panel.closest(".pac-filter-sheet");
+    const visible = panel && panel.getClientRects().length && (!sheet || getComputedStyle(sheet).position !== "fixed");
+    if (visible) return panel.closest("section, [class^='section_'], [class*=' section_']") || panel;
+    // Mobiel: filters zitten in een sheet; dan naar de lijst zelf (net onder de knoppen/kop van het filterblok)
+    return root;
+  };
+  const yFor = () => Math.max(0, target().getBoundingClientRect().top + window.scrollY - offset);
+  const scroll = (y, quick) => {
+    if (hasLenis && lenis) lenis.scrollTo(y, { duration: reducedMotion || quick ? 0.35 : 1.1, force: true });
     else window.scrollTo({ top: y, behavior: reducedMotion ? "auto" : "smooth" });
-  }, 350);
+  };
+  // Afbreken zodra de bezoeker zelf scrolt
+  let userMoved = false;
+  const stop = () => (userMoved = true);
+  ["wheel", "touchstart", "keydown"].forEach((ev) => window.addEventListener(ev, stop, { once: true, passive: true }));
+  // Afbeeldingen/sliders boven de lijst laden later in en duwen alles omlaag: een paar keer bijsturen
+  let last = null;
+  [350, 1500, 2600, 4000].forEach((t, i) => {
+    setTimeout(() => {
+      if (userMoved || !root.isConnected) return;
+      const y = yFor();
+      if (last !== null && Math.abs(y - last) < 8 && Math.abs(window.scrollY - y) < 8) return;
+      scroll(y, i > 0);
+      last = y;
+    }, t);
+  });
 }
 
 function markFirstLoadHeadings(container) {
