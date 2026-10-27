@@ -144,6 +144,7 @@ function initBeforeEnterFunctions(next) {
 function initAfterEnterFunctions(next) {
   nextPage = next || document;
   fixAwardsCurrent();
+  scrollToDeepLinkedFilter();
 
   if (hasLenis) {
     lenis.resize();
@@ -152,6 +153,23 @@ function initAfterEnterFunctions(next) {
   if (hasScrollTrigger) {
     ScrollTrigger.refresh();
   }
+}
+
+// Pagina geopend met filterparameters in de URL: scroll naar de filtersectie ([data-filter-sheet]).
+// Op mobiel zit het paneel in een sheet/modal; dan scrollen we naar het filterblok zelf.
+function scrollToDeepLinkedFilter() {
+  const root = nextPage.querySelector('[data-filter][data-filter-deeplink="true"]');
+  if (!root) return;
+  delete root.dataset.filterDeeplink;
+  const panel = root.querySelector("[data-filter-sheet]") || nextPage.querySelector("[data-filter-sheet]");
+  const visible = panel && panel.getClientRects().length && !panel.closest(".pac-filter-sheet.is-modal");
+  const target = (visible && (panel.closest("section, [class^='section_'], [class*=' section_']") || panel)) || root;
+  const offset = parseFloat(root.dataset.filterScrollOffset) || 120;
+  setTimeout(() => {
+    const y = Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
+    if (hasLenis && lenis) lenis.scrollTo(y, { duration: reducedMotion ? 0 : 1.1 });
+    else window.scrollTo({ top: y, behavior: reducedMotion ? "auto" : "smooth" });
+  }, 350);
 }
 
 function markFirstLoadHeadings(container) {
@@ -3256,8 +3274,9 @@ function preloadFilterPages() {
       } catch (e) {}
       nextPage = page;
       initListFilters();
-      nextPage = prev;
       if (hasLenis && lenis) lenis.resize();
+      if (!isTransitioning) scrollToDeepLinkedFilter();
+      nextPage = prev;
       if (hasScrollTrigger) ScrollTrigger.refresh();
     });
   });
@@ -3431,6 +3450,10 @@ function initListFilters() {
       if (params.has(uk("tot"))) state.to = ymd(params.get(uk("tot")));
       if (state.to && !state.from) state.from = state.to;
       if (state.from && !state.to) state.to = state.from;
+      // Binnengekomen via een link met filters (bijv. ?type=column): straks naar de filtersectie scrollen
+      if (groups.map(uk).concat([uk("q"), uk("sort"), uk("pagina"), uk("van"), uk("tot")]).some((k) => params.has(k))) {
+        root.dataset.filterDeeplink = "true";
+      }
     }
 
     const writeUrl = () => {
