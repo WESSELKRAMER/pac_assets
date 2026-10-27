@@ -2991,3 +2991,8 @@ h1:not([data-split]), h2:not([data-split]), h3:not([data-split]) { hyphens: auto
 
 /* Awards: gekantelde winnaarskaarten (3D) maakten de pagina ~16px te breed */
 .section_awards { overflow-x: clip; }
+
+/* Project-/subprojectheader: onder desktop staat alles onder elkaar, dan mag de tekstkolom de volle breedte pakken */
+@media (max-width: 991px) {
+  [data-project-hero] .stories_hero_text_wrap { width: 100%; max-width: none; flex: 0 0 auto; }
+}

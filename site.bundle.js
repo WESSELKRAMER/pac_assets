@@ -1730,7 +1730,18 @@ function fitLongestWord(el) {
   if (el.dataset.fitOriginal) el.innerHTML = el.dataset.fitOriginal;
   else el.dataset.fitOriginal = el.innerHTML;
   el.style.removeProperty("font-size");
-  const width = el.clientWidth;
+  // Beschikbare breedte: bij een kop met fit-content/inline-block is de eigen breedte gelijk aan de tekst zelf,
+  // dan rekenen we met de ruimte in de ouder (block of flex-kolom).
+  let width = el.clientWidth;
+  const parent = el.parentElement;
+  if (parent) {
+    const pcs = getComputedStyle(parent);
+    const column = pcs.display.indexOf("flex") === -1 || pcs.flexDirection.indexOf("column") === 0;
+    if (column) {
+      const avail = parent.clientWidth - (parseFloat(pcs.paddingLeft) || 0) - (parseFloat(pcs.paddingRight) || 0);
+      if (avail > width) width = avail;
+    }
+  }
   if (!width) return;
   const cs = getComputedStyle(el);
   const lang = el.closest("[lang]")?.getAttribute("lang") || "nl";
