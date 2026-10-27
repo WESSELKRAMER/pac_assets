@@ -6735,6 +6735,7 @@ function initPacForms() {
     let widgetId = null;
     let token = "";
     let rendered = false;
+    let errors = 0;
 
     const setReady = (ready) => {
       if (btn) {
@@ -6761,15 +6762,23 @@ function initPacForms() {
           if (!holder.isConnected) return;
           widgetId = ts.render(holder, {
             sitekey: key,
+            retry: "never",
             callback: (t) => {
               token = t;
+              errors = 0;
               setReady(true);
             },
             "expired-callback": reset,
             "error-callback": () => {
               token = "";
-              setReady(false);
-              setTimeout(() => holder.isConnected && reset(), 3000);
+              errors++;
+              if (errors <= 2) {
+                setReady(false);
+                setTimeout(() => holder.isConnected && reset(), 2500);
+              } else {
+                setReady(true); // blijft falen: knop vrijgeven, Webflow toont zo nodig de foutmelding
+              }
+              return true; // geen eigen retry-lus van Turnstile
             },
           });
         })
