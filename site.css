@@ -2145,12 +2145,12 @@ form:has([data-submit-trigger]) input[type="submit"],
   appearance: none;
 }
 
-[data-barba="container"] > *:has(.filter-dropdown.is-open, .filter-datepicker.is-open) {
+[data-barba="container"] > *:not(.pac-filter-sheet, .pac-filter-backdrop, .pac-filter-fab):has(.filter-dropdown.is-open, .filter-datepicker.is-open) {
   position: relative;
   z-index: 20;
   overflow: visible;
 }
-[data-barba="container"] > *:has(.filter-dropdown.is-open, .filter-datepicker.is-open) .container:has(.filter-dropdown.is-open) {
+[data-barba="container"] > *:not(.pac-filter-sheet):has(.filter-dropdown.is-open, .filter-datepicker.is-open) .container:has(.filter-dropdown.is-open) {
   z-index: 20;
 }
 

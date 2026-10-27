@@ -2462,6 +2462,15 @@ function initAgendaMonths() {
     const name = MONTHS[key % 12];
     return name.charAt(0).toUpperCase() + name.slice(1) + " " + Math.floor(key / 12);
   };
+  const SHORT = ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+  const spanLabel = (a, b) => {
+    if (a === b) return labelOf(a);
+    const ya = Math.floor(a / 12);
+    const yb = Math.floor(b / 12);
+    return ya === yb
+      ? SHORT[a % 12] + " \u2013 " + SHORT[b % 12] + " " + ya
+      : SHORT[a % 12] + " " + ya + " \u2013 " + SHORT[b % 12] + " " + yb;
+  };
 
   roots.forEach((root) => {
     root.dataset.agendaInitialized = "true";
@@ -2553,15 +2562,18 @@ function initAgendaMonths() {
       for (let k = currentKey; k <= last; k++) months.push(k);
     }
 
-    let index = -1;
+    const span = Math.max(1, Math.round(toNumber(root.dataset.agendaWindow, 3)));
+    const minKey = months[0];
+    const maxKey = months[months.length - 1];
+    let winStart = null;
     let tl = null;
 
     const setLabel = (key) => labels.forEach((el) => (el.textContent = labelOf(key)));
 
     const updateButtons = () => {
       const inRange = typeof range !== "undefined" && range.from;
-      const atStart = inRange ? keyOf(new Date(range.from)) <= months[0] : index <= 0;
-      const atEnd = inRange ? keyOf(new Date(range.to || range.from)) >= months[months.length - 1] : index >= months.length - 1;
+      const atStart = inRange ? keyOf(new Date(range.from)) <= minKey : winStart <= minKey;
+      const atEnd = inRange ? keyOf(new Date(range.to || range.from)) >= maxKey : winStart + span - 1 >= maxKey;
       prevBtns.forEach((el) => {
         el.classList.toggle(disabledClass, atStart);
         el.setAttribute("aria-disabled", atStart ? "true" : "false");
@@ -2628,15 +2640,16 @@ function initAgendaMonths() {
     const pickers = [];
     const refreshPickers = () => pickers.forEach((p) => p.refresh());
 
-    const go = (newIndex, animate = true) => {
-      if (newIndex < 0 || newIndex >= months.length || (newIndex === index && !range.from)) return;
-      const key = months[newIndex];
-      index = newIndex;
+    const go = (key, animate = true) => {
+      key = Math.max(minKey, Math.min(maxKey, key));
+      if (key === winStart && !range.from) return;
+      winStart = key;
+      const end = key + span - 1;
       range.from = 0;
       range.to = 0;
       root.removeAttribute("data-agenda-range");
       root.dataset.agendaCurrent = String(key);
-      transition(items.filter((item) => item.key === key).map((item) => item.el), labelOf(key), animate);
+      transition(items.filter((item) => item.key >= key && item.key <= end).map((item) => item.el), spanLabel(key, end), animate);
       refreshPickers();
     };
 
@@ -2655,28 +2668,23 @@ function initAgendaMonths() {
     const onPrev = (e) => {
       e.preventDefault();
       if (range.from) {
-        // Uit de periode-weergave: naar de maand vóór het begin van de periode
-        const k = keyOf(new Date(range.from));
-        const i = months.findIndex((m) => m >= k);
-        go(Math.max(0, (i === -1 ? months.length : i) - 1));
+        go(keyOf(new Date(range.from)) - span);
         return;
       }
-      go(index - 1);
+      if (winStart > minKey) go(winStart - span);
     };
     const onNext = (e) => {
       e.preventDefault();
       if (range.from) {
-        const k = keyOf(new Date(range.to || range.from));
-        const i = months.findIndex((m) => m > k);
-        go(i === -1 ? months.length - 1 : i);
+        go(keyOf(new Date(range.to || range.from)) + 1);
         return;
       }
-      go(index + 1);
+      if (winStart + span - 1 < maxKey) go(winStart + span);
     };
     prevBtns.forEach((el) => el.addEventListener("click", onPrev));
     nextBtns.forEach((el) => el.addEventListener("click", onNext));
 
-    go(Math.max(0, months.indexOf(startKey)), false);
+    go(startKey, false);
 
     const agendaEventDays = new Set(items.map((item) => dpDayStart(item.date)));
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
@@ -2692,9 +2700,8 @@ function initAgendaMonths() {
           getRange: () => ({ from: range.from, to: range.to }),
           setRange: (a, b) => {
             if (!a) {
-              const back = Math.max(0, months.indexOf(currentKey));
-              index = -1;
-              go(back === -1 ? 0 : back);
+              winStart = null;
+              go(currentKey);
               return;
             }
             range.from = a;
