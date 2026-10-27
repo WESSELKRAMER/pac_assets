@@ -2873,3 +2873,9 @@ html.pac-sheet-open body {
   .samenwerken_zone .section_what_we_do > .u-sec-spacer:first-child{height:3rem}
   .samenwerken_zone .section_what_we_do > .u-sec-spacer:last-child{height:4rem}
 }
+
+/* Awards edities: doorverwijzing oude pagina's + archief */
+html.js [data-awards-redirect] { visibility: hidden; animation: pacAwardsReveal 0s 4.5s forwards; }
+html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animation: none; }
+@keyframes pacAwardsReveal { to { visibility: visible; } }
+.award_editie_tag, .award_edition_data, .award_router, .award_editions_empty { display: none !important; }

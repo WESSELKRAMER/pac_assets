@@ -5,6 +5,7 @@ history.scrollRestoration = "manual";
 
 let lenis = null;
 let nextPage = document;
+let pacNextHref = window.location.href;
 let onceFunctionsInitialized = false;
 let isTransitioning = false;
 
@@ -85,8 +86,12 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-story-collection]")) initFeaturedStories();
   if (has("form select")) initFormSelects();
   if (has("[data-status]")) initComingSoon();
-  if (has('[data-pill-nav="award"]')) initAwardsNav();
-  if (has('[data-pill-nav="award"]')) initAwardsEmpty();
+  if (has("[data-awards-redirect]")) initAwardsRedirect();
+  if (has("[data-awards-editions]")) initAwardsArchive();
+  if (has("[data-awards-template]")) initAwardsTemplate();
+  if (has('[data-pill-nav="award"]') && !has("[data-awards-template]")) initAwardsNav();
+  if (has('[data-pill-nav="award"]') && !has("[data-awards-template]")) initAwardsEmpty();
+  initAwardsLinks();
   initDutchDates();
   initRichTextClasses();
   if (has("[data-gradient]")) initGradientColors();
@@ -282,6 +287,7 @@ barba.hooks.beforeEnter(data => {
     lenis.stop();
   }
 
+  pacNextHref = (data.next && data.next.url && data.next.url.href) || window.location.href;
   initBeforeEnterFunctions(data.next.container);
   applyThemeFrom(data.next.container);
 });
@@ -3980,8 +3986,252 @@ function toDomainRow(card) {
   return row;
 }
 
+/* ---------- Awards edities (CMS template /awards/{editie}) ---------- */
+const AWARDS_TABS = ["awards", "shortlist", "longlist", "jury", "photowall"];
+const AWARDS_CACHE_KEY = "pacAwardsCurrent";
+const AWARDS_ARCHIVE_URL = "/pan-asian-awards/archief";
+
+function awardsEditionUrl(slug, tab) {
+  return "/awards/" + slug + (tab && tab !== "awards" ? "?tab=" + tab : "");
+}
+
+function awardsCacheGet() {
+  try { return sessionStorage.getItem(AWARDS_CACHE_KEY) || ""; } catch (e) { return ""; }
+}
+
+function awardsCacheSet(slug) {
+  try { if (slug) sessionStorage.setItem(AWARDS_CACHE_KEY, slug); } catch (e) {}
+}
+
+function awardsReadEditions(root) {
+  return Array.from(root.querySelectorAll("[data-awards-editions] .w-dyn-item")).map((item) => ({
+    item,
+    slug: ((item.querySelector("[data-edition-slug]") || {}).textContent || "").trim(),
+    status: ((item.querySelector("[data-edition-status]") || {}).textContent || "").trim().toLowerCase(),
+  }));
+}
+
+let awardsCurrentPromise = null;
+function getAwardsCurrent() {
+  const cached = awardsCacheGet();
+  if (cached) return Promise.resolve(cached);
+  if (awardsCurrentPromise) return awardsCurrentPromise;
+  awardsCurrentPromise = fetch(AWARDS_ARCHIVE_URL, { credentials: "same-origin" })
+    .then((r) => (r.ok ? r.text() : ""))
+    .then((html) => {
+      if (!html) return "";
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const cur = awardsReadEditions(doc).find((e) => e.status === "actueel" && e.slug);
+      const slug = cur ? cur.slug : "";
+      awardsCacheSet(slug);
+      return slug;
+    })
+    .catch(() => "")
+    .finally(() => { awardsCurrentPromise = null; });
+  return awardsCurrentPromise;
+}
+
+// Oude losse award-pagina's sturen door naar de editie-pagina
+function initAwardsRedirect() {
+  const page = nextPage.matches && nextPage.matches("[data-awards-redirect]") ? nextPage : nextPage.querySelector("[data-awards-redirect]");
+  if (!page) return;
+  const val = (page.getAttribute("data-awards-redirect") || "").trim();
+  const parts = val.split(":");
+  const edition = parts.length > 1 ? parts[0] : "";
+  const tab = (parts.length > 1 ? parts[1] : parts[0]) || "awards";
+  const reveal = () => page.classList.add("is-redirect-failed");
+  const go = (slug) => {
+    if (!slug) return reveal();
+    window.location.replace(awardsEditionUrl(slug, tab));
+  };
+  const timer = setTimeout(reveal, 4000);
+  if (edition) go(edition);
+  else getAwardsCurrent().then((slug) => { clearTimeout(timer); go(slug); });
+}
+
+// Archief: kaarten koppelen, alleen Status = Archief tonen, nieuwste eerst
+function initAwardsArchive() {
+  const editions = awardsReadEditions(nextPage);
+  const cur = editions.find((e) => e.status === "actueel" && e.slug);
+  if (cur) awardsCacheSet(cur.slug);
+  const list = editions.length ? editions[0].item.parentNode : null;
+  editions.forEach((e) => {
+    if (e.status !== "archief" || !e.slug) { e.item.remove(); return; }
+    const link = e.item.querySelector("[data-edition-link]");
+    if (link) {
+      link.setAttribute("href", awardsEditionUrl(e.slug));
+      const t = link.querySelector(".cta_text");
+      if (t) t.textContent = "Bekijk editie " + e.slug;
+    }
+  });
+  if (list) {
+    editions
+      .filter((e) => e.item.isConnected)
+      .sort((a, b) => b.slug.localeCompare(a.slug, "nl", { numeric: true }))
+      .forEach((e) => list.appendChild(e.item));
+  }
+}
+
+// Herschrijf links naar de oude award-pagina's naar de editie-pagina's
+function initAwardsLinks() {
+  const re = /^\/pan-asian-awards\/(?:(\d{4})\/)?(awards|longlist|shortlist|jury)\/?$/;
+  const links = Array.from(document.querySelectorAll('a[href^="/pan-asian-awards/"]')).filter((a) => re.test(a.getAttribute("href") || ""));
+  if (!links.length) return;
+  const apply = (current) => {
+    links.forEach((a) => {
+      const m = (a.getAttribute("href") || "").match(re);
+      if (!m) return;
+      const slug = m[1] || current;
+      if (slug) a.setAttribute("href", awardsEditionUrl(slug, m[2]));
+    });
+  };
+  const needsCurrent = links.some((a) => !(a.getAttribute("href") || "").match(re)[1]);
+  if (!needsCurrent) return apply("");
+  const cached = awardsCacheGet();
+  if (cached) return apply(cached);
+  getAwardsCurrent().then(apply);
+}
+
+function initAwardsTemplate() {
+  const page = nextPage.matches && nextPage.matches("[data-awards-template]") ? nextPage : nextPage.querySelector("[data-awards-template]");
+  if (!page || page.dataset.awardsBuilt === "true") return;
+  page.dataset.awardsBuilt = "true";
+
+  const val = (k) => ((page.querySelector('[data-edition-field="' + k + '"]') || {}).textContent || "").trim();
+  const flag = (k) => {
+    const el = page.querySelector('[data-edition-field="' + k + '"] .award_edition_value');
+    return !!el && !el.classList.contains("w-condition-invisible");
+  };
+  const slug = val("slug");
+  const status = val("status").toLowerCase();
+  const isArchive = status === "archief";
+  const shortlistOn = flag("shortlist");
+  const winnersOn = flag("winners");
+  if (status === "actueel") awardsCacheSet(slug);
+
+  // Alleen items van deze editie tonen
+  page.querySelectorAll("[data-editie-tag]").forEach((t) => {
+    if (t.textContent.trim() !== slug) {
+      const item = t.closest(".w-dyn-item");
+      if (item) item.remove();
+    }
+  });
+
+  // Actieve tab
+  let tab = "awards";
+  try { tab = (new URL(pacNextHref, window.location.origin).searchParams.get("tab") || "awards").toLowerCase(); } catch (e) {}
+  const available = AWARDS_TABS.filter((k) => (k !== "shortlist" || shortlistOn) && page.querySelector('[data-award-tab="' + k + '"]'));
+  if (!available.includes(tab)) tab = "awards";
+  page.setAttribute("data-awards-page", tab);
+  page.querySelectorAll("[data-award-tab]").forEach((p) => {
+    if (p.getAttribute("data-award-tab") !== tab) p.remove();
+  });
+  const panel = page.querySelector('[data-award-tab="' + tab + '"]');
+
+  // Winnaars pas tonen als ze bekend zijn
+  if (panel && tab === "awards") {
+    if (!winnersOn) panel.querySelectorAll(".section_awards").forEach((s) => s.remove());
+    panel.querySelectorAll(".w-video.w-dyn-bind-empty, .w-embed-youtubevideo.w-dyn-bind-empty").forEach((v) => {
+      const sec = Array.from(panel.children).find((c) => c.contains(v));
+      if (sec) sec.remove();
+    });
+  }
+
+  // Lege lijsten -> coming soon
+  if (panel && tab !== "awards") {
+    const hidden = [];
+    Array.from(panel.children).forEach((section) => {
+      if (section.matches(".section_award_hero, .video_pop_up")) return;
+      const lists = Array.from(section.querySelectorAll(".w-dyn-list")).filter((l) => !l.closest(".w-dyn-item"));
+      if (!lists.length || section.querySelector(".w-dyn-item")) return;
+      section.style.display = "none";
+      hidden.push(section);
+    });
+    if (hidden.length) {
+      const labels = { shortlist: "De shortlist", longlist: "De longlist", jury: "De jury", photowall: "De photowall" };
+      const note = document.createElement("section");
+      note.className = "pac-awards-soon";
+      note.innerHTML =
+        '<div class="container"><div class="pac-awards-soon__inner">' +
+        '<span class="pac-soon-tag">Coming soon</span>' +
+        "<h2>" + (labels[tab] || "Deze pagina") + (slug ? " van " + slug : "") + " wordt binnenkort bekendgemaakt.</h2>" +
+        '<p>Benieuwd naar eerdere edities? <a href="' + AWARDS_ARCHIVE_URL + '">Bekijk het archief</a>.</p>' +
+        "</div></div>";
+      hidden[0].parentNode.insertBefore(note, hidden[0]);
+    }
+  }
+
+  // Tab-navigatie
+  const labelToTab = { introductie: "awards", awards: "awards", shortlist: "shortlist", longlist: "longlist", jury: "jury", photowall: "photowall" };
+  page.querySelectorAll('[data-pill-nav="award"]').forEach((navEl) => {
+    if (/^\d{4}$/.test(slug) && !navEl.querySelector(".pac-award-year")) {
+      const y = document.createElement("span");
+      y.className = "pac-award-year" + (isArchive ? " is-archive" : "");
+      y.setAttribute("aria-label", "Editie " + slug);
+      y.textContent = slug;
+      navEl.insertBefore(y, navEl.firstChild);
+    }
+    navEl.querySelectorAll("a").forEach((a) => {
+      const label = a.textContent.trim().toLowerCase();
+      if (label === "archief") { a.setAttribute("href", AWARDS_ARCHIVE_URL); a.classList.remove("w--current"); return; }
+      const key = labelToTab[label];
+      if (!key) return;
+      if (!available.includes(key)) { a.style.display = "none"; return; }
+      a.setAttribute("href", awardsEditionUrl(slug, key));
+      const current = key === tab;
+      a.classList.toggle("w--current", current);
+      if (current) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
+  });
+
+  // Interne ?tab= links (CTA's) volledig maken
+  page.querySelectorAll('a[href^="?tab="]').forEach((a) => {
+    const key = (a.getAttribute("href") || "").replace("?tab=", "").toLowerCase();
+    a.setAttribute("href", awardsEditionUrl(slug, available.includes(key) ? key : "awards"));
+  });
+
+  // Archief-label + kruimelpad
+  const heroInner = isArchive && panel ? panel.querySelector(".section_award_hero .award_hero_inner") : null;
+  if (heroInner && !heroInner.querySelector(".pac-edition-tag")) {
+    const tag = document.createElement("span");
+    tag.className = "pac-soon-tag pac-edition-tag";
+    tag.textContent = "Archief · Editie " + slug;
+    heroInner.insertBefore(tag, heroInner.firstChild);
+    const labels = { awards: "Introductie", shortlist: "Shortlist", longlist: "Longlist", jury: "Jury", photowall: "Photowall" };
+    const home = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 26 27" fill="none" class="home_icon"><path fill="currentColor" d="M25.1447 9.06182C24.9647 7.64482 23.8877 6.19082 22.3277 5.26482C20.9027 4.43282 19.5077 3.59082 18.1607 2.77782C16.7537 1.92782 15.3977 1.11082 14.1157 0.367816C13.2817 -0.116184 12.3247 -0.122184 11.4897 0.347816C10.0807 1.14182 8.58571 2.02982 7.02971 2.95182C5.75471 3.70982 4.43871 4.49182 3.08871 5.26982C1.51671 6.18982 0.428713 7.64982 0.248713 9.08182C-0.230287 12.9388 -0.0172869 16.8508 0.886713 20.7258C1.38871 22.7038 3.47371 24.8178 5.45871 25.3488C7.86071 25.9408 10.2787 26.2368 12.6977 26.2368C15.1167 26.2368 17.5347 25.9408 19.9367 25.3488C19.9427 25.3478 19.9497 25.3458 19.9557 25.3438C21.9227 24.8178 24.0077 22.7028 24.5137 20.7068C25.4137 16.8448 25.6267 12.9278 25.1447 9.06182ZM16.8127 22.7818C16.7057 23.4628 16.1777 24.0148 15.4917 24.0838C13.6357 24.2718 11.7777 24.2728 9.92471 24.0878C9.23871 24.0188 8.70971 23.4668 8.60271 22.7858C8.27771 20.7168 8.36271 18.6478 8.85771 16.5778C9.01171 15.9368 9.50471 15.4238 10.1247 15.1978C11.8467 14.5698 13.5677 14.5698 15.2897 15.1978C15.9097 15.4238 16.4027 15.9368 16.5567 16.5778C17.0527 18.6458 17.1377 20.7138 16.8127 22.7818Z"></path></svg>';
+    const sep = '<div class="breadcrumb_link"><div>/</div></div>';
+    const crumb = (href, text, current) =>
+      '<a href="' + href + '" class="breadcrumb_link w-inline-block' + (current ? " is--current" : "") + '"' + (current ? ' aria-current="page"' : "") + "><div>" + text + "</div></a>";
+    const nav = document.createElement("nav");
+    nav.className = "breadcrumb_subproject_wrap pac-awards-crumbs";
+    nav.setAttribute("aria-label", "Kruimelpad");
+    nav.innerHTML =
+      '<a href="/" class="breadcrumb_link is--icon w-inline-block" aria-label="Home">' + home + "</a>" + sep +
+      crumb("/pan-asian-awards/awards", "Pan Asian Awards") + sep +
+      crumb(AWARDS_ARCHIVE_URL, "Archief") + sep +
+      crumb(awardsEditionUrl(slug), slug, tab === "awards") +
+      (tab !== "awards" ? sep + crumb(awardsEditionUrl(slug, tab), labels[tab] || tab, true) : "");
+    const back = document.createElement("a");
+    back.className = "pac-awards-current";
+    back.href = "/pan-asian-awards/" + (tab === "photowall" ? "awards" : tab);
+    back.textContent = "Naar de huidige editie →";
+    const row = document.createElement("div");
+    row.className = "pac-awards-crumbs-row";
+    row.appendChild(nav);
+    row.appendChild(back);
+    heroInner.parentNode.insertBefore(row, heroInner);
+  }
+
+  // Paginatitel per tab
+  if (tab !== "awards") {
+    const names = { shortlist: "Shortlist", longlist: "Longlist", jury: "Jury", photowall: "Photowall" };
+    document.title = names[tab] + " " + slug + " | Pan Asian Awards";
+  }
+}
+
 function initAwardsNav() {
-  const find = (sel) => (nextPage.matches && nextPage.matches(sel) ? nextPage : nextPage.querySelector(sel));
+  const find =(sel) => (nextPage.matches && nextPage.matches(sel) ? nextPage : nextPage.querySelector(sel));
   const edHolder = find("[data-awards-edition]");
   const pageHolder = find("[data-awards-page]");
   const edition = edHolder ? (edHolder.getAttribute("data-awards-edition") || "").trim() : "";
