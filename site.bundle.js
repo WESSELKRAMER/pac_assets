@@ -5026,9 +5026,10 @@ function initProjectChapterSource() {
   const src = nextPage.querySelector("[data-project-chapters]");
   if (!src || src.dataset.chaptersBuilt === "true") return;
   src.dataset.chaptersBuilt = "true";
-  const empty = src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim() && !src.querySelector("img");
-  if (empty) { src.remove(); return; }
   const templates = Array.from(nextPage.querySelectorAll("[data-chapter]"));
+  const drop = () => { templates.forEach((t) => t.remove()); src.remove(); };
+  const empty = src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim() && !src.querySelector("img");
+  if (empty) { drop(); return; }
   const tpl = templates[0];
   if (!tpl) return;
 
@@ -5041,7 +5042,7 @@ function initProjectChapterSource() {
     if (!cur) { cur = { title: "", nodes: [] }; chapters.push(cur); }
     cur.nodes.push(n);
   });
-  if (!chapters.length) { src.remove(); return; }
+  if (!chapters.length) { drop(); return; }
 
   const blank = tpl.cloneNode(true);
   const frag = document.createDocumentFragment();
@@ -5049,6 +5050,7 @@ function initProjectChapterSource() {
     const sec = blank.cloneNode(true);
     const n = String(i + 1);
     sec.setAttribute("data-chapter", n);
+    sec.removeAttribute("data-chapter-template");
     sec.classList.remove("is-empty", "is-reverse");
     sec.classList.add("is-from-rich");
     sec.querySelectorAll(".w-condition-invisible").forEach((el) => el.classList.remove("w-condition-invisible"));

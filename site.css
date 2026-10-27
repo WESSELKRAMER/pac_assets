@@ -2900,3 +2900,6 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
 
 /* Projecthoofdstukken uit rich text: blok zonder foto */
 .section_flex_content.is-no-image .flex_text_wrap { width: 100%; max-width: 48rem; }
+
+/* Hoofdstuk-sjabloon: alleen als bron voor JS-klonen */
+[data-chapter-template] { display: none !important; }
