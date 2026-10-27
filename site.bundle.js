@@ -77,7 +77,9 @@ function initBeforeEnterFunctions(next) {
 
   applyNavbarPageConfig(nextPage);
   if (has("[data-project-slug]")) initProjectFilter();
+  if (has("[data-project-chapters]")) initProjectChapterSource();
   if (has("[data-chapter]")) initProjectChapters();
+  initExternalLinks();
   if (has("[data-project-page]")) initProjectMediaSlider();
   if (has("[data-home-featured]")) initHomeFeatured();
   initContactLinks();
@@ -5002,6 +5004,112 @@ function initProjectMediaSlider() {
       '<div class="team_button is--next" data-slider-next data-arrow-button role="button" tabindex="0" aria-label="Volgende">' + arrow + "</div>";
     titleRow.appendChild(controls);
   });
+}
+
+// Uitgaande links altijd in een nieuw tabblad
+function initExternalLinks() {
+  const own = new Set([window.location.hostname, "pac.tv", "www.pac.tv", "pan-asian-collective.webflow.io"]);
+  document.querySelectorAll('a[href^="http"]').forEach((a) => {
+    let url;
+    try { url = new URL(a.href); } catch (e) { return; }
+    if (own.has(url.hostname)) return;
+    a.setAttribute("target", "_blank");
+    const rel = new Set((a.getAttribute("rel") || "").split(/\s+/).filter(Boolean));
+    rel.add("noopener");
+    a.setAttribute("rel", Array.from(rel).join(" "));
+  });
+}
+
+// Projecten/subprojecten: rich-text-veld "Hoofdstukken" -> onbeperkt aantal hoofdstukblokken.
+// Elke H2 start een hoofdstuk; eerste afbeelding = hoofdstukfoto; losse link onderaan = knop.
+function initProjectChapterSource() {
+  const src = nextPage.querySelector("[data-project-chapters]");
+  if (!src || src.dataset.chaptersBuilt === "true") return;
+  src.dataset.chaptersBuilt = "true";
+  const empty = src.classList.contains("w-dyn-bind-empty") || !src.textContent.trim() && !src.querySelector("img");
+  if (empty) { src.remove(); return; }
+  const templates = Array.from(nextPage.querySelectorAll("[data-chapter]"));
+  const tpl = templates[0];
+  if (!tpl) return;
+
+  // Opdelen op H2
+  const chapters = [];
+  let cur = null;
+  Array.from(src.childNodes).forEach((n) => {
+    if (n.nodeType === 1 && n.tagName === "H2") { cur = { title: n.textContent.trim(), nodes: [] }; chapters.push(cur); return; }
+    if (n.nodeType === 3 && !n.textContent.trim()) return;
+    if (!cur) { cur = { title: "", nodes: [] }; chapters.push(cur); }
+    cur.nodes.push(n);
+  });
+  if (!chapters.length) { src.remove(); return; }
+
+  const blank = tpl.cloneNode(true);
+  const frag = document.createDocumentFragment();
+  chapters.forEach((ch, i) => {
+    const sec = blank.cloneNode(true);
+    const n = String(i + 1);
+    sec.setAttribute("data-chapter", n);
+    sec.classList.remove("is-empty", "is-reverse");
+    sec.classList.add("is-from-rich");
+    sec.querySelectorAll(".w-condition-invisible").forEach((el) => el.classList.remove("w-condition-invisible"));
+
+    // Afbeelding
+    const body = document.createElement("div");
+    ch.nodes.forEach((node) => body.appendChild(node.cloneNode(true)));
+    const firstImg = body.querySelector("img");
+    let imgSrc = "", imgAlt = "";
+    if (firstImg) {
+      imgSrc = firstImg.getAttribute("src") || "";
+      imgAlt = firstImg.getAttribute("alt") || "";
+      if (imgAlt === "__wf_reserved_inherit") imgAlt = "";
+      const fig = firstImg.closest("figure") || firstImg;
+      const cap = fig.querySelector && fig.querySelector("figcaption");
+      if (cap && !imgAlt) imgAlt = cap.textContent.trim();
+      fig.remove();
+    }
+    // Knop: laatste alinea die alleen uit één link bestaat
+    let btnText = "", btnHref = "";
+    const paras = Array.from(body.children).filter((el) => el.tagName === "P");
+    const last = paras[paras.length - 1];
+    if (last) {
+      const links = last.querySelectorAll("a");
+      if (links.length === 1 && links[0].textContent.trim() === last.textContent.trim()) {
+        btnText = links[0].textContent.trim();
+        btnHref = links[0].getAttribute("href") || "";
+        last.remove();
+      }
+    }
+    Array.from(body.querySelectorAll("p")).forEach((p) => { if (!p.textContent.trim() && !p.querySelector("img")) p.remove(); });
+
+    const title = sec.querySelector("[data-chapter-title]");
+    if (title) { title.textContent = ch.title; title.setAttribute("data-chapter-title", n); title.classList.remove("w-dyn-bind-empty"); }
+    const text = sec.querySelector("[data-chapter-text]");
+    if (text) { text.innerHTML = body.innerHTML; text.setAttribute("data-chapter-text", n); text.classList.remove("w-dyn-bind-empty"); }
+    const imgWrap = sec.querySelector(".flex_img_wrap");
+    const img = imgWrap && imgWrap.querySelector("img");
+    if (img) {
+      img.removeAttribute("srcset");
+      img.removeAttribute("sizes");
+      img.classList.remove("w-dyn-bind-empty");
+      img.setAttribute("loading", "lazy");
+      if (imgSrc) { img.setAttribute("src", imgSrc); img.setAttribute("alt", imgAlt); }
+      else if (imgWrap) { imgWrap.remove(); sec.classList.add("is-no-image"); }
+    }
+    const btn = sec.querySelector("[data-chapter-button]");
+    if (btn) {
+      btn.setAttribute("data-chapter-button", n);
+      const a = btn.querySelector("a");
+      if (btnText && btnHref && a) {
+        a.setAttribute("href", btnHref);
+        const t = a.querySelector(".cta_text");
+        if (t) t.textContent = btnText;
+      } else btn.remove();
+    }
+    frag.appendChild(sec);
+  });
+  tpl.parentNode.insertBefore(frag, tpl);
+  templates.forEach((t) => t.remove());
+  src.remove();
 }
 
 function initProjectChapters() {

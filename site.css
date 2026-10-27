@@ -2897,3 +2897,6 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
 .pac-yt-bg__frame { transform: scale(1.35); opacity: 0; transition: opacity .8s ease; }
 .pac-yt-bg.is-playing .pac-yt-bg__frame { opacity: 1; }
 .about_video_wrapper:has(.pac-yt-bg) { position: relative; }
+
+/* Projecthoofdstukken uit rich text: blok zonder foto */
+.section_flex_content.is-no-image .flex_text_wrap { width: 100%; max-width: 48rem; }
