@@ -7905,7 +7905,7 @@ function initPhotowall() {
         '<button type="button" class="photowall_preview_arrow" data-pw-scroll="-1" aria-label="Vorige foto\'s">' + arrowSvg("M15 5l-7 7 7 7") + "</button>" +
         '<button type="button" class="photowall_preview_arrow" data-pw-scroll="1" aria-label="Volgende foto\'s">' + arrowSvg("M9 5l7 7-7 7") + "</button>" +
         "</div></div>" +
-        '<div class="photowall_preview_track" data-lenis-prevent></div>' +
+        '<div class="photowall_preview_track"></div>' +
         '<button type="button" class="photowall_preview_all"></button>';
       preview.querySelector(".photowall_preview_title").textContent = title;
       preview.querySelector(".photowall_preview_all").textContent = "Bekijk alle " + all.length + " foto's";
