@@ -2652,8 +2652,26 @@ html.pac-sheet-open body {
 }
 .photowall_overlay_body .photowall_filters {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
+}
+.photowall_overlay_body .photowall_filter {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .photowall_overlay_body .photowall_filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+    scrollbar-width: none;
+  }
+  .photowall_overlay_body .photowall_filters::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (max-width: 767px) {
