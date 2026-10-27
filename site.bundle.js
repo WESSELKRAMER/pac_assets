@@ -1730,18 +1730,13 @@ function fitLongestWord(el) {
   if (el.dataset.fitOriginal) el.innerHTML = el.dataset.fitOriginal;
   else el.dataset.fitOriginal = el.innerHTML;
   el.style.removeProperty("font-size");
-  // Beschikbare breedte: bij een kop met fit-content/inline-block is de eigen breedte gelijk aan de tekst zelf,
-  // dan rekenen we met de ruimte in de ouder (block of flex-kolom).
-  let width = el.clientWidth;
-  const parent = el.parentElement;
-  if (parent) {
-    const pcs = getComputedStyle(parent);
-    const column = pcs.display.indexOf("flex") === -1 || pcs.flexDirection.indexOf("column") === 0;
-    if (column) {
-      const avail = parent.clientWidth - (parseFloat(pcs.paddingLeft) || 0) - (parseFloat(pcs.paddingRight) || 0);
-      if (avail > width) width = avail;
-    }
-  }
+  // Beschikbare breedte meten: koppen (of hun ouders) die op tekstbreedte krimpen (fit-content, inline-block,
+  // flex-kolom met align-items:start) zijn even breed als hun eigen tekst. Door tijdelijk een lange zin
+  // in te zetten groeit de kop tot de echte maximale breedte.
+  const original = el.innerHTML;
+  el.textContent = "mm ".repeat(300);
+  const width = el.clientWidth;
+  el.innerHTML = original;
   if (!width) return;
   const cs = getComputedStyle(el);
   const lang = el.closest("[lang]")?.getAttribute("lang") || "nl";
@@ -1785,7 +1780,7 @@ function fitLongestWord(el) {
     const clean = w.replace(/[^\p{L}\p{N}]+$/u, "");
     const tail = w.slice(clean.length);
     const options = breakPoints(clean)
-      .map((i) => ({ i, a: clean.slice(0, i) + "-", b: clean.slice(i) + tail }))
+      .map((i) => ({ i, a: clean.slice(0, i) + (/[-‐–]$/.test(clean.slice(0, i)) ? "" : "-"), b: clean.slice(i) + tail }))
       .filter((o) => measure(o.a) <= width && measure(o.b) <= width)
       .map((o) => ({ ...o, diff: Math.abs(measure(o.a) - measure(o.b)) }))
       .sort((x, y) => x.diff - y.diff);
