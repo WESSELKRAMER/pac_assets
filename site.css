@@ -2735,6 +2735,11 @@ html.pac-sheet-open body {
   width: 100%;
   max-width: none;
   max-height: none;
-  margin-top: 0.5rem;
+  flex: 0 0 100%;
+  margin-top: 0;
   box-shadow: none;
+}
+.pac-filter-sheet.is-sheet :is(.filter-dropdown, .filter-datepicker) {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
 }
