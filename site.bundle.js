@@ -4075,7 +4075,7 @@ function initAwardsArchive() {
 
 // Herschrijf links naar de oude award-pagina's naar de editie-pagina's
 function initAwardsLinks() {
-  const re = /^\/pan-asian-awards\/(?:(\d{4})\/)?(awards|longlist|shortlist|jury)\/?$/;
+  const re = /^\/pan-asian-awards\/(?:(\d{4})\/)?(awards|longlist|shortlist|jury|photowall)\/?$/;
   const links = Array.from(document.querySelectorAll('a[href^="/pan-asian-awards/"]')).filter((a) => re.test(a.getAttribute("href") || ""));
   if (!links.length) return;
   const apply = (current) => {
@@ -4217,7 +4217,7 @@ function initAwardsTemplate() {
       (tab !== "awards" ? sep + crumb(awardsEditionUrl(slug, tab), labels[tab] || tab, true) : "");
     const back = document.createElement("a");
     back.className = "pac-awards-current";
-    back.href = "/pan-asian-awards/" + (tab === "photowall" ? "awards" : tab);
+    back.href = "/pan-asian-awards/" + tab;
     back.textContent = "Naar de huidige editie →";
     const row = document.createElement("div");
     row.className = "pac-awards-crumbs-row";
