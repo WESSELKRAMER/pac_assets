@@ -1820,7 +1820,7 @@ form:has([data-submit-trigger]) input[type="submit"],
   [data-chapter].is-reverse .flex_text_wrap { padding-left: 5rem; padding-right: 2.5rem; }
 }
 
-[data-project-page] > .section_stories:not(:has(.w-dyn-item)) { display: none; }
+[data-project-page] > :is(.section_stories, .section_common):not(:has(.w-dyn-item)) { display: none; }
 
 [data-project-subs] .title_top_wrap,
 [data-project-media] .title_top_wrap {
