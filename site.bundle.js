@@ -2631,29 +2631,28 @@ function initAgendaMonths() {
       }
 
       const visibleEmpties = empties.filter((el) => el.style.display !== "none");
+      const wasEmpty = visibleEmpties.length > 0;
+      const willEmpty = !show.length && empties.length > 0;
+      // Leeg -> leeg: melding gewoon laten staan (geen uit/in-fade, dus geen flikkering)
+      const fadeEmpties = !(wasEmpty && willEmpty);
 
       tl = gsap.timeline({ onComplete: () => (tl = null) });
       tl.to([...labels, ...visibleNow], { autoAlpha: 0, y: -8, duration: 0.25, ease: "power2.in" }, 0);
-      if (visibleEmpties.length) tl.to(visibleEmpties, { autoAlpha: 0, duration: 0.25, ease: "power2.in" }, 0);
+      if (wasEmpty && fadeEmpties) tl.to(visibleEmpties, { autoAlpha: 0, duration: 0.25, ease: "power2.in" }, 0);
       tl.add(swap)
         .set(visibleNow, { y: 0, autoAlpha: 1 })
-        .set(empties, { autoAlpha: 1 })
+        .set(empties, { autoAlpha: willEmpty && fadeEmpties ? 0 : 1 })
         .fromTo(labels, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration, ease: "power2.out" });
 
       if (show.length) {
         tl.fromTo(
           show,
           { autoAlpha: 0, y: 16 },
-          { autoAlpha: 1, y: 0, duration, stagger, ease: "power2.out", clearProps: "opacity,visibility,transform" },
+          { autoAlpha: 1, y: 0, duration, stagger, ease: "power2.out", clearProps: "opacity,visibility,transform", immediateRender: false },
           "<0.05"
         );
-      } else if (empties.length) {
-        tl.fromTo(
-          empties,
-          { autoAlpha: 0 },
-          { autoAlpha: 1, duration, ease: "power1.out", clearProps: "opacity,visibility" },
-          "<0.05"
-        );
+      } else if (willEmpty && fadeEmpties) {
+        tl.to(empties, { autoAlpha: 1, duration, ease: "power1.out", clearProps: "opacity,visibility" }, "<0.05");
       }
     };
 
