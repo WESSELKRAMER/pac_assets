@@ -5221,6 +5221,32 @@ function buildVideoLists(root) {
   root.querySelectorAll("ul").forEach((ul) => {
     const items = Array.from(ul.children).filter((li) => li.tagName === "LI");
     if (!items.length) return;
+    const spotify = (href) => {
+      const m = (href || "").match(/open\.spotify\.com\/(?:embed\/)?(episode|show|track|playlist)\/([A-Za-z0-9]+)/);
+      return m ? m[1] + "/" + m[2] : "";
+    };
+    const audio = items.map((li) => {
+      const a = li.querySelector("a[href]");
+      const id = a ? spotify(a.getAttribute("href")) : "";
+      return id ? { li, a, id } : null;
+    });
+    if (!audio.some((p) => !p)) {
+      found = true;
+      ul.classList.add("pac-audios");
+      audio.forEach(({ li, a, id }) => {
+        const title = a.textContent.trim();
+        li.className = "pac-audio";
+        li.innerHTML = "";
+        const frame = document.createElement("iframe");
+        frame.src = "https://open.spotify.com/embed/" + id + "?utm_source=generator";
+        frame.title = title || "Spotify";
+        frame.loading = "lazy";
+        frame.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
+        frame.className = "pac-audio__frame";
+        li.appendChild(frame);
+      });
+      return;
+    }
     const parsed = items.map((li) => {
       const a = li.querySelector("a[href]");
       const id = a ? pacYoutubeId(a.getAttribute("href")) : "";
