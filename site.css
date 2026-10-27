@@ -2843,6 +2843,8 @@ html.pac-sheet-open body {
 .section_intro > .blob{pointer-events:none}
 
 /* Samenwerken – kleurzones (intro + accordion delen één gradient + muis-blob) */
+.samenwerken_zone.is--orange{background-image:linear-gradient(180deg,rgba(255,246,241,0) 0%,#fff6f1 18%,#fff6f1 70%,rgba(255,246,241,0) 100%)}
+.samenwerken_zone.is--green{background-image:linear-gradient(180deg,rgba(251,254,244,0) 0%,#fbfef4 18%,#fbfef4 70%,rgba(251,254,244,0) 100%)}
 .samenwerken_zone > *:not(.blob_wrap){position:relative;z-index:1}
 .samenwerken_zone > .blob_wrap{-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 86%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 86%,transparent 100%)}
 .samenwerken_zone .section_intro,.samenwerken_zone .section_what_we_do{background-color:transparent}
