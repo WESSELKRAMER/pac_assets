@@ -2807,3 +2807,9 @@ html.pac-sheet-open body {
 
 /* Formulier-meldingen pas tonen als Webflow ze activeert (inline display) */
 .w-form-done.contact_success,.w-form-fail.contact_error{display:none}
+
+/* Logo marquee basis (stond alleen in de embed van News Grid) */
+.logo-marquee_track,[data-marquee-track]{display:flex;flex-wrap:nowrap;gap:4rem;width:max-content}
+.logo-marquee_track>*,[data-marquee-track]>*{flex:0 0 auto}
+.section_partners .logo-marquee{padding-bottom:0}
+@media (max-width:767px){.section_partners .logo-marquee_track{gap:2.5rem}}
