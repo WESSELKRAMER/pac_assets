@@ -2647,6 +2647,9 @@ html.pac-sheet-open body {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+.photowall_overlay_body > * {
+  flex-shrink: 0;
+}
 .photowall_overlay_body .photowall_filters {
   display: flex;
   flex-wrap: wrap;
