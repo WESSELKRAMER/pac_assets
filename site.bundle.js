@@ -287,7 +287,7 @@ function buildPageLoader() {
   gsap.set(navLogo, { visibility: "hidden" });
   gsap.set(ring, { attr: { "stroke-dasharray": "1 1", "stroke-dashoffset": 1 } });
   gsap.set(letterGroups, { y: 24 });
-  pacIntroDelay = 0.85;
+  pacIntroDelay = 1.1;
 
   const finish = () => {
     unblock();
@@ -319,10 +319,10 @@ function buildPageLoader() {
     scale: () => measure().s,
     color: () => measure().c,
     autoAlpha: () => (measure().ok ? 1 : 0),
-    duration: 0.55,
+    duration: 0.52,
     ease: "pacFly"
-  }, 0.7);
-  tl.to(bg, { autoAlpha: 0, duration: 0.45, ease: "power2.inOut" }, 0.78);
+  }, 0.98); // na de animatie staat het logo heel even stil
+  tl.to(bg, { autoAlpha: 0, duration: 0.42, ease: "power2.inOut" }, 1.06);
   // Korte haperingen (bijv. afbeeldingen die decoderen) niet laten doorschieten
   const play = tl.play.bind(tl);
   tl.play = (...a) => { gsap.ticker.lagSmoothing(250, 33); return play(...a); };
@@ -5554,6 +5554,12 @@ function initProjectFilter() {
   });
   nextPage.querySelectorAll("[data-project-agenda] [data-project-ref]").forEach((item) => {
     if ((item.getAttribute("data-project-ref") || "").trim() !== slug) item.remove();
+  });
+  // Verhalen bij dit subproject: elk verhaal heeft een verborgen lijstje met zijn subproject-slugs
+  nextPage.querySelectorAll("[data-project-verhalen] [data-verhaal-item]").forEach((item) => {
+    const subs = Array.from(item.querySelectorAll("[data-verhaal-sub]"), (el) => (el.getAttribute("data-verhaal-sub") || "").trim());
+    if (!subs.includes(slug)) item.remove();
+    else item.querySelectorAll(".filter_data").forEach((el) => el.remove());
   });
 }
 
