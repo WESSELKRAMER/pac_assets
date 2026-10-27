@@ -1582,6 +1582,7 @@ function initMaskTextScrollReveal() {
         ? heading.dataset.splitReveal
         : "lines";
 
+      fitLongestWord(heading);
       const isImmediate = heading.dataset.splitImmediate === "true";
       const config = splitConfig[type];
 
@@ -1696,6 +1697,27 @@ function initMaskTextScrollReveal() {
       });
     });
   });
+}
+
+// Lange woorden (bijv. "Empathiebeweging") passen soms niet in de kolom: verklein dan de koptekst tot het langste woord past.
+function fitLongestWord(el) {
+  el.style.removeProperty("font-size");
+  const width = el.clientWidth;
+  if (!width) return;
+  const words = (el.textContent || "").split(/\s+/).filter(Boolean);
+  if (!words.length) return;
+  const cs = getComputedStyle(el);
+  const probe = document.createElement("span");
+  probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0;";
+  ["fontFamily", "fontSize", "fontWeight", "fontStyle", "letterSpacing", "textTransform", "fontFeatureSettings"].forEach((k) => (probe.style[k] = cs[k]));
+  document.body.appendChild(probe);
+  let widest = 0;
+  words.forEach((w) => { probe.textContent = w; widest = Math.max(widest, probe.getBoundingClientRect().width); });
+  probe.remove();
+  if (widest <= width) return;
+  const size = parseFloat(cs.fontSize);
+  const scale = Math.max(0.5, (width / widest) * 0.97);
+  el.style.fontSize = (size * scale).toFixed(2) + "px";
 }
 
 function initHighlightText() {
