@@ -4225,10 +4225,8 @@ function initAwardsTemplate() {
   }
 
   // Paginatitel per tab
-  if (tab !== "awards") {
-    const names = { shortlist: "Shortlist", longlist: "Longlist", jury: "Jury", photowall: "Photowall" };
-    document.title = names[tab] + " " + slug + " | Pan Asian Awards";
-  }
+  const names = { awards: "Pan Asian Awards", shortlist: "Shortlist", longlist: "Longlist", jury: "Jury", photowall: "Photowall" };
+  document.title = (tab === "awards" ? "Pan Asian Awards " + slug : names[tab] + " " + slug + " • Pan Asian Awards") + " • PAC";
 }
 
 // Webflow zet w--current op basis van het pad (zonder ?tab=); corrigeer dat
