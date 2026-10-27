@@ -4106,6 +4106,8 @@ function initAwardsTemplate() {
   const slug = val("slug");
   const status = val("status").toLowerCase();
   const isArchive = status === "archief";
+  const theme = val("theme").toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+  if (theme) page.setAttribute("data-awards-theme", theme);
   const shortlistOn = flag("shortlist");
   const winnersOn = flag("winners");
   if (status === "actueel") awardsCacheSet(slug);

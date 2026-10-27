@@ -2879,3 +2879,13 @@ html.js [data-awards-redirect] { visibility: hidden; animation: pacAwardsReveal 
 html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animation: none; }
 @keyframes pacAwardsReveal { to { visibility: visible; } }
 .award_editie_tag, .award_edition_data, .award_router, .award_editions_empty { display: none !important; }
+
+/* Awards: kleurthema per editie (CMS-veld Kleurthema) */
+[data-awards-theme="oranje"] { --awards-theme: var(--pac-orange--500); --awards-archive: var(--pac-orange--500); --awards-archive-dark: var(--pac-brown--700, #2b1814); }
+[data-awards-theme="groen"]  { --awards-theme: var(--pac-green--500);  --awards-archive: var(--pac-green--500);  --awards-archive-dark: var(--pac-dark--1000, #111); }
+[data-awards-theme="blauw"]  { --awards-theme: var(--pac-blue--500);   --awards-archive: var(--pac-blue--500);   --awards-archive-dark: var(--pac-dark--1000, #111); }
+[data-awards-theme="roze"]   { --awards-theme: var(--pac-pink--500);   --awards-archive: var(--pac-pink--500);   --awards-archive-dark: var(--pac-brown--700, #2b1814); }
+[data-awards-theme="bruin"]  { --awards-theme: var(--pac-brown--200, #bd947e); --awards-archive: var(--pac-brown--200, #bd947e); --awards-archive-dark: var(--pac-brown--500, #442823); }
+[data-awards-theme] .section_award_hero { background-image: linear-gradient(180deg, var(--awards-theme), var(--pac-light--500, #fff)); }
+[data-awards-theme]:not([data-awards-theme="oranje"]) .domain_indicator { background-color: var(--awards-archive-dark); }
+[data-awards-theme] .pac-award-year { color: var(--awards-archive-dark); border-right-color: currentColor; opacity: .7; }
