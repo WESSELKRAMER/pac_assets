@@ -2580,7 +2580,9 @@ function initAgendaMonths() {
       n.className = "pac-agenda-note";
       n.setAttribute("data-agenda-note", "");
       n.setAttribute("aria-live", "polite");
-      labels[0].insertAdjacentElement("afterend", n);
+      const top = labels[0].closest(".agenda_top");
+      if (top) top.insertAdjacentElement("afterend", n);
+      else labels[0].insertAdjacentElement("afterend", n);
       notes = [n];
     }
 
