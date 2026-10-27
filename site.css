@@ -2725,3 +2725,16 @@ html.pac-sheet-open body {
     flex: 0 0 auto;
   }
 }
+
+.pac-filter-sheet.is-sheet .filter-dropdown__list,
+.pac-filter-sheet.is-sheet .filter-datepicker__panel {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  margin-top: 0.5rem;
+  box-shadow: none;
+}

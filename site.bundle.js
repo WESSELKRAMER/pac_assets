@@ -3001,6 +3001,7 @@ function createDatePicker(host, opts) {
     if (from) view = monthOf(from);
     renderGrid();
     panel.hidden = false;
+    revealInSheet(panel);
     // Rechts uitlijnen als het paneel buiten beeld zou vallen
     panel.style.left = "";
     panel.style.right = "";
@@ -3619,6 +3620,7 @@ function initListFilters() {
         button.setAttribute("aria-expanded", "true");
         setActive(Math.max(0, select.selectedIndex));
         list.focus({ preventScroll: true });
+        revealInSheet(list);
         if (!reducedMotion) gsap.fromTo(list, { autoAlpha: 0, y: -6 }, { autoAlpha: 1, y: 0, duration: 0.25, ease: "power2.out" });
       };
 
@@ -4171,6 +4173,17 @@ function buildFilterSheets() {
 }
 
 // Alle elementen binnen een filter, inclusief een eventueel verhuisd filter-sheet
+function revealInSheet(el) {
+  const body = el && el.closest(".pac-filter-sheet__body");
+  if (!body) return;
+  requestAnimationFrame(() => {
+    const r = el.getBoundingClientRect();
+    const b = body.getBoundingClientRect();
+    const over = r.bottom - b.bottom + 16;
+    if (over > 0) body.scrollBy({ top: Math.min(over, r.top - b.top - 16), behavior: reducedMotion ? "auto" : "smooth" });
+  });
+}
+
 function filterScopeAll(root, sel) {
   const found = new Set(root.querySelectorAll(sel));
   (root.__pacSheets || []).forEach((sheet) => sheet.querySelectorAll(sel).forEach((el) => found.add(el)));
