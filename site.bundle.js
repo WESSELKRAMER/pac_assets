@@ -4124,7 +4124,7 @@ function initAwardsTemplate() {
   // Actieve tab
   let tab = "awards";
   try { tab = (new URL(pacNextHref, window.location.origin).searchParams.get("tab") || "awards").toLowerCase(); } catch (e) {}
-  const available = AWARDS_TABS.filter((k) => (k !== "shortlist" || shortlistOn) && page.querySelector('[data-award-tab="' + k + '"]'));
+  const available = AWARDS_TABS.filter((k) => page.querySelector('[data-award-tab="' + k + '"]'));
   if (!available.includes(tab)) tab = "awards";
   page.setAttribute("data-awards-page", tab);
   page.querySelectorAll("[data-award-tab]").forEach((p) => {
@@ -4140,6 +4140,9 @@ function initAwardsTemplate() {
       if (sec) sec.remove();
     });
   }
+
+  // Shortlist nog niet bekend -> zelfde coming soon als een lege longlist
+  if (panel && tab === "shortlist" && !shortlistOn) panel.querySelectorAll(".w-dyn-item").forEach((i) => i.remove());
 
   // Lege lijsten -> coming soon
   if (panel && tab !== "awards") {
