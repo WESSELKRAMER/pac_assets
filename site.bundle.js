@@ -5125,6 +5125,31 @@ function initProjectChapterSource() {
   tpl.parentNode.insertBefore(frag, tpl);
   templates.forEach((t) => t.remove());
   src.remove();
+  pairTextChapters();
+}
+
+// Hoofdstukken zonder foto worden kaarten in de themakleur; twee op rij komen naast elkaar te staan.
+function pairTextChapters() {
+  const hero = nextPage.querySelector("[data-project-theme]");
+  const color = hero ? getComputedStyle(hero).getPropertyValue("--gradient-color").trim() : "";
+  const sections = Array.from(nextPage.querySelectorAll("[data-chapter].is-from-rich"));
+  if (!sections.length) return;
+  if (color) sections[0].parentElement.style.setProperty("--chapter-card", color);
+  for (let i = 0; i < sections.length; i++) {
+    const a = sections[i];
+    const b = sections[i + 1];
+    if (!a.classList.contains("is-no-image")) continue;
+    if (!b || !b.classList.contains("is-no-image") || a.nextElementSibling !== b) continue;
+    const innerA = a.querySelector(".flex_content_inner");
+    const wrapB = b.querySelector(".flex_text_wrap");
+    if (!innerA || !wrapB) continue;
+    innerA.appendChild(wrapB);
+    a.classList.add("is-pair");
+    b.remove();
+    i++;
+  }
+  // Nummering na samenvoegen weer doorlopend maken
+  Array.from(nextPage.querySelectorAll("[data-chapter].is-from-rich")).forEach((sec, n) => sec.setAttribute("data-chapter", String(n + 1)));
 }
 
 function initProjectChapters() {

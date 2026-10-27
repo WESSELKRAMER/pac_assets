@@ -2914,3 +2914,23 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
   .stories_hero_inner.is--hor > .stories_hero_text_wrap { flex: 2 1 0; min-width: 0; }
   .stories_hero_inner.is--hor > .stories_hero_img_wrap { flex: 3 1 0; min-width: 0; }
 }
+
+/* Tekst-hoofdstukken (zonder foto) als kaart in de themakleur; twee op rij naast elkaar */
+[data-chapter].is-no-image .flex_content_inner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+[data-chapter].is-no-image .flex_text_wrap {
+  width: 100%;
+  max-width: 56rem;
+  padding: 1.75rem 1.5rem;
+  border-radius: 1.3rem;
+  background-color: color-mix(in srgb, var(--chapter-card, var(--pac-beige--500, #f2e3d4)) 35%, var(--pac-light--500, #fff));
+}
+[data-chapter].is-no-image.is-pair .flex_text_wrap { max-width: none; }
+[data-chapter].is-no-image .flex_text_wrap > :last-child,
+[data-chapter].is-no-image .rich-text > :last-child { margin-bottom: 0; }
+@media (min-width: 768px) {
+  [data-chapter].is-no-image .flex_text_wrap { padding: 2.5rem; }
+}
+@media (min-width: 992px) {
+  [data-chapter].is-no-image.is-pair .flex_content_inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; align-items: stretch; }
+  [data-chapter].is-no-image .flex_text_wrap { padding: 3rem; }
+}
