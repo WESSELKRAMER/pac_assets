@@ -1245,7 +1245,7 @@ function initA11yFixes() {
     b.setAttribute("aria-hidden", "true");
   });
   root.querySelectorAll("[data-open-video][role='button']").forEach((b) => {
-    if (!b.getAttribute("aria-label") && !b.textContent.trim()) b.setAttribute("aria-label", "Speel video");
+    if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", b.getAttribute("data-cursor-text") || "Speel video");
   });
 }
 
