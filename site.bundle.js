@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-28 19:50";
+window.PAC_BUNDLE = "2026-10-28 21:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -101,6 +101,7 @@ function initBeforeEnterFunctions(next) {
   initAwardsLinks();
   initDutchDates();
   initRichTextClasses();
+  initA11yLabels();
   if (has("[data-quote-reveal]")) initQuoteReveal();
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
@@ -1157,6 +1158,35 @@ function initNavCurrentUnderline() {
     } else {
       el.setAttribute("data-underline-link", original);
     }
+  });
+}
+
+// Toegankelijke namen voor links zonder tekst (logo, footerlogo's, pijl-CTA's)
+function initA11yLabels() {
+  const hosts = { "fairpracticecode.nl": "Fair Practice Code", "codedi.nl": "Code Diversiteit & Inclusie" };
+  const hasName = (a) =>
+    a.textContent.trim() ||
+    a.getAttribute("aria-label") ||
+    [...a.querySelectorAll("img")].some((i) => (i.getAttribute("alt") || "").trim()) ||
+    a.querySelector("svg[aria-label], svg title");
+  document.querySelectorAll("a[href]").forEach((a) => {
+    if (hasName(a) || a.closest("[aria-hidden='true']")) return;
+    const href = a.getAttribute("href") || "";
+    if (a.classList.contains("logo_wrapper") || href === "/") {
+      a.setAttribute("aria-label", "Pan Asian Collective, naar home");
+      return;
+    }
+    const host = Object.keys(hosts).find((h) => href.includes(h));
+    if (host) {
+      a.setAttribute("aria-label", hosts[host]);
+      return;
+    }
+    let el = a.parentElement, title = "";
+    for (let i = 0; i < 6 && el && !title; i++, el = el.parentElement) {
+      const h = el.querySelector("h1, h2, h3, h4, h5, h6, [data-title]");
+      if (h && h.textContent.trim()) title = h.textContent.trim().replace(/\s+/g, " ");
+    }
+    if (title) a.setAttribute("aria-label", (href.startsWith("/verhalen/") ? "Lees verhaal: " : "Bekijk: ") + title);
   });
 }
 
