@@ -2990,3 +2990,61 @@ html.pac-loader-on::after { content: ""; position: fixed; inset: 0; z-index: 999
 
 /* Formulier 'Dien je verhaal in' alleen tonen als het subproject dat aangeeft (CMS-veld Inzendformulier = Tonen) */
 [data-verhaal-form-section]:not([data-verhaal-form-section="Tonen"]) { display: none !important; }
+
+/* ------------------------------------------------------------------ */
+/* Citaten: lijnen boven en onder tekenen zich (JS zet --quote-top/--quote-bottom) */
+.rich-text blockquote[data-quote-reveal] {
+  position: relative;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+.rich-text blockquote[data-quote-reveal]::before,
+.rich-text blockquote[data-quote-reveal]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--rt-line);
+  pointer-events: none;
+}
+.rich-text blockquote[data-quote-reveal]::before {
+  top: -1px;
+  transform: scaleX(var(--quote-top, 1));
+  transform-origin: 0% 50%;
+}
+.rich-text blockquote[data-quote-reveal]::after {
+  bottom: -1px;
+  transform: scaleX(var(--quote-bottom, 1));
+  transform-origin: 100% 50%;
+}
+
+/* FLIP-filter: kopie van een verdwijnende kaart */
+.pac-flip-ghost { will-change: opacity, transform; }
+
+/* ------------------------------------------------------------------ */
+/* View Transitions als vangnet: alleen bij navigaties die Barba niet afhandelt
+   (harde navigaties, Barba-time-out). Chrome/Edge 126+, Safari 18.2+; andere browsers negeren dit. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: pac-vt-out 0.35s cubic-bezier(0.4, 0, 1, 1) both; }
+::view-transition-new(root) { animation: pac-vt-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
+@keyframes pac-vt-out { to { opacity: 0; } }
+@keyframes pac-vt-in { from { opacity: 0; transform: translateY(12px); } }
+.navbar, [data-navbar] { view-transition-name: pac-nav; }
+::view-transition-group(pac-nav),
+::view-transition-old(pac-nav),
+::view-transition-new(pac-nav) { animation: none; }
+
+/* ------------------------------------------------------------------ */
+/* Verminder beweging: CSS-overgangen en -animaties (bijna) direct, geen smooth scroll, geen view transitions */
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+}

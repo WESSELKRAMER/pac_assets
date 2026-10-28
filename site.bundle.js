@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-22 14:55";
+window.PAC_BUNDLE = "2026-10-28 17:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -21,6 +21,8 @@ const rmMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
 let reducedMotion = rmMQ.matches;
 rmMQ.addEventListener?.("change", e => (reducedMotion = e.matches));
 rmMQ.addListener?.(e => (reducedMotion = e.matches));
+// Duur 0 bij "verminder beweging"
+const rmd = (d) => (reducedMotion ? 0 : d);
 
 const SEL = {
   animateLine: "[data-animate-line], .u-line-hor",
@@ -70,6 +72,7 @@ function initOnceFunctions() {
   initLogoHover();
   initNavCurrentUnderline();
   initDynamicTextCursor();
+  initFaviconAnimation();
 }
 
 function initBeforeEnterFunctions(next) {
@@ -98,6 +101,8 @@ function initBeforeEnterFunctions(next) {
   initAwardsLinks();
   initDutchDates();
   initRichTextClasses();
+  if (has("[data-quote-reveal]")) initQuoteReveal();
+  if (has(".section_what_we_do .faq_item, [data-domain-wash]")) initDomainWash();
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
   initUnselectableText();
@@ -573,7 +578,7 @@ function initLenis() {
     lerp: toNumber(cfg.lenisLerp, 0.08),
     wheelMultiplier: toNumber(cfg.lenisWheel, 0.9),
     touchMultiplier: toNumber(cfg.lenisTouch, 1),
-    smoothWheel: true,
+    smoothWheel: !reducedMotion,
     syncTouch: false
   });
 
@@ -756,7 +761,7 @@ function initNavbarHide() {
 
     gsap.to(navbarEl, {
       yPercent: state === "hidden" ? -100 : 0,
-      duration: navConfig.duration,
+      duration: rmd(navConfig.duration),
       ease: navConfig.ease,
       overwrite: "auto"
     });
@@ -937,7 +942,7 @@ function initMobileMenu() {
 
     gsap.to(reveal, {
       p: 100,
-      duration: 0.8,
+      duration: rmd(0.8),
       ease: "expo.out",
       onUpdate: applyClip
     });
@@ -945,15 +950,15 @@ function initMobileMenu() {
     gsap.to(items, {
       y: 0,
       autoAlpha: 1,
-      duration: 0.7,
+      duration: rmd(0.7),
       stagger: 0.05,
       delay: 0.1,
       ease: "expo.out"
     });
 
     if (firstLine && lastLine && firstLine !== lastLine) {
-      gsap.to(firstLine, { y: offset, rotate: 45, duration: 0.6, ease: "expo.out" });
-      gsap.to(lastLine, { y: -offset, rotate: -45, duration: 0.6, ease: "expo.out" });
+      gsap.to(firstLine, { y: offset, rotate: 45, duration: rmd(0.6), ease: "expo.out" });
+      gsap.to(lastLine, { y: -offset, rotate: -45, duration: rmd(0.6), ease: "expo.out" });
     }
   }
 
@@ -975,14 +980,14 @@ function initMobileMenu() {
 
     gsap.to(items, {
       autoAlpha: 0,
-      duration: 0.25,
+      duration: rmd(0.25),
       stagger: { each: 0.02, from: "end" },
       ease: "power2.in"
     });
 
     gsap.to(reveal, {
       p: 0,
-      duration: 0.6,
+      duration: rmd(0.6),
       delay: 0.1,
       ease: "expo.inOut",
       onUpdate: applyClip,
@@ -992,7 +997,7 @@ function initMobileMenu() {
       }
     });
 
-    gsap.to(lines, { y: 0, rotate: 0, duration: 0.6, ease: "expo.out" });
+    gsap.to(lines, { y: 0, rotate: 0, duration: rmd(0.6), ease: "expo.out" });
   }
 
   function toggleMenu() {
@@ -1104,7 +1109,7 @@ function initCircleButtonHover() {
     circle.dataset.circleHover = "true";
     const trigger = circle.closest(".faq_question, .video_close_button_wrap") || circle;
     gsap.set(circle, { transformOrigin: "50% 50%" });
-    trigger.addEventListener("mouseenter", () => gsap.to(circle, { scale: 0.92, duration: 0.5, ease: "expo.out", overwrite: "auto" }));
+    trigger.addEventListener("mouseenter", () => !reducedMotion && gsap.to(circle, { scale: 0.92, duration: 0.5, ease: "expo.out", overwrite: "auto" }));
     trigger.addEventListener("mouseleave", () => gsap.to(circle, { scale: 1, duration: 0.5, ease: "expo.out", overwrite: "auto" }));
   });
 }
@@ -1119,6 +1124,7 @@ function initLogoHover() {
     gsap.set(circle, { transformOrigin: "50% 50%" });
 
     wrapper.addEventListener("mouseenter", () => {
+      if (reducedMotion) return;
       gsap.to(circle, {
         scale: 0.92,
         duration: 0.5,
@@ -1202,6 +1208,7 @@ function initRichTextClasses() {
       bq.innerHTML =
         `<span class="rt-quote_text"${splitAttr}>“${quote}”</span>` +
         (source ? `<cite class="rt-quote_source">${source}</cite>` : "");
+      if (rt.classList.contains("rich-text")) bq.setAttribute("data-quote-reveal", "");
     });
   });
 }
@@ -1428,6 +1435,7 @@ function initCTAAnimation() {
     gsap.set([arrow, circle], { transformOrigin: "50% 50%" });
 
     trigger.addEventListener("mouseenter", () => {
+      if (reducedMotion) return;
       gsap.killTweensOf([arrow, circle, chars]);
 
       gsap.to(chars, {
@@ -1656,14 +1664,14 @@ function initFAQAnimation() {
 
     gsap.to(answer, {
       height: 0,
-      duration: 0.55,
+      duration: rmd(0.55),
       ease: "power2.out"
     });
 
     if (plusIcon) {
       gsap.to(plusIcon, {
         rotate: 0,
-        duration: 0.55,
+        duration: rmd(0.55),
         ease: "power2.out"
       });
     }
@@ -1683,7 +1691,7 @@ function initFAQAnimation() {
 
     gsap.to(answer, {
       height,
-      duration: 0.55,
+      duration: rmd(0.55),
       ease: "power2.out",
       onComplete: () => {
         gsap.set(answer, { height: "auto" });
@@ -1693,7 +1701,7 @@ function initFAQAnimation() {
     if (plusIcon) {
       gsap.to(plusIcon, {
         rotate: 45,
-        duration: 0.55,
+        duration: rmd(0.55),
         ease: "power2.out"
       });
     }
@@ -1747,7 +1755,7 @@ function initMaskTextScrollReveal() {
   const headings = nextPage.querySelectorAll('[data-split="heading"]');
   if (!headings.length) return;
 
-  if (!hasSplitText || !hasScrollTrigger) {
+  if (!hasSplitText || !hasScrollTrigger || reducedMotion) {
     gsap.set(headings, { autoAlpha: 1 });
     return;
   }
@@ -3692,8 +3700,88 @@ function initListFilters() {
     };
 
     let tween = null;
+    const flipDuration = toNumber(root.dataset.filterFlipDuration, 0.7);
+    const useFlip = root.dataset.filterFlip !== "false";
+
+    // FLIP: posities vóór de wijziging vastleggen (alleen kaarten rond het scherm, voor de performance)
+    const measure = () => {
+      const vh = window.innerHeight;
+      const map = new Map();
+      items.forEach((item) => {
+        if (item.el.style.display === "none") return;
+        const r = item.el.getBoundingClientRect();
+        if (!r.width || r.bottom < -vh * 0.5 || r.top > vh * 1.5) return;
+        map.set(item.el, r);
+      });
+      return map;
+    };
+
+    const runFlip = (before, show) => {
+      const vh = window.innerHeight;
+      const dur = flipDuration;
+      const tl = gsap.timeline();
+      const entering = [];
+      const restore = [];
+      show.forEach((el) => {
+        const r1 = el.getBoundingClientRect();
+        if (!r1.width || r1.bottom < 0 || r1.top > vh) return;
+        const r0 = before.get(el);
+        if (!r0) return entering.push(el);
+        const dx = r0.left - r1.left;
+        const dy = r0.top - r1.top;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+        tl.fromTo(el, { x: dx, y: dy }, { x: 0, y: 0, duration: dur, ease: "expo.out", clearProps: "transform" }, 0);
+      });
+      // Kaarten die verdwijnen: kort een kopie op de oude plek laten uitfaden
+      before.forEach((r0, el) => {
+        if (show.has(el)) return;
+        const parent = el.parentElement;
+        if (!parent || r0.bottom < 0 || r0.top > vh) return;
+        if (getComputedStyle(parent).position === "static") {
+          parent.style.position = "relative";
+          restore.push(() => (parent.style.position = ""));
+        }
+        const pr = parent.getBoundingClientRect();
+        const ghost = el.cloneNode(true);
+        ghost.removeAttribute("data-filter-item");
+        ghost.removeAttribute("id");
+        ghost.setAttribute("aria-hidden", "true");
+        ghost.classList.add("pac-flip-ghost");
+        Object.assign(ghost.style, {
+          display: "",
+          position: "absolute",
+          left: r0.left - pr.left - parent.clientLeft + "px",
+          top: r0.top - pr.top - parent.clientTop + "px",
+          width: r0.width + "px",
+          height: r0.height + "px",
+          margin: "0",
+          pointerEvents: "none",
+          zIndex: "0"
+        });
+        parent.appendChild(ghost);
+        restore.push(() => ghost.remove());
+        tl.to(ghost, { autoAlpha: 0, scale: 0.96, duration: dur * 0.45, ease: "power2.in" }, 0);
+      });
+      const fadeIn = entering.length ? entering : show.size ? [] : empties;
+      if (fadeIn.length) {
+        tl.fromTo(
+          fadeIn,
+          { autoAlpha: 0, scale: entering.length ? 0.96 : 1 },
+          { autoAlpha: 1, scale: 1, duration: dur * 0.8, stagger: Math.min(stagger, 0.04), ease: "power2.out", clearProps: "opacity,visibility,transform" },
+          dur * 0.2
+        );
+      }
+      tl.eventCallback("onComplete", () => {
+        restore.forEach((fn) => fn());
+        if (tween === tl) tween = null;
+      });
+      return tl;
+    };
 
     const apply = (animate = true) => {
+      const doFlip = animate === "flip" && useFlip && !!duration;
+      if (doFlip && tween) tween.progress(1);
+      const before = doFlip ? measure() : null;
       const q = searchNormalize(state.query);
       const matches = items.filter((item) => {
         for (const g of groups) {
@@ -3733,7 +3821,9 @@ function initListFilters() {
       });
       syncControls();
 
-      if (animate && duration) {
+      if (doFlip) {
+        tween = runFlip(before, show);
+      } else if (animate && duration) {
         const visible = (sorts.length ? Array.from(show).sort((a, b) => (a.compareDocumentPosition(b) & 4 ? -1 : 1)) : Array.from(show)).slice(0, 12);
         const targets = visible.length ? visible : empties;
         if (targets.length) {
@@ -3752,7 +3842,7 @@ function initListFilters() {
     const update = () => {
       state.page = 1;
       writeUrl();
-      apply(true);
+      apply("flip");
     };
 
     const goToPage = (n) => {
@@ -6768,6 +6858,7 @@ function initDomainTabs() {
       if (opacity !== null) vars.opacity = opacity;
 
       gsap.to(blob, vars);
+      if (color && module.dataset.domainsWash !== "false") pacWash(blobSection, color, animate);
     };
     const scrollHost = module.closest("[data-domains-scroll]");
     const scrollMode = !!(scrollHost && hasScrollTrigger);
@@ -7140,7 +7231,7 @@ function initBigLogoReveal() {
   const logos = nextPage.querySelectorAll(SEL.bigLogo);
   if (!logos.length) return;
 
-  if (!hasScrollTrigger) {
+  if (!hasScrollTrigger || reducedMotion) {
     logos.forEach((logo) => {
       logo.style.visibility = "visible";
     });
@@ -8360,5 +8451,229 @@ function initPhotowall() {
       if (moreIo) moreIo.disconnect();
     });
     }
+  });
+}
+
+
+// ---------------------------------------------------------------------------
+// Citaten (blockquotes in .rich-text): lijnen boven/onder tekenen zich, bron fadet in.
+// De tekst zelf gebruikt de bestaande regel-voor-regel onthulling (data-split="heading").
+function initQuoteReveal() {
+  const quotes = Array.from(nextPage.querySelectorAll("[data-quote-reveal]")).filter((q) => q.dataset.quoteInit !== "true");
+  if (!quotes.length) return;
+  quotes.forEach((q) => {
+    q.dataset.quoteInit = "true";
+    if (reducedMotion || !hasScrollTrigger) return;
+    const cite = q.querySelector(".rt-quote_source");
+    gsap.set(q, { "--quote-top": 0, "--quote-bottom": 0 });
+    if (cite) gsap.set(cite, { autoAlpha: 0, y: 10 });
+    const tl = gsap.timeline({
+      paused: true,
+      defaults: { ease: "expo.inOut" }
+    });
+    tl.to(q, { "--quote-top": 1, duration: 1.1 }, 0)
+      .to(q, { "--quote-bottom": 1, duration: 1.1 }, 0.25);
+    if (cite) tl.to(cite, { autoAlpha: 1, y: 0, duration: 0.8, ease: "expo.out" }, 0.55);
+    const st = ScrollTrigger.create({
+      trigger: q,
+      start: "top 80%",
+      once: true,
+      onEnter: () => tl.play()
+    });
+    addCleanup(q, () => {
+      st.kill();
+      tl.kill();
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Domeinkleur die meeloopt: de sectie-achtergrond kleurt zacht mee met het actieve domein.
+function pacParseRgb(c) {
+  const m = (c || "").match(/rgba?\(([^)]+)\)/);
+  if (!m) return null;
+  const v = m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
+  if (v.length < 3 || v.slice(0, 3).some((n) => !Number.isFinite(n))) return null;
+  if (v.length > 3 && v[3] === 0) return null;
+  return v.slice(0, 3);
+}
+function pacTint(color, strength) {
+  const v = pacParseRgb(color);
+  if (!v) return null;
+  return "rgb(" + v.map((x) => Math.round(255 + (x - 255) * strength)).join(", ") + ")";
+}
+function pacWash(section, color, animate) {
+  if (!section) return;
+  const strength = toNumber(section.dataset.washStrength, 0.16);
+  const to = color ? pacTint(color, strength) : null;
+  if (!section.dataset.washBase) {
+    const base = getComputedStyle(section).backgroundColor;
+    section.dataset.washBase = pacParseRgb(base) ? base : "rgba(255, 255, 255, 0)";
+  }
+  gsap.to(section, {
+    backgroundColor: to || section.dataset.washBase,
+    duration: animate ? rmd(1) : 0,
+    ease: "power2.out",
+    overwrite: "auto"
+  });
+}
+
+function initDomainWash() {
+  const sections = Array.from(nextPage.querySelectorAll(".section_what_we_do, [data-domain-wash]")).filter(
+    (sec) => sec.dataset.washInit !== "true" && !sec.closest(".samenwerken_zone") && sec.querySelector(SEL.faqItem)
+  );
+  sections.forEach((section) => {
+    section.dataset.washInit = "true";
+    const items = Array.from(section.querySelectorAll(SEL.faqItem));
+    const colorOf = (item) => {
+      const c = item.getAttribute("data-domain-color") || getComputedStyle(item).backgroundColor;
+      return pacParseRgb(c) ? c : null;
+    };
+    let active = false;
+    let hovered = null;
+    const target = () => {
+      if (!active) return null;
+      const item = hovered || items.find((i) => i.dataset.open === "true");
+      return item ? colorOf(item) : null;
+    };
+    const update = () => pacWash(section, target(), true);
+
+    const st = hasScrollTrigger
+      ? ScrollTrigger.create({
+          trigger: section,
+          start: "top 65%",
+          end: "bottom 35%",
+          onToggle: (self) => {
+            active = self.isActive;
+            update();
+          }
+        })
+      : null;
+    if (!st) active = true;
+
+    const onClick = () => requestAnimationFrame(update);
+    const canHover = window.matchMedia("(hover: hover)").matches;
+    const onEnter = (e) => {
+      hovered = e.currentTarget;
+      update();
+    };
+    const onLeave = () => {
+      hovered = null;
+      update();
+    };
+    items.forEach((item) => {
+      item.addEventListener("click", onClick);
+      if (canHover) {
+        item.addEventListener("mouseenter", onEnter);
+        item.addEventListener("mouseleave", onLeave);
+      }
+    });
+    update();
+
+    addCleanup(section, () => {
+      if (st) st.kill();
+      items.forEach((item) => {
+        item.removeEventListener("click", onClick);
+        item.removeEventListener("mouseenter", onEnter);
+        item.removeEventListener("mouseleave", onLeave);
+      });
+      gsap.killTweensOf(section);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Geanimeerde favicon: kom je terug naar het tabblad, dan tekent de ring zich opnieuw en verschijnen de letters.
+// Werkt in Chrome, Edge en Firefox; Safari toont de gewone favicon.
+const PAC_FAVICON_PATHS = {
+  letters: [
+    "M36.1677 50.6185L36.4923 48.5138L46.8681 45.9065L48.1493 47.6079L36.1677 50.6185Z",
+    "M33.4453 53.0947L41.5566 32.8905H43.4324L51.5715 53.0947H49.2912L43.7206 39.0956C43.4506 38.3836 43.2253 37.7635 43.0424 37.2343C42.8596 36.7051 42.6816 36.142 42.5084 35.5462C42.3158 36.1432 42.1281 36.7051 41.9453 37.2343C41.7624 37.7635 41.536 38.3848 41.2671 39.0956L35.6675 53.0947H33.4453Z",
+    "M17.6335 44.464V42.4731V34.8814V32.8905H15.5264V53.0984L17.6335 52.5692V44.464Z",
+    "M23.4703 49.17H17.6333V47.0484H23.4703C26.7884 47.0484 29.4889 44.349 29.4889 41.0297C29.4889 37.7104 26.7896 35.0111 23.4703 35.0111H17.6333V32.8894H23.4703C27.9582 32.8894 31.6106 36.5406 31.6106 41.0297C31.6106 45.5189 27.9595 49.17 23.4703 49.17Z",
+    "M71.1581 46.8788C71.1532 46.8897 71.1484 46.9006 71.1436 46.9115C70.6386 47.9372 69.9035 48.8322 68.9383 49.5951C67.972 50.358 66.813 50.8872 65.4591 51.1827C64.3317 51.4298 63.243 51.4503 62.1931 51.2469C61.1444 51.0434 60.1804 50.6487 59.3049 50.0613C58.4281 49.4752 57.6833 48.7268 57.0706 47.8174C56.4578 46.9079 56.0243 45.8701 55.7688 44.7039C55.5145 43.5389 55.4757 42.4187 55.6549 41.3458C55.8342 40.2729 56.1987 39.2871 56.7509 38.3885C57.3031 37.49 58.0115 36.7246 58.8786 36.0913C59.7445 35.4592 60.7423 35.0196 61.8698 34.7725C63.2237 34.477 64.5061 34.4673 65.7195 34.7435C66.9329 35.0208 67.9817 35.5197 68.8693 36.2415C69.0122 36.3589 69.1466 36.4812 69.2762 36.606L71.6522 36.0089C71.5093 35.8237 71.3591 35.642 71.1968 35.4676C70.4618 34.6732 69.5777 34.0302 68.5436 33.5361C67.5094 33.0432 66.3916 32.7271 65.1891 32.5855C63.9866 32.445 62.7368 32.5164 61.4399 32.7998C60.0303 33.1086 58.7708 33.6548 57.6616 34.4383C56.5523 35.223 55.6465 36.1688 54.9441 37.2781C54.2405 38.3873 53.7755 39.6165 53.549 40.9655C53.3226 42.3146 53.3674 43.7133 53.6834 45.1616C53.9995 46.6088 54.5432 47.8985 55.3122 49.0308C56.0812 50.1631 57.0173 51.0858 58.1193 51.8003C59.2213 52.5148 60.4384 52.9968 61.7741 53.2462C63.1086 53.4957 64.4819 53.4666 65.8915 53.1591C67.1884 52.8757 68.3534 52.4143 69.3852 51.7749C70.417 51.1355 71.2961 50.3774 72.0191 49.4994C72.7433 48.6227 73.2773 47.6684 73.6237 46.6366C73.6697 46.501 73.7097 46.3654 73.7484 46.2297L71.1593 46.88L71.1581 46.8788Z"
+  ]
+};
+
+function initFaviconAnimation() {
+  if (typeof Path2D === "undefined" || window.__pacFavicon) return;
+  const links = Array.from(document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]'));
+  if (!links.length) return;
+  window.__pacFavicon = true;
+  const originals = links.map((l) => l.getAttribute("href"));
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  let letters;
+  try {
+    letters = PAC_FAVICON_PATHS.letters.map((d) => new Path2D(d));
+  } catch (e) {
+    return;
+  }
+  const color = "#0f0f0f";
+  const ease = gsap.parseEase("expo.inOut");
+  const easeOut = gsap.parseEase("expo.out");
+  let playing = false;
+  let hiddenAt = 0;
+
+  const draw = (t) => {
+    ctx.clearRect(0, 0, size, size);
+    ctx.save();
+    ctx.scale(size / 86, size / 86);
+    // Ring
+    const p = ease(Math.min(1, t / 0.7));
+    if (p > 0) {
+      ctx.beginPath();
+      ctx.arc(43, 43, 42, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.6;
+      ctx.lineCap = "round";
+      ctx.stroke();
+    }
+    // Letters P, A, C komen na elkaar omhoog
+    const groups = [[2, 3], [1, 0], [4]];
+    groups.forEach((g, i) => {
+      const lt = easeOut(Math.max(0, Math.min(1, (t - 0.25 - i * 0.1) / 0.45)));
+      if (lt <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = lt;
+      ctx.translate(0, (1 - lt) * 10);
+      ctx.fillStyle = color;
+      g.forEach((n) => ctx.fill(letters[n]));
+      ctx.restore();
+    });
+    ctx.restore();
+    const url = canvas.toDataURL("image/png");
+    links.forEach((l) => l.setAttribute("href", url));
+  };
+
+  const play = () => {
+    if (playing || reducedMotion) return;
+    playing = true;
+    const total = 1100;
+    const start = performance.now();
+    let last = 0;
+    const frame = (now) => {
+      const t = Math.min(1, (now - start) / total);
+      // ~25 fps is genoeg voor een favicon en spaart de browser
+      if (now - last > 40 || t === 1) {
+        last = now;
+        draw(t);
+      }
+      if (t < 1 && !document.hidden) requestAnimationFrame(frame);
+      else {
+        links.forEach((l, i) => l.setAttribute("href", originals[i]));
+        playing = false;
+      }
+    };
+    draw(0);
+    requestAnimationFrame(frame);
+  };
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) hiddenAt = Date.now();
+    else if (hiddenAt && Date.now() - hiddenAt > 2000) play();
   });
 }
