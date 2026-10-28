@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-28 17:30";
+window.PAC_BUNDLE = "2026-10-28 19:50";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -114,12 +114,10 @@ function initBeforeEnterFunctions(next) {
   if (has('[data-split="heading"]')) initMaskTextScrollReveal();
   if (has("[data-highlight-text]")) initHighlightText();
   if (has(SEL.floatingImg)) initFloatingImages();
-  if (has("[data-image-reveal]")) initImageReveal();
   if (has("[data-wipe-reveal]")) initWipeReveal();
   if (has("[data-yt-bg]")) initYoutubeBg();
   if (has("[data-open-video]")) initVideoPopup();
   if (has("[data-team-slider]")) initTeamSlider();
-  if (has("[data-gallery]")) initGalleries();
   if (has("[data-agenda]")) initAgendaMonths();
   if (has("[data-social-share]")) initSocialShare();
   if (has("[data-filter-link]")) initFilterLinks();
@@ -136,7 +134,6 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-stack]")) initStackCards();
   if (has(SEL.bigLogo)) initBigLogoReveal();
   if (has(SEL.marqueeTrack)) initLogoMarquee();
-  if (has(".partners_pills")) initPartnerOrder();
   if (has(SEL.footerLink)) initFooterLinkHover();
   if (has("[data-blob-section]")) initCursorBlob();
   if (has("[data-slider], .stories-swiper")) initSliders();
@@ -1775,7 +1772,7 @@ function initMaskTextScrollReveal() {
         ? heading.dataset.splitReveal
         : "lines";
 
-      const fitted = fitLongestWord(heading);
+      fitLongestWord(heading);
       const isImmediate = heading.dataset.splitImmediate === "true";
       const config = splitConfig[type];
 
@@ -1867,11 +1864,6 @@ function initMaskTextScrollReveal() {
         }
       });
 
-      if (fitted) {
-        const tmp = document.createElement("div");
-        tmp.innerHTML = fitted;
-        heading.setAttribute("aria-label", tmp.textContent.trim());
-      }
       const recheck = () => scheduleCheck(instance);
       // Breedte veranderd na het splitsen (bijv. hero-afbeelding laadt later): regels opnieuw controleren
       let lastW = heading.offsetWidth;
@@ -1922,7 +1914,6 @@ function fitLongestWord(el) {
   const measure = (t) => { probe.textContent = t; return probe.getBoundingClientRect().width; };
 
   const words = (el.textContent || "").split(/\s+/).filter(Boolean);
-  const splits = new Map();
   let widestLeft = 0;
   words.forEach((w) => {
     if (measure(w) <= width) return;
@@ -1931,21 +1922,10 @@ function fitLongestWord(el) {
   });
   probe.remove();
 
-  if (splits.size) {
-    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach((n) => {
-      let t = n.nodeValue;
-      splits.forEach((o, w) => { t = t.split(w).join(o.a + " " + o.b); });
-      n.nodeValue = t;
-    });
-  }
   if (widestLeft > width) {
     const size = parseFloat(cs.fontSize);
     el.style.fontSize = (size * Math.max(0.5, (width / widestLeft) * 0.97)).toFixed(2) + "px";
   }
-  return splits.size ? el.dataset.fitOriginal : null;
 }
 
 function initHighlightText() {
@@ -2111,224 +2091,6 @@ function initFloatingImages() {
 
 const CLIP_OVERFLOW = typeof CSS !== "undefined" && CSS.supports && CSS.supports("overflow", "clip") ? "clip" : "hidden";
 
-function initImageReveal() {
-  const elements = Array.from(nextPage.querySelectorAll("[data-image-reveal]")).filter(
-    (el) => el.dataset.imageRevealInitialized !== "true"
-  );
-  if (!elements.length) return;
-
-  if (reducedMotion || !hasScrollTrigger) {
-    elements.forEach((el) => {
-      el.dataset.imageRevealInitialized = "true";
-      gsap.set(el, { visibility: "visible" });
-    });
-    return;
-  }
-
-  const isFirstLoad = nextPage === document;
-  const CURTAIN_COLOR = "var(--pac-dark--900, #1b1c1e)";
-
-  const lerp = (a, b, t) => a + (b - a) * t;
-
-  function getRadius(wrap, img) {
-    let radius = parseFloat(getComputedStyle(wrap).borderTopLeftRadius) || 0;
-    if (!radius && img) radius = parseFloat(getComputedStyle(img).borderTopLeftRadius) || 0;
-    return radius;
-  }
-
-  function buildReveal(wrap) {
-    wrap.dataset.imageRevealInitialized = "true";
-
-    const type = (wrap.dataset.imageReveal || "clip").toLowerCase();
-    const img = wrap.querySelector("[data-reveal-img]") || wrap.querySelector("img");
-    const radius = getRadius(wrap, img);
-
-    const defaults = {
-      clip: { direction: "up", duration: 1.2, ease: "expo.out", zoom: 1.2 },
-      circle: { direction: "center", duration: 1.4, ease: "expo.inOut", zoom: 1.3 },
-      curtain: { direction: "right", duration: 1.4, ease: "power3.inOut", zoom: 1.15 }
-    };
-    const d = defaults[type] || defaults.clip;
-
-    const direction = (wrap.dataset.revealDirection || d.direction).toLowerCase();
-    const duration = toNumber(wrap.dataset.revealDuration, d.duration);
-    const ease = wrap.dataset.revealEase || d.ease;
-    const zoom = toNumber(wrap.dataset.revealZoom, d.zoom);
-    const parallax = Math.max(0, toNumber(wrap.dataset.revealParallax, 0));
-    const endScale = parallax > 0 ? 1 + parallax * 2 : 1;
-
-    if (getComputedStyle(wrap).position === "static") wrap.style.position = "relative";
-    wrap.style.overflow = CLIP_OVERFLOW;
-
-    if (img) {
-      gsap.set(img, {
-        scale: Math.max(zoom, endScale),
-        transformOrigin: "50% 50%",
-        willChange: "transform"
-      });
-    }
-
-    const tl = gsap.timeline({ paused: true });
-    const state = { p: 0 };
-    let curtain = null;
-
-    if (type === "circle") {
-      const startSize = toNumber(wrap.dataset.revealCircleSize, 0.2);
-
-      const applyCircle = () => {
-        const w = wrap.offsetWidth;
-        const h = wrap.offsetHeight;
-        const s = Math.min(w, h) * startSize;
-        const insetX = ((w - s) / 2) * (1 - state.p);
-        const insetY = ((h - s) / 2) * (1 - state.p);
-        const r = lerp(s / 2, radius, state.p);
-        wrap.style.clipPath = `inset(${insetY}px ${insetX}px ${insetY}px ${insetX}px round ${r}px)`;
-      };
-
-      applyCircle();
-
-      tl.to(state, {
-        p: 1,
-        duration,
-        ease,
-        onStart: applyCircle,
-        onUpdate: applyCircle,
-        onComplete: () => {
-          wrap.style.clipPath = "";
-        }
-      }, 0);
-    } else if (type === "curtain") {
-      const horizontal = direction === "left" || direction === "right";
-      const from = { right: "0% 50%", left: "100% 50%", down: "50% 0%", up: "50% 100%" };
-      const to = { right: "100% 50%", left: "0% 50%", down: "50% 100%", up: "50% 0%" };
-      const prop = horizontal ? "scaleX" : "scaleY";
-
-      curtain = document.createElement("div");
-      curtain.setAttribute("aria-hidden", "true");
-      curtain.className = "image-reveal_curtain";
-      Object.assign(curtain.style, {
-        position: "absolute",
-        inset: "0",
-        background: CURTAIN_COLOR,
-        zIndex: "2",
-        pointerEvents: "none",
-        borderRadius: "inherit"
-      });
-      wrap.appendChild(curtain);
-
-      const content = Array.from(wrap.children).filter((el) => el !== curtain);
-      gsap.set(content, { autoAlpha: 0 });
-      gsap.set(curtain, { [prop]: 0, transformOrigin: from[direction] || from.right });
-
-      tl.to(curtain, { [prop]: 1, duration: duration * 0.5, ease: "power3.in" }, 0)
-        .set(content, { autoAlpha: 1 })
-        .set(curtain, { transformOrigin: to[direction] || to.right })
-        .to(curtain, { [prop]: 0, duration: duration * 0.6, ease: "power3.out" });
-    } else {
-      const insets = {
-        up: (v) => `inset(${v}% 0% 0% 0% round ${radius}px)`,
-        down: (v) => `inset(0% 0% ${v}% 0% round ${radius}px)`,
-        left: (v) => `inset(0% 0% 0% ${v}% round ${radius}px)`,
-        right: (v) => `inset(0% ${v}% 0% 0% round ${radius}px)`,
-        center: (v) => `inset(${v / 2}% ${v / 2}% ${v / 2}% ${v / 2}% round ${radius}px)`
-      };
-      const build = insets[direction] || insets.up;
-
-      const applyClip = () => {
-        wrap.style.clipPath = build(100 - state.p * 100);
-      };
-      applyClip();
-
-      tl.to(state, {
-        p: 1,
-        duration,
-        ease,
-        onUpdate: applyClip,
-        onComplete: () => {
-          wrap.style.clipPath = "";
-        }
-      }, 0);
-    }
-
-    if (img) {
-      const imgStart = type === "curtain" ? duration * 0.5 : 0;
-      tl.to(img, {
-        scale: endScale,
-        duration: duration * 1.3,
-        ease: "expo.out"
-      }, imgStart);
-    }
-
-    gsap.set(wrap, { visibility: "visible" });
-
-    let parallaxTween = null;
-    if (img && parallax > 0) {
-      parallaxTween = gsap.fromTo(
-        img,
-        { yPercent: -parallax * 100 },
-        {
-          yPercent: parallax * 100,
-          ease: "none",
-          scrollTrigger: {
-            trigger: wrap,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: true
-          }
-        }
-      );
-    }
-
-    addCleanup(wrap, () => {
-      tl.kill();
-      if (parallaxTween) parallaxTween.kill();
-      if (curtain) curtain.remove();
-    });
-
-    return tl;
-  }
-
-  const groups = new Map();
-  elements.forEach((el) => {
-    const group = el.closest("[data-reveal-stagger]");
-    const key = group || el;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(el);
-  });
-
-  groups.forEach((list, trigger) => {
-    const isGroup = trigger.hasAttribute("data-reveal-stagger");
-    const stagger = isGroup ? toNumber(trigger.dataset.revealStagger, 0.12) : 0;
-    const source = isGroup ? trigger : list[0];
-
-    const immediate = (source.dataset.revealImmediate || list[0].dataset.revealImmediate) === "true";
-    const baseDelay = toNumber(
-      source.dataset.revealDelay ?? list[0].dataset.revealDelay,
-      immediate ? (isFirstLoad ? 0.2 + pacIntroDelay : 0.5) : 0
-    );
-    const start = source.dataset.revealStart || list[0].dataset.revealStart || "top 85%";
-
-    const master = gsap.timeline({ paused: true });
-    list.forEach((wrap, i) => {
-      const tl = buildReveal(wrap);
-      tl.paused(false);
-      master.add(tl, baseDelay + i * stagger);
-    });
-
-    if (immediate) {
-      master.play();
-    } else {
-      ScrollTrigger.create({
-        trigger: source,
-        start: `clamp(${start})`,
-        once: true,
-        onEnter: () => master.play()
-      });
-    }
-
-    addCleanup(source, () => master.kill());
-  });
-}
 
 function initWipeReveal() {
   const elements = Array.from(nextPage.querySelectorAll("[data-wipe-reveal]")).filter(
@@ -2419,289 +2181,6 @@ function initWipeReveal() {
   });
 }
 
-function initGalleries() {
-  const galleries = Array.from(nextPage.querySelectorAll("[data-gallery]")).filter(
-    (el) => el.dataset.galleryInitialized !== "true"
-  );
-  if (!galleries.length) return;
-
-  const getImg = (el) => (el.tagName === "IMG" ? el : el.querySelector("img"));
-
-  galleries.forEach((gallery) => {
-    gallery.dataset.galleryInitialized = "true";
-
-    const own = (selector) =>
-      Array.from(gallery.querySelectorAll(selector)).filter((el) => el.closest("[data-gallery]") === gallery);
-    const first = (selector) => own(selector)[0] || null;
-
-    const items = own("[data-gallery-item]").filter((item) => getImg(item));
-    const count = items.length;
-
-    if (!count) {
-      if (gallery.dataset.galleryHideEmpty !== "false") gallery.style.display = "none";
-      return;
-    }
-
-    const main = first("[data-gallery-main]") || items[0].parentElement;
-    const prevBtns = own("[data-gallery-prev]");
-    const nextBtns = own("[data-gallery-next]");
-    const currentEls = own("[data-gallery-current]");
-    const totalEls = own("[data-gallery-total]");
-    const captionEls = own("[data-gallery-caption]");
-    const thumbsWrap = first("[data-gallery-thumbs]");
-
-    const loop = gallery.dataset.galleryLoop !== "false";
-    const duration = reducedMotion ? 0 : toNumber(gallery.dataset.galleryDuration, 0.6);
-    const zoom = toNumber(gallery.dataset.galleryZoom, 1);
-    const pad = Math.max(0, Math.round(toNumber(gallery.dataset.galleryPad, 0)));
-    const swipe = gallery.dataset.gallerySwipe !== "false";
-    const keyboard = gallery.dataset.galleryKeyboard !== "false";
-    const activeClass = gallery.dataset.galleryActiveClass || "is-active";
-    const disabledClass = gallery.dataset.galleryDisabledClass || "is-disabled";
-    const start = Math.min(count - 1, Math.max(0, Math.round(toNumber(gallery.dataset.galleryStart, 1)) - 1));
-
-    const format = (n) => String(n).padStart(pad, "0");
-    totalEls.forEach((el) => (el.textContent = format(count)));
-
-    if (getComputedStyle(main).position === "static") main.style.position = "relative";
-    main.style.overflow = "clip";
-
-    items.forEach((item) => {
-      Object.assign(item.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
-      const img = getImg(item);
-      Object.assign(img.style, { width: "100%", height: "100%", objectFit: "cover" });
-      img.setAttribute("draggable", "false");
-    });
-
-    Array.from(main.children).forEach((child) => {
-      if (items.some((item) => child.contains(item))) return;
-      const cs = getComputedStyle(child);
-      if (cs.position === "static") child.style.position = "relative";
-      if (cs.zIndex === "auto" || parseInt(cs.zIndex, 10) < 3) child.style.zIndex = "3";
-    });
-
-    if (count === 1) {
-      gallery.dataset.gallerySingle = "true";
-      [...prevBtns, ...nextBtns].forEach((el) => (el.style.display = "none"));
-      if (thumbsWrap) thumbsWrap.style.display = "none";
-    }
-
-    let thumbs = [];
-    if (thumbsWrap && count > 1) {
-      const existing = Array.from(thumbsWrap.querySelectorAll("[data-gallery-thumb]"));
-
-      if (existing.length > 1) {
-        thumbs = existing.slice(0, count);
-      } else {
-        const template = existing[0] || null;
-        if (template) template.remove();
-
-        thumbs = items.map((item) => {
-          const source = getImg(item);
-          let thumb;
-          if (template) {
-            thumb = template.cloneNode(true);
-          } else {
-            thumb = document.createElement("button");
-            thumb.type = "button";
-            thumb.className = "gallery_thumb";
-          }
-          let img = getImg(thumb);
-          if (!img) {
-            img = document.createElement("img");
-            thumb.appendChild(img);
-          }
-          img.src = source.currentSrc || source.src;
-          if (source.srcset) img.srcset = source.srcset;
-          img.sizes = "160px";
-          img.alt = "";
-          img.loading = "lazy";
-          img.setAttribute("draggable", "false");
-          thumbsWrap.appendChild(thumb);
-          return thumb;
-        });
-      }
-
-      thumbs.forEach((thumb, i) => {
-        if (thumb.tagName !== "BUTTON" && thumb.tagName !== "A") {
-          thumb.setAttribute("role", "button");
-          thumb.setAttribute("tabindex", "0");
-        }
-        thumb.setAttribute("aria-label", `Foto ${i + 1} van ${count}`);
-        thumb.style.cursor = "pointer";
-      });
-    }
-
-    let current = -1;
-    let activeTween = null;
-
-    const scrollThumbIntoView = (thumb) => {
-      if (!thumb || !thumbsWrap) return;
-      if (thumbsWrap.scrollWidth <= thumbsWrap.clientWidth) return;
-      const left = thumb.offsetLeft - thumbsWrap.offsetLeft - (thumbsWrap.clientWidth - thumb.offsetWidth) / 2;
-      thumbsWrap.scrollTo({ left, behavior: reducedMotion ? "auto" : "smooth" });
-    };
-
-    const updateControls = () => {
-      currentEls.forEach((el) => (el.textContent = format(current + 1)));
-
-      const caption = items[current].dataset.galleryCaption || getImg(items[current]).alt || "";
-      captionEls.forEach((el) => {
-        el.textContent = caption;
-        el.style.display = caption ? "" : "none";
-      });
-
-      thumbs.forEach((thumb, i) => {
-        const on = i === current;
-        thumb.classList.toggle(activeClass, on);
-        thumb.setAttribute("aria-current", on ? "true" : "false");
-      });
-      scrollThumbIntoView(thumbs[current]);
-
-      if (!loop) {
-        const atStart = current === 0;
-        const atEnd = current === count - 1;
-        prevBtns.forEach((el) => {
-          el.classList.toggle(disabledClass, atStart);
-          el.setAttribute("aria-disabled", atStart ? "true" : "false");
-        });
-        nextBtns.forEach((el) => {
-          el.classList.toggle(disabledClass, atEnd);
-          el.setAttribute("aria-disabled", atEnd ? "true" : "false");
-        });
-      }
-    };
-
-    const go = (index, animate = true) => {
-      if (loop) index = (index + count) % count;
-      if (index < 0 || index >= count || index === current) return;
-
-      const prev = current;
-      current = index;
-
-      items.forEach((item, i) => {
-        item.setAttribute("aria-hidden", i === current ? "false" : "true");
-        item.style.zIndex = i === current ? "2" : i === prev ? "1" : "0";
-      });
-
-      if (activeTween) activeTween.progress(1);
-
-      const incoming = items[current];
-      const incomingImg = getImg(incoming);
-
-      if (!animate || prev < 0 || !duration) {
-        items.forEach((item, i) => gsap.set(item, { opacity: i === current ? 1 : 0 }));
-        gsap.set(incomingImg, { scale: 1 });
-      } else {
-        const outgoing = items[prev];
-        activeTween = gsap.timeline({
-          onComplete: () => {
-            items.forEach((item, i) => {
-              if (i !== current) gsap.set(item, { opacity: 0 });
-            });
-            activeTween = null;
-          }
-        });
-        activeTween
-          .fromTo(incoming, { opacity: 0 }, { opacity: 1, duration, ease: "power1.inOut" }, 0)
-          .set(outgoing, { opacity: 0 }, duration);
-      }
-
-      updateControls();
-    };
-
-    const next = () => go(current + 1);
-    const prev = () => go(current - 1);
-
-    const listeners = [];
-    const on = (el, type, fn, opts) => {
-      el.addEventListener(type, fn, opts);
-      listeners.push(() => el.removeEventListener(type, fn, opts));
-    };
-
-    prevBtns.forEach((el) =>
-      on(el, "click", (e) => {
-        e.preventDefault();
-        prev();
-      })
-    );
-    nextBtns.forEach((el) =>
-      on(el, "click", (e) => {
-        e.preventDefault();
-        next();
-      })
-    );
-
-    thumbs.forEach((thumb, i) => {
-      on(thumb, "click", (e) => {
-        e.preventDefault();
-        go(i);
-      });
-      on(thumb, "keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          go(i);
-        }
-      });
-    });
-
-    if (keyboard && count > 1) {
-      if (!gallery.hasAttribute("tabindex")) gallery.setAttribute("tabindex", "-1");
-      on(gallery, "keydown", (e) => {
-        if (e.key === "ArrowRight") {
-          e.preventDefault();
-          next();
-        } else if (e.key === "ArrowLeft") {
-          e.preventDefault();
-          prev();
-        }
-      });
-    }
-
-    if (swipe && count > 1) {
-      let startX = 0;
-      let startY = 0;
-      let tracking = false;
-      main.style.touchAction = "pan-y";
-
-      on(main, "pointerdown", (e) => {
-        if (e.pointerType === "mouse" && e.button !== 0) return;
-        tracking = true;
-        startX = e.clientX;
-        startY = e.clientY;
-      });
-      on(main, "pointerup", (e) => {
-        if (!tracking) return;
-        tracking = false;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-          if (dx < 0) next();
-          else prev();
-        }
-      });
-      on(main, "pointercancel", () => (tracking = false));
-    }
-
-    gallery.setAttribute("role", "region");
-    if (!gallery.hasAttribute("aria-label")) gallery.setAttribute("aria-label", "Fotogalerij");
-
-    go(start, false);
-
-    if (zoom !== 1) {
-      const zoomIn = () => {
-        if (!duration) return;
-        gsap.fromTo(getImg(items[current]), { scale: zoom }, { scale: 1, duration: duration * 1.5, ease: "power2.out" });
-      };
-      [...prevBtns, ...nextBtns, ...thumbs].forEach((el) => on(el, "click", zoomIn));
-    }
-
-    addCleanup(gallery, () => {
-      listeners.forEach((off) => off());
-      if (activeTween) activeTween.kill();
-    });
-  });
-}
 
 function initAgendaMonths() {
   const roots = Array.from(nextPage.querySelectorAll("[data-agenda]")).filter(
@@ -7253,27 +6732,6 @@ function initBigLogoReveal() {
   });
 }
 
-function initPartnerOrder() {
-  // Sorteer partnerlogo's en community-pillen op CMS-veld Volgorde (data-order); lege waarden achteraan
-  (nextPage || document).querySelectorAll(".partners_pills").forEach((list) => {
-    const items = Array.from(list.children).filter((el) => el.hasAttribute("data-order"));
-    const num = (el) => {
-      const n = parseFloat(el.getAttribute("data-order"));
-      return isNaN(n) ? Infinity : n;
-    };
-    items
-      .map((el, i) => ({ el, i, n: num(el) }))
-      .sort((a, b) => a.n - b.n || a.i - b.i)
-      .forEach(({ el }) => list.appendChild(el));
-    // Items zonder logo overslaan
-    list.querySelectorAll("img").forEach((img) => {
-      if (!img.getAttribute("src") || img.classList.contains("w-dyn-bind-empty")) {
-        const item = img.closest(".partners_logo_item");
-        if (item) item.remove();
-      }
-    });
-  });
-}
 
 function initLogoMarquee() {
   nextPage.querySelectorAll(SEL.marqueeTrack).forEach((track) => {

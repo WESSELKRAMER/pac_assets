@@ -39,7 +39,6 @@ html.lenis body {
 .js [data-load-fade],
 .js [data-animate-line],
 .js .u-line-hor,
-.js [data-image-reveal],
 .js [data-wipe-reveal],
 .js :is(.rich-text, .w-richtext) blockquote:not([data-rt-quote-done]) {
   visibility: hidden;
@@ -100,35 +99,6 @@ html.lenis body {
   .stories_grid {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-
-.js [data-gallery-main] {
-  position: relative;
-  overflow: clip;
-}
-.js [data-gallery-item] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-}
-.js [data-gallery-item]:first-child {
-  opacity: 1;
-}
-.js [data-gallery-item] img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.js [data-gallery-thumbs] {
-  scrollbar-width: none;
-}
-.js [data-gallery-thumbs]::-webkit-scrollbar {
-  display: none;
-}
-.wf-design-mode [data-gallery-item],
-.w-editor [data-gallery-item] {
-  position: relative;
-  opacity: 1;
 }
 
 .pac-slider {
@@ -306,7 +276,6 @@ html.lenis body {
 .wf-design-mode [data-load-fade],
 .wf-design-mode [data-animate-line],
 .wf-design-mode .u-line-hor,
-.wf-design-mode [data-image-reveal],
 .wf-design-mode [data-wipe-reveal],
 .wf-design-mode blockquote,
 .w-editor h1,
@@ -317,7 +286,6 @@ html.lenis body {
 .w-editor [data-load-fade],
 .w-editor [data-animate-line],
 .w-editor .u-line-hor,
-.w-editor [data-image-reveal],
 .w-editor [data-wipe-reveal],
 .w-editor blockquote {
   visibility: visible !important;
