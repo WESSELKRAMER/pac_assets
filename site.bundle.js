@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-28 21:40";
+window.PAC_BUNDLE = "2026-10-28 21:55";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -1174,9 +1174,12 @@ function initSkipLink() {
   a.addEventListener("click", (e) => {
     e.preventDefault();
     const main = document.getElementById("pac-main");
-    if (!main) return;
-    main.focus({ preventScroll: true });
-    main.scrollIntoView();
+    const target = main && (main.querySelector("h1") || main.firstElementChild);
+    if (!target) return;
+    if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+    if (lenis && lenis.scrollTo) lenis.scrollTo(target, { offset: -120, immediate: true });
+    else target.scrollIntoView();
   });
   document.body.prepend(a);
 }
@@ -1203,15 +1206,21 @@ function initSplitAriaObserver() {
 // Kleine ARIA-reparaties per pagina
 function initA11yFixes() {
   const root = document;
-  // Eén main-landmark: de Barba-container van de huidige pagina
+  // Eén main-landmark: alles in de Barba-container behalve de footer, in een wrapper met display: contents
   const containers = document.querySelectorAll('[data-barba="container"]');
-  const main = containers[containers.length - 1];
-  if (main) {
-    document.querySelectorAll("#pac-main").forEach((el) => el !== main && el.removeAttribute("id"));
+  const container = containers[containers.length - 1];
+  if (container && !container.querySelector(":scope > .pac-main")) {
+    document.querySelectorAll("#pac-main").forEach((el) => el.removeAttribute("id"));
+    const main = document.createElement("div");
+    main.className = "pac-main";
     main.id = "pac-main";
     main.setAttribute("role", "main");
-    main.setAttribute("tabindex", "-1");
+    const footer = container.querySelector(":scope > footer");
+    Array.from(container.children).forEach((c) => c !== footer && main.appendChild(c));
+    container.insertBefore(main, footer || null);
   }
+  const cursor = document.querySelector(".cursor");
+  if (cursor) cursor.setAttribute("aria-hidden", "true");
   // Gesplitste tekst die al vóór de observer bestond
   root.querySelectorAll("[aria-label]").forEach(fixSplitAria);
   // Scheidingstekens in het kruimelpad zijn decoratief
@@ -1223,8 +1232,8 @@ function initA11yFixes() {
     t.setAttribute("role", "group");
     if (!t.hasAttribute("aria-label")) t.setAttribute("aria-label", "Teamleden");
   });
-  root.querySelectorAll("[data-team-item] a, [data-team-url]").forEach((a) => {
-    a.setAttribute("tabindex", "-1");
+  root.querySelectorAll("[data-team-track] [data-team-item] a").forEach((a) => {
+    a.inert = true;
     a.setAttribute("aria-hidden", "true");
   });
   // Domeintabs: de lijst rond de tabpanels is geen lijst
@@ -1232,8 +1241,11 @@ function initA11yFixes() {
   root.querySelectorAll(".domain_contents_list > [role='listitem']").forEach((l) => l.removeAttribute("role"));
   // Video-knoppen met een Webflow play/pause-knop erin: geen geneste knoppen
   root.querySelectorAll("[role='button'] .w-backgroundvideo-backgroundvideoplaypausebutton").forEach((b) => {
-    b.setAttribute("tabindex", "-1");
+    b.inert = true;
     b.setAttribute("aria-hidden", "true");
+  });
+  root.querySelectorAll("[data-open-video][role='button']").forEach((b) => {
+    if (!b.getAttribute("aria-label") && !b.textContent.trim()) b.setAttribute("aria-label", "Speel video");
   });
 }
 
