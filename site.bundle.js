@@ -102,7 +102,6 @@ function initBeforeEnterFunctions(next) {
   initDutchDates();
   initRichTextClasses();
   if (has("[data-quote-reveal]")) initQuoteReveal();
-  if (has(".section_what_we_do .faq_item, [data-domain-wash]")) initDomainWash();
   if (has("[data-gradient]")) initGradientColors();
   initDynamicCurrentYear();
   initUnselectableText();
@@ -6845,7 +6844,6 @@ function initDomainTabs() {
 
     const updateBlob = (index, animate) => {
       const color = getColor(index);
-      if (color && blobSection && module.dataset.domainsWash !== "false") pacWash(blobSection, color, animate);
       if (!blob) return;
       const opacity = readBlobOpacity(index);
       if (!color && opacity === null) return;
@@ -8483,101 +8481,6 @@ function initQuoteReveal() {
     addCleanup(q, () => {
       st.kill();
       tl.kill();
-    });
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Domeinkleur die meeloopt: de sectie-achtergrond kleurt zacht mee met het actieve domein.
-function pacParseRgb(c) {
-  const m = (c || "").match(/rgba?\(([^)]+)\)/);
-  if (!m) return null;
-  const v = m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
-  if (v.length < 3 || v.slice(0, 3).some((n) => !Number.isFinite(n))) return null;
-  if (v.length > 3 && v[3] === 0) return null;
-  return v.slice(0, 3);
-}
-function pacTint(color, strength) {
-  const v = pacParseRgb(color);
-  if (!v) return null;
-  return "rgb(" + v.map((x) => Math.round(255 + (x - 255) * strength)).join(", ") + ")";
-}
-function pacWash(section, color, animate) {
-  if (!section) return;
-  const strength = toNumber(section.dataset.washStrength, 0.16);
-  const to = color ? pacTint(color, strength) : null;
-  if (!section.dataset.washBase) {
-    const base = getComputedStyle(section).backgroundColor;
-    section.dataset.washBase = pacParseRgb(base) ? base : "rgba(255, 255, 255, 0)";
-  }
-  gsap.to(section, {
-    backgroundColor: to || section.dataset.washBase,
-    duration: animate ? rmd(1) : 0,
-    ease: "power2.out",
-    overwrite: "auto"
-  });
-}
-
-function initDomainWash() {
-  const sections = Array.from(nextPage.querySelectorAll(".section_what_we_do, [data-domain-wash]")).filter(
-    (sec) => sec.dataset.washInit !== "true" && !sec.closest(".samenwerken_zone") && sec.querySelector(SEL.faqItem)
-  );
-  sections.forEach((section) => {
-    section.dataset.washInit = "true";
-    const items = Array.from(section.querySelectorAll(SEL.faqItem));
-    const colorOf = (item) => {
-      const c = item.getAttribute("data-domain-color") || getComputedStyle(item).backgroundColor;
-      return pacParseRgb(c) ? c : null;
-    };
-    let active = false;
-    let hovered = null;
-    const target = () => {
-      if (!active) return null;
-      const item = hovered || items.find((i) => i.dataset.open === "true");
-      return item ? colorOf(item) : null;
-    };
-    const update = () => pacWash(section, target(), true);
-
-    const st = hasScrollTrigger
-      ? ScrollTrigger.create({
-          trigger: section,
-          start: "top 65%",
-          end: "bottom 35%",
-          onToggle: (self) => {
-            active = self.isActive;
-            update();
-          }
-        })
-      : null;
-    if (!st) active = true;
-
-    const onClick = () => requestAnimationFrame(update);
-    const canHover = window.matchMedia("(hover: hover)").matches;
-    const onEnter = (e) => {
-      hovered = e.currentTarget;
-      update();
-    };
-    const onLeave = () => {
-      hovered = null;
-      update();
-    };
-    items.forEach((item) => {
-      item.addEventListener("click", onClick);
-      if (canHover) {
-        item.addEventListener("mouseenter", onEnter);
-        item.addEventListener("mouseleave", onLeave);
-      }
-    });
-    update();
-
-    addCleanup(section, () => {
-      if (st) st.kill();
-      items.forEach((item) => {
-        item.removeEventListener("click", onClick);
-        item.removeEventListener("mouseenter", onEnter);
-        item.removeEventListener("mouseleave", onLeave);
-      });
-      gsap.killTweensOf(section);
     });
   });
 }
