@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-28 21:10";
+window.PAC_BUNDLE = "2026-10-28 21:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -73,6 +73,8 @@ function initOnceFunctions() {
   initNavCurrentUnderline();
   initDynamicTextCursor();
   initFaviconAnimation();
+  initSkipLink();
+  initSplitAriaObserver();
 }
 
 function initBeforeEnterFunctions(next) {
@@ -143,6 +145,7 @@ function initBeforeEnterFunctions(next) {
   if (has(".section_404")) init404();
   if (has("form[data-pac-form]")) initPacForms();
   if (has("[data-flex-video]")) initFlexVideos();
+  initA11yFixes();
 }
 
 function initAfterEnterFunctions(next) {
@@ -1161,6 +1164,79 @@ function initNavCurrentUnderline() {
   });
 }
 
+// Skiplink naar de inhoud (eenmalig; werkt ook na Barba-overgangen)
+function initSkipLink() {
+  if (document.querySelector(".pac-skip-link")) return;
+  const a = document.createElement("a");
+  a.className = "pac-skip-link";
+  a.href = "#pac-main";
+  a.textContent = "Naar de inhoud";
+  a.addEventListener("click", (e) => {
+    e.preventDefault();
+    const main = document.getElementById("pac-main");
+    if (!main) return;
+    main.focus({ preventScroll: true });
+    main.scrollIntoView();
+  });
+  document.body.prepend(a);
+}
+
+// Gesplitste tekst (SplitText) op <p>/<div>: aria-label mag daar niet en wordt door screenreaders genegeerd,
+// terwijl de losse stukjes aria-hidden zijn. Dan hoort een screenreader niets. Zet het terug naar gewone tekst.
+const A11Y_LABEL_OK = "a,button,input,select,textarea,summary,iframe,img,svg,nav,section,form,aside,header,footer,main,dialog,h1,h2,h3,h4,h5,h6,[role],[tabindex]";
+function fixSplitAria(el) {
+  if (!el.hasAttribute("aria-label") || el.matches(A11Y_LABEL_OK)) return;
+  el.removeAttribute("aria-label");
+  el.querySelectorAll("[aria-hidden='true']").forEach((c) => {
+    if (!c.closest("svg") && !c.matches("svg, img, .pac-flip-ghost")) c.removeAttribute("aria-hidden");
+  });
+}
+function initSplitAriaObserver() {
+  if (!("MutationObserver" in window)) return;
+  new MutationObserver((list) => {
+    list.forEach((m) => {
+      if (m.type === "attributes" && m.target.nodeType === 1) fixSplitAria(m.target);
+    });
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["aria-label"] });
+}
+
+// Kleine ARIA-reparaties per pagina
+function initA11yFixes() {
+  const root = document;
+  // Eén main-landmark: de Barba-container van de huidige pagina
+  const containers = document.querySelectorAll('[data-barba="container"]');
+  const main = containers[containers.length - 1];
+  if (main) {
+    document.querySelectorAll("#pac-main").forEach((el) => el !== main && el.removeAttribute("id"));
+    main.id = "pac-main";
+    main.setAttribute("role", "main");
+    main.setAttribute("tabindex", "-1");
+  }
+  // Gesplitste tekst die al vóór de observer bestond
+  root.querySelectorAll("[aria-label]").forEach(fixSplitAria);
+  // Scheidingstekens in het kruimelpad zijn decoratief
+  root.querySelectorAll(".breadcrumb_link > div, .breadcrumb_separator, [data-breadcrumb-sep]").forEach((d) => {
+    if (d.textContent.trim() === "/") d.setAttribute("aria-hidden", "true");
+  });
+  // Teamslider: items zijn knoppen, dus de lijst is een groep; de verborgen data-links niet focusbaar
+  root.querySelectorAll("[data-team-track]").forEach((t) => {
+    t.setAttribute("role", "group");
+    if (!t.hasAttribute("aria-label")) t.setAttribute("aria-label", "Teamleden");
+  });
+  root.querySelectorAll("[data-team-item] a, [data-team-url]").forEach((a) => {
+    a.setAttribute("tabindex", "-1");
+    a.setAttribute("aria-hidden", "true");
+  });
+  // Domeintabs: de lijst rond de tabpanels is geen lijst
+  root.querySelectorAll(".domain_contents_list[role='list']").forEach((l) => l.setAttribute("role", "none"));
+  root.querySelectorAll(".domain_contents_list > [role='listitem']").forEach((l) => l.removeAttribute("role"));
+  // Video-knoppen met een Webflow play/pause-knop erin: geen geneste knoppen
+  root.querySelectorAll("[role='button'] .w-backgroundvideo-backgroundvideoplaypausebutton").forEach((b) => {
+    b.setAttribute("tabindex", "-1");
+    b.setAttribute("aria-hidden", "true");
+  });
+}
+
 // Toegankelijke namen voor links zonder tekst (logo, footerlogo's, pijl-CTA's)
 function initA11yLabels() {
   const hosts = { "fairpracticecode.nl": "Fair Practice Code", "codedi.nl": "Code Diversiteit & Inclusie" };
@@ -1170,8 +1246,8 @@ function initA11yLabels() {
     [...a.querySelectorAll("img")].some((i) => (i.getAttribute("alt") || "").trim()) ||
     a.querySelector("svg[aria-label], svg title");
   document.querySelectorAll("a[href]").forEach((a) => {
-    if (hasName(a) || a.closest("[aria-hidden='true']")) return;
     const href = a.getAttribute("href") || "";
+    if (!href || href === "#" || hasName(a) || a.closest("[aria-hidden='true']")) return;
     if (a.classList.contains("logo_wrapper") || href === "/") {
       a.setAttribute("aria-label", "Pan Asian Collective, naar home");
       return;
