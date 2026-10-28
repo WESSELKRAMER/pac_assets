@@ -1867,11 +1867,6 @@ form:has([data-submit-trigger]) input[type="submit"],
   opacity: 0.7;
 }
 
-:root {
-  --_typesetting---h1-stories: clamp(2.75rem, min(2rem + 4vw, max(1.02rem + 4.479vw, 3.25rem)), 5.5rem);
-  --_typesetting---h3: clamp(1.3rem, min(1.5rem + 1.5vw, max(1.464rem + 0.446vw, 1.85rem)), 2rem);
-}
-
 .domains_projects_wrap:has(> .pac-domain-row) {
   display: flex !important;
   flex-direction: column;
