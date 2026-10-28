@@ -3059,3 +3059,6 @@ html.pac-loader-on::after { content: ""; position: fixed; inset: 0; z-index: 999
     #fff 100%
   );
 }
+
+/* Verhalen: "Blader verder" onder elk hoofdstuk */
+.story_next_wrap { display: flex; margin-top: 2.5rem; }

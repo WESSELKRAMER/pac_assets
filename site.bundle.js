@@ -4830,8 +4830,37 @@ function initStoryChapters() {
     );
     const rt = panel.querySelector(".rich-text");
     c.nodes.forEach((n) => rt.appendChild(n));
+    // "Blader verder" onder elk hoofdstuk behalve het laatste
+    if (i < chapters.length - 1) {
+      const next = make(
+        '<div class="story_next_wrap"><a href="#" class="secondary_cta w-inline-block" data-chapter-next="' +
+          (i + 1) +
+          '"><div data-underline-link="alt">Blader verder</div></a></div>'
+      );
+      next.querySelector("a").setAttribute("aria-label", "Blader verder naar " + (chapters[i + 1].nav || "hoofdstuk " + (i + 2)));
+      panel.querySelector(".domain_contents_item_inner").appendChild(next);
+    }
     panelList.appendChild(panel);
   });
+
+  const onNext = (e) => {
+    const btn = e.target.closest("[data-chapter-next]");
+    if (!btn || !module.contains(btn)) return;
+    e.preventDefault();
+    const i = parseInt(btn.getAttribute("data-chapter-next"), 10);
+    const tab = module.querySelectorAll(".domains_collection_item")[i];
+    if (!tab) return;
+    tab.click();
+    // Terug naar het begin van het hoofdstuk
+    const offset = parseFloat(module.dataset.chapterScrollOffset) || 120;
+    const y = Math.max(0, module.getBoundingClientRect().top + window.scrollY - offset);
+    if (y < window.scrollY && !module.closest("[data-domains-scroll]")) {
+      if (hasLenis && lenis) lenis.scrollTo(y, { duration: reducedMotion ? 0 : 1 });
+      else window.scrollTo({ top: y, behavior: reducedMotion ? "auto" : "smooth" });
+    }
+  };
+  module.addEventListener("click", onNext);
+  addCleanup(module, () => module.removeEventListener("click", onNext));
 }
 
 function buildFilterSheets() {
