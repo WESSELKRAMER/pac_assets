@@ -5163,16 +5163,32 @@ function initFormSelects() {
   });
 }
 
+// Domein van uitgelichte items: in het geheugen (Barba) en per sessie bewaard (refresh), zodat we niet elke keer pagina's ophalen
 const homeFeaturedDomainCache = {};
+const HOME_DOMAIN_KEY = "pacHomeDomains";
+function homeDomainStore() {
+  try { return JSON.parse(sessionStorage.getItem(HOME_DOMAIN_KEY) || "{}") || {}; } catch (e) { return {}; }
+}
 function homeFeaturedDomain(url) {
   if (!homeFeaturedDomainCache[url]) {
+    const stored = homeDomainStore();
+    if (Object.prototype.hasOwnProperty.call(stored, url)) {
+      homeFeaturedDomainCache[url] = Promise.resolve(stored[url]);
+      return homeFeaturedDomainCache[url];
+    }
     homeFeaturedDomainCache[url] = fetch(url, { credentials: "same-origin" })
       .then((r) => (r.ok ? r.text() : ""))
       .then((html) => {
         if (!html) return "";
         const doc = new DOMParser().parseFromString(html, "text/html");
         const el = doc.querySelector("[data-page-domain]");
-        return el ? (el.getAttribute("data-page-domain") || "").trim() : "";
+        const domain = el ? (el.getAttribute("data-page-domain") || "").trim() : "";
+        try {
+          const all = homeDomainStore();
+          all[url] = domain;
+          sessionStorage.setItem(HOME_DOMAIN_KEY, JSON.stringify(all));
+        } catch (e) {}
+        return domain;
       })
       .catch(() => "");
   }
