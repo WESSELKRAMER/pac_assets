@@ -1166,17 +1166,17 @@ function initNavCurrentUnderline() {
 
 function initRichTextClasses() {
   const BR = "(?:\\s|&nbsp;|<br\\s*\\/?>)*";
-  const OPEN = /^[\s ]*(?:<br\s*\/?>[\s ]*)*(?:<(?:em|i)>)?[\s ]*[“"„‘'«][\s ]*(?:<br\s*\/?>[\s ]*)*/i;
-  const CLOSE = /[\s ]*(?:<br\s*\/?>[\s ]*)*[”"’'»][\s ]*(?:<\/(?:em|i)>)?[\s ]*(?:<br\s*\/?>[\s ]*)*$/i;
-  const SOURCE = new RegExp("(?:(?:<br\\s*\\/?>[\\s\u00a0]*)+|[”\"’'][\\s\u00a0]*)(?:<(?:em|i)>)?[\\s\u00a0]*[—–-][\\s\u00a0]*([^<>—–]{2,80}?)[\\s\u00a0]*(?:<\\/(?:em|i)>)?" + BR + "$", "i");
+  const OPEN = /^[\s ]*(?:<br\s*\/?>[\s ]*)*(?:<(?:em|i|strong|b)>)?[\s ]*[“"„‘'«][\s ]*(?:<br\s*\/?>[\s ]*)*/i;
+  const CLOSE = /[\s ]*(?:<br\s*\/?>[\s ]*)*[”"’'»][\s ]*(?:<\/(?:em|i|strong|b)>)?[\s ]*(?:<br\s*\/?>[\s ]*)*$/i;
+  const SOURCE = new RegExp("(?:(?:<br\\s*\\/?>[\\s\u00a0]*)+|[”\"’'][\\s\u00a0]*)(?:<(?:em|i|strong|b)>)?[\\s\u00a0]*[—–-][\\s\u00a0]*([^<>—–]{2,80}?)[\\s\u00a0]*(?:<\\/(?:em|i)>)?" + BR + "$", "i");
   const SOURCE_EM = new RegExp("(?:<br\\s*\\/?>[\\s\u00a0]*)+<(em|i)>[\\s\u00a0]*([^<>]{2,80}?)[\\s\u00a0]*<\\/\\1>" + BR + "$", "i");
 
   const cleanQuote = (html) => {
     let q = html.trim();
     q = q.replace(OPEN, "").replace(CLOSE, "");
     q = q.replace(new RegExp("^" + BR), "").replace(new RegExp(BR + "$"), "");
-    const wrapped = q.match(/^<(em|i)>([\s\S]*)<\/\1>$/i);
-    if (wrapped && !/<(em|i)>/i.test(wrapped[2])) q = wrapped[2];
+    const wrapped = q.match(/^<(em|i|strong|b)>([\s\S]*)<\/\1>$/i);
+    if (wrapped && !/<(em|i|strong|b)>/i.test(wrapped[2])) q = wrapped[2];
     return q.replace(OPEN, "").replace(CLOSE, "").trim();
   };
 
