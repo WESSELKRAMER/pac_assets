@@ -76,6 +76,7 @@ function initBeforeEnterFunctions(next) {
   nextPage = next || document;
 
   applyNavbarPageConfig(nextPage);
+  if (has(".cta_arrow_wrapper.is--faq, .cta_arrow_wrapper.is--video_close")) initCircleButtonHover();
   if (has("[data-project-slug]")) initProjectFilter();
   if (has("[data-project-chapters]")) initProjectChapterSource();
   if (has("[data-chapter]")) initProjectChapters();
@@ -1093,6 +1094,19 @@ function initDynamicTextCursor() {
 
 function resetDynamicTextCursor() {
   if (cursorEl) cursorEl.setAttribute("data-cursor", "");
+}
+
+// Ronde knoppen met een plus (FAQ, video sluiten): cirkel krimpt licht op hover, net als het logo
+function initCircleButtonHover() {
+  if (!window.matchMedia("(hover: hover)").matches) return;
+  nextPage.querySelectorAll(".cta_arrow_wrapper.is--faq, .cta_arrow_wrapper.is--video_close").forEach((circle) => {
+    if (circle.dataset.circleHover === "true") return;
+    circle.dataset.circleHover = "true";
+    const trigger = circle.closest(".faq_question, .video_close_button_wrap") || circle;
+    gsap.set(circle, { transformOrigin: "50% 50%" });
+    trigger.addEventListener("mouseenter", () => gsap.to(circle, { scale: 0.92, duration: 0.5, ease: "expo.out", overwrite: "auto" }));
+    trigger.addEventListener("mouseleave", () => gsap.to(circle, { scale: 1, duration: 0.5, ease: "expo.out", overwrite: "auto" }));
+  });
 }
 
 function initLogoHover() {
