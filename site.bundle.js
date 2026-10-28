@@ -6844,8 +6844,9 @@ function initDomainTabs() {
     };
 
     const updateBlob = (index, animate) => {
-      if (!blob) return;
       const color = getColor(index);
+      if (color && blobSection && module.dataset.domainsWash !== "false") pacWash(blobSection, color, animate);
+      if (!blob) return;
       const opacity = readBlobOpacity(index);
       if (!color && opacity === null) return;
 
@@ -6858,7 +6859,6 @@ function initDomainTabs() {
       if (opacity !== null) vars.opacity = opacity;
 
       gsap.to(blob, vars);
-      if (color && module.dataset.domainsWash !== "false") pacWash(blobSection, color, animate);
     };
     const scrollHost = module.closest("[data-domains-scroll]");
     const scrollMode = !!(scrollHost && hasScrollTrigger);
