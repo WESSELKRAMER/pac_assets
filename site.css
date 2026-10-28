@@ -2916,8 +2916,6 @@ html.js [data-awards-redirect].is-redirect-failed { visibility: visible; animati
   [data-chapter].is-no-image .flex_text_wrap { padding: 3rem; }
 }
 
-/* Lange woorden in koppen zonder split-animatie: logisch afbreken (NL-woordenboek), alleen als het niet past */
-h1:not([data-split]), h2:not([data-split]), h3:not([data-split]) { hyphens: auto; -webkit-hyphens: auto; hyphenate-limit-chars: 10 4 4; }
 /* Kaarten die direct op elkaar volgen: kleinere tussenruimte, zodat het één raster wordt */
 [data-project-page] > [data-chapter].is-no-image:has(+ [data-chapter].is-no-image) { padding-bottom: 1.5rem; }
 
@@ -3062,3 +3060,27 @@ html.pac-loader-on::after { content: ""; position: fixed; inset: 0; z-index: 999
 
 /* Verhalen: "Blader verder" onder elk hoofdstuk */
 .story_next_wrap { display: flex; margin-top: 2.5rem; }
+
+/* Koppen: vloeiender meeschalen (overschrijft de Typesetting-variabelen H1/H2 per breakpoint) */
+:root {
+  --_typesetting---h1: clamp(4.5rem, 1.5rem + 5vw, 7.35rem);
+  --_typesetting---h2: clamp(2.6rem, 1.75rem + 1.6vw, 3.8rem);
+}
+@media screen and (max-width: 991px) {
+  body {
+    --_typesetting---h1: clamp(3.25rem, 1.5rem + 5vw, 5.6rem);
+    --_typesetting---h2: clamp(2.25rem, 1.25rem + 2.6vw, 2.75rem);
+  }
+}
+@media screen and (max-width: 767px) {
+  body {
+    --_typesetting---h1: clamp(2.5rem, 1.25rem + 5vw, 4rem);
+    --_typesetting---h2: clamp(1.9rem, 1.1rem + 3vw, 2.6rem);
+  }
+}
+@media screen and (max-width: 479px) {
+  body {
+    --_typesetting---h1: clamp(2.25rem, 1.2rem + 5vw, 3.1rem);
+    --_typesetting---h2: clamp(1.7rem, 1.1rem + 3vw, 2.1rem);
+  }
+}
