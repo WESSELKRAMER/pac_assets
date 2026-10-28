@@ -1437,9 +1437,10 @@ function initCTAAnimation() {
         }
       });
 
+      // Cirkeltje krimpt licht, net als de cirkel in het logo
       gsap.to(circle, {
-        scale: 1.08,
-        duration: 0.4,
+        scale: 0.92,
+        duration: 0.5,
         ease: "expo.out"
       });
 
