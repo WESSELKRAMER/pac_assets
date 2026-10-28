@@ -1606,7 +1606,7 @@ function initArrowButtons() {
     if (canHover) {
       btn.addEventListener("mouseenter", () => {
         isHovering = true;
-        gsap.to(btn, { scale: 1.08, duration: 0.4, ease: "expo.out", overwrite: "auto" });
+        gsap.to(btn, { scale: 0.92, duration: 0.5, ease: "expo.out", overwrite: "auto" }); // krimpt licht, zoals het logo
         slideThrough();
       });
 
