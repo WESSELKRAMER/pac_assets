@@ -6844,6 +6844,7 @@ function initDomainTabs() {
 
     const updateBlob = (index, animate) => {
       const color = getColor(index);
+      if (color && blobSection && module.dataset.domainsWash !== "false") pacWash(blobSection, color, animate);
       if (!blob) return;
       const opacity = readBlobOpacity(index);
       if (!color && opacity === null) return;
@@ -8483,6 +8484,26 @@ function initQuoteReveal() {
       tl.kill();
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Domeinkleur (Domeinen-pagina): zachte tint van het actieve domein, boven en onder verlopend naar wit.
+function pacTint(color, strength) {
+  const m = (color || "").match(/rgba?\(([^)]+)\)/);
+  if (!m) return null;
+  const v = m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
+  if (v.length < 3 || v.slice(0, 3).some((n) => !Number.isFinite(n)) || (v.length > 3 && v[3] === 0)) return null;
+  return "rgb(" + v.slice(0, 3).map((x) => Math.round(255 + (x - 255) * strength)).join(", ") + ")";
+}
+function pacWash(section, color, animate) {
+  if (!section) return;
+  const to = pacTint(color, toNumber(section.dataset.washStrength, 0.1));
+  if (!to) return;
+  if (!section.classList.contains("pac-wash")) {
+    section.style.setProperty("--pac-wash", "rgb(255, 255, 255)");
+    section.classList.add("pac-wash");
+  }
+  gsap.to(section, { "--pac-wash": to, duration: animate ? rmd(1.2) : 0, ease: "power2.out", overwrite: "auto" });
 }
 
 // ---------------------------------------------------------------------------

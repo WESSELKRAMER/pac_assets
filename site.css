@@ -3048,3 +3048,14 @@ html.pac-loader-on::after { content: ""; position: fixed; inset: 0; z-index: 999
     transition-delay: 0s !important;
   }
 }
+
+/* Domeinkleur op de Domeinen-pagina: tint in het midden, boven en onder wit */
+.pac-wash {
+  background-image: linear-gradient(
+    180deg,
+    #fff 0,
+    var(--pac-wash, #fff) min(45vh, 30%),
+    var(--pac-wash, #fff) max(calc(100% - 45vh), 70%),
+    #fff 100%
+  );
+}
