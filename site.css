@@ -4341,27 +4341,27 @@ html.pac-loader-on::after {
   transition-delay: 0s;
 }
 @media (hover: hover) {
-  .btn-slanted:hover .btn-slanted-label:nth-of-type(1) {
+  :is(.btn-slanted:hover, a:hover .btn-slanted) .btn-slanted-label:nth-of-type(1) {
     transform: translate(calc(var(--move) * 0.2), calc(var(--move) * -2.5)) rotate(calc(var(--rotate) * 2));
     transition-delay: 0s;
   }
-  .btn-slanted:hover .btn-slanted-label:nth-of-type(2) {
+  :is(.btn-slanted:hover, a:hover .btn-slanted) .btn-slanted-label:nth-of-type(2) {
     transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
     transition-delay: 0.075s;
   }
-  .btn-slanted:hover .btn-slanted-bg {
+  :is(.btn-slanted:hover, a:hover .btn-slanted) .btn-slanted-bg {
     transform: translate(0%, 0%) rotate(0deg);
   }
 }
-.btn-slanted:focus-visible .btn-slanted-label:nth-of-type(1) {
+:is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) .btn-slanted-label:nth-of-type(1) {
   transform: translate(calc(var(--move) * 0.2), calc(var(--move) * -2.5)) rotate(calc(var(--rotate) * 2));
   transition-delay: 0s;
 }
-.btn-slanted:focus-visible .btn-slanted-label:nth-of-type(2) {
+:is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) .btn-slanted-label:nth-of-type(2) {
   transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
   transition-delay: 0.075s;
 }
-.btn-slanted:focus-visible .btn-slanted-bg {
+:is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) .btn-slanted-bg {
   transform: translate(0%, 0%) rotate(0deg);
 }
 @media (prefers-reduced-motion: reduce) {

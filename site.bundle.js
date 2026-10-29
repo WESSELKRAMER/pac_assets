@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 19:40";
+window.PAC_BUNDLE = "2026-10-29 19:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -146,7 +146,7 @@ function initBeforeEnterFunctions(next) {
   if (has(".section_404")) init404();
   if (has("form[data-pac-form]")) initPacForms();
   if (has("[data-flex-video]")) initFlexVideos();
-  if (has("a.tag")) initTagHover();
+  if (has(".tag")) initTagHover();
   initA11yFixes();
 }
 
@@ -1208,16 +1208,18 @@ function initSplitAriaObserver() {
 // Kleine ARIA-reparaties per pagina
 // Tags: schuin-omhoog wissel van het label met een achtergrond die meekantelt (Osmo "Button with Slanted Reveal")
 function initTagHover() {
-  nextPage.querySelectorAll("a.tag:not([data-tag-anim])").forEach((tag) => {
+  nextPage.querySelectorAll(".tag:not([data-tag-anim])").forEach((tag) => {
     const text = tag.textContent.replace(/\s+/g, " ").trim();
     if (!text) return;
+    const inner = tag.firstElementChild;
+    const innerCls = inner && inner.className ? " " + inner.className : "";
     tag.setAttribute("data-tag-anim", "");
     tag.classList.add("btn-slanted");
     const esc = escHtml(text);
     tag.innerHTML =
       '<div class="btn-slanted-label__wrap">' +
-      '<span class="btn-slanted-label">' + esc + "</span>" +
-      '<span aria-hidden="true" class="btn-slanted-label">' + esc + "</span>" +
+      '<span class="btn-slanted-label' + innerCls + '">' + esc + "</span>" +
+      '<span aria-hidden="true" class="btn-slanted-label' + innerCls + '">' + esc + "</span>" +
       "</div>" +
       '<div class="btn-slanted-bg"></div>';
   });
