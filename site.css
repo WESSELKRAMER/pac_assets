@@ -4146,3 +4146,12 @@ html.pac-loader-on::after {
 .w-richtext p + figure.w-richtext-figure-type-video {
   margin-top: 0.5rem;
 }
+
+/* Nominee-pagina: kleurthema van de editie (zelfde verloop als de awards-hero) */
+[data-nominee-page][data-awards-theme] .section_nominee {
+  background-image: linear-gradient(180deg, var(--awards-theme) 0, var(--pac-light--500, #fff) min(80vh, 48rem));
+  background-repeat: no-repeat;
+}
+[data-nominee-page][data-awards-theme] .nominee_category {
+  color: var(--awards-archive-dark);
+}

@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 17:20";
+window.PAC_BUNDLE = "2026-10-29 17:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4108,6 +4108,10 @@ function initNomineePage() {
     const rt = page.querySelector(".nominee_content .w-richtext, .nominee_content .rich-text");
     if (!url || (m && rt && rt.innerHTML.indexOf(m[1]) > -1)) vidEl.remove();
   }
+
+  // Kleurthema van de editie (CMS: Editie > Kleurthema)
+  const theme = (page.getAttribute("data-nominee-theme") || "").toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+  if (theme) page.setAttribute("data-awards-theme", theme);
 
   const cat = page.querySelector(".nominee_category");
   if (cat) {
