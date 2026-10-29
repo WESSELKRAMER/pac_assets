@@ -4180,3 +4180,13 @@ html.pac-loader-on::after {
 :is([data-award-tab="shortlist"], [data-award-tab="longlist"]) .section_award_hero .u-sec-spacer {
   display: none;
 }
+
+/* Shortlist/longlist: ruimte tussen het nominee-grid en de footer */
+:is([data-award-tab="shortlist"], [data-award-tab="longlist"]) .domains_module {
+  padding-bottom: 8rem;
+}
+@media (max-width: 767px) {
+  :is([data-award-tab="shortlist"], [data-award-tab="longlist"]) .domains_module {
+    padding-bottom: 5rem;
+  }
+}
