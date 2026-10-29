@@ -3974,3 +3974,92 @@ html.pac-loader-on::after {
 .section_downloads:not(:has(.download_item)) {
   display: none;
 }
+
+/* Awards: grid met genomineerden (shortlist / longlist) */
+.pac-nominee-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3rem 2rem;
+  padding-top: 2rem;
+}
+.pac-nominee-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: inherit;
+  text-decoration: none;
+}
+.pac-nominee-card__img {
+  aspect-ratio: 4 / 5;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: #f1ede6;
+}
+.pac-nominee-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.pac-nominee-card:hover .pac-nominee-card__img img,
+.pac-nominee-card:focus-visible .pac-nominee-card__img img {
+  transform: scale(1.04);
+}
+.pac-nominee-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.pac-nominee-card__name {
+  margin: 0;
+}
+.pac-nominee-card__role {
+  margin: 0;
+  opacity: 0.7;
+}
+.pac-nominee-card__excerpt {
+  margin: 0.25rem 0 0;
+}
+.pac-nominee-card__cta {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.pac-nominee-card:focus-visible {
+  outline: 2px solid var(--pac-dark--900, #1b1c1e);
+  outline-offset: 4px;
+  border-radius: 1.25rem;
+}
+@media screen and (max-width: 991px) {
+  .pac-nominee-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.5rem 1.25rem;
+  }
+}
+@media screen and (max-width: 479px) {
+  .pac-nominee-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Pagina per genomineerde: links */
+.pac-nominee-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(27, 28, 30, 0.2);
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+.pac-nominee-link:hover,
+.pac-nominee-link:focus-visible {
+  background: var(--pac-dark--900, #1b1c1e);
+  color: #fff;
+}

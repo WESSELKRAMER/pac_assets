@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 15:55";
+window.PAC_BUNDLE = "2026-10-29 16:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -98,6 +98,7 @@ function initBeforeEnterFunctions(next) {
   if (has("[data-awards-redirect]")) initAwardsRedirect();
   if (has("[data-awards-editions]")) initAwardsArchive();
   if (has("[data-awards-template]")) initAwardsTemplate();
+  if (has("[data-nominee-page]")) initNomineePage();
   if (has('[data-pill-nav="award"]') && !has("[data-awards-template]")) initAwardsNav();
   if (has('[data-pill-nav="award"]') && !has("[data-awards-template]")) initAwardsEmpty();
   initAwardsLinks();
@@ -4042,6 +4043,115 @@ function initAwardsLinks() {
   getAwardsCurrent().then(apply);
 }
 
+const NOMINEE_BASE = "/awards-nominees/";
+const escHtml = (t) => String(t || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+function nomineeExcerpt(text, max = 150) {
+  const t = String(text || "").replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  return cut.slice(0, cut.lastIndexOf(" ") > 80 ? cut.lastIndexOf(" ") : max).replace(/[,.;:–-]+$/, "") + "…";
+}
+
+function buildNomineeGrids(panel) {
+  panel.querySelectorAll("[data-team-slider]").forEach((slider) => {
+    const items = Array.from(slider.querySelectorAll("[data-team-item]"));
+    if (!items.length) return;
+    const cards = items
+      .map((item) => {
+        const slug = (item.getAttribute("data-nominee-slug") || "").trim();
+        const img = item.querySelector("img");
+        const name = (item.querySelector("[data-team-name]") || {}).textContent || "";
+        const role = (item.querySelector("[data-team-role]") || {}).textContent || "";
+        const bio = (item.querySelector("[data-team-bio]") || {}).textContent || "";
+        const href = slug ? NOMINEE_BASE + slug : "";
+        const tag = href ? "a" : "div";
+        return (
+          "<" + tag + ' class="pac-nominee-card"' + (href ? ' href="' + href + '"' : "") + ' data-hover-dim-item="">' +
+          '<div class="pac-nominee-card__img">' +
+          (img ? '<img src="' + escHtml(img.getAttribute("src")) + '" alt="' + escHtml(img.getAttribute("alt") || name) + '" loading="lazy">' : "") +
+          "</div>" +
+          '<div class="pac-nominee-card__body">' +
+          '<h3 class="pac-nominee-card__name">' + escHtml(name.trim()) + "</h3>" +
+          (role.trim() ? '<p class="pac-nominee-card__role">' + escHtml(role.trim()) + "</p>" : "") +
+          (bio.trim() ? '<p class="pac-nominee-card__excerpt">' + escHtml(nomineeExcerpt(bio)) + "</p>" : "") +
+          (href ? '<span class="pac-nominee-card__cta">Lees meer</span>' : "") +
+          "</div></" + tag + ">"
+        );
+      })
+      .join("");
+    const grid = document.createElement("div");
+    grid.className = "pac-nominee-grid";
+    grid.setAttribute("data-hover-dim", "");
+    grid.innerHTML = cards;
+    slider.removeAttribute("data-team-slider");
+    slider.replaceWith(grid);
+  });
+}
+
+// Pagina per genomineerde: links, kruimelpad en terug-link
+function initNomineePage() {
+  const page = nextPage.matches && nextPage.matches("[data-nominee-page]") ? nextPage : nextPage.querySelector("[data-nominee-page]");
+  if (!page || page.dataset.nomineeBuilt === "true") return;
+  page.dataset.nomineeBuilt = "true";
+  const edition = (page.getAttribute("data-nominee-edition") || "").trim();
+  const name = ((page.querySelector(".nominee_name") || {}).textContent || "").trim();
+
+  const cat = page.querySelector(".nominee_category");
+  if (cat) {
+    const t = cat.textContent.trim();
+    if (!t) cat.remove();
+    else if (!/award$/i.test(t)) cat.textContent = t + " Award";
+  }
+  const ed = page.querySelector(".nominee_edition");
+  if (ed) {
+    const t = ed.textContent.trim();
+    if (!t) ed.remove();
+    else if (/^\d{4}$/.test(t)) ed.textContent = "Pan Asian Awards " + t;
+  }
+
+  const linksEl = page.querySelector("[data-nominee-links]");
+  if (linksEl) {
+    const val = (k) => {
+      const v = (linksEl.getAttribute("data-" + k) || "").trim();
+      return v && v !== "#" ? v : "";
+    };
+    const defs = [
+      ["website", val("website-label") || "Website"],
+      ["website-2", val("website-2-label") || "Website"],
+      ["linkedin", "LinkedIn"],
+      ["instagram", "Instagram"],
+      ["twitter", "X"],
+      ["facebook", "Facebook"],
+      ["tiktok", "TikTok"],
+      ["youtube", "YouTube"],
+      ["imdb", "IMDb"],
+    ];
+    linksEl.innerHTML = defs
+      .filter(([k]) => val(k))
+      .map(([k, label]) => '<a class="pac-nominee-link" href="' + escHtml(val(k)) + '" target="_blank" rel="noopener">' + escHtml(label) + "</a>")
+      .join("");
+    if (!linksEl.children.length) linksEl.remove();
+  }
+
+  const back = page.querySelector("[data-nominee-back]");
+  if (back && edition) {
+    back.innerHTML = '<a class="secondary_cta w-inline-block" href="' + awardsEditionUrl(edition, "longlist") + '"><div data-underline-link="alt">Terug naar de longlist</div></a>';
+  } else if (back) back.remove();
+
+  const crumbs = page.querySelector("[data-nominee-crumbs]");
+  if (crumbs) {
+    const home = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 26 27" fill="none" class="home_icon" aria-hidden="true"><path fill="currentColor" d="M25.1447 9.06182C24.9647 7.64482 23.8877 6.19082 22.3277 5.26482C20.9027 4.43282 19.5077 3.59082 18.1607 2.77782C16.7537 1.92782 15.3977 1.11082 14.1157 0.367816C13.2817 -0.116184 12.3247 -0.122184 11.4897 0.347816C10.0807 1.14182 8.58571 2.02982 7.02971 2.95182C5.75471 3.70982 4.43871 4.49182 3.08871 5.26982C1.51671 6.18982 0.428713 7.64982 0.248713 9.08182C-0.230287 12.9388 -0.0172869 16.8508 0.886713 20.7258C1.38871 22.7038 3.47371 24.8178 5.45871 25.3488C7.86071 25.9408 10.2787 26.2368 12.6977 26.2368C15.1167 26.2368 17.5347 25.9408 19.9367 25.3488C19.9427 25.3478 19.9497 25.3458 19.9557 25.3438C21.9227 24.8178 24.0077 22.7028 24.5137 20.7068C25.4137 16.8448 25.6267 12.9278 25.1447 9.06182ZM16.8127 22.7818C16.7057 23.4628 16.1777 24.0148 15.4917 24.0838C13.6357 24.2718 11.7777 24.2728 9.92471 24.0878C9.23871 24.0188 8.70971 23.4668 8.60271 22.7858C8.27771 20.7168 8.36271 18.6478 8.85771 16.5778C9.01171 15.9368 9.50471 15.4238 10.1247 15.1978C11.8467 14.5698 13.5677 14.5698 15.2897 15.1978C15.9097 15.4238 16.4027 15.9368 16.5567 16.5778C17.0527 18.6458 17.1377 20.7138 16.8127 22.7818Z"></path></svg>';
+    const sep = '<div class="breadcrumb_link" aria-hidden="true"><div>/</div></div>';
+    const crumb = (href, text) => '<a href="' + href + '" class="breadcrumb_link w-inline-block"><div>' + escHtml(text) + "</div></a>";
+    crumbs.innerHTML =
+      '<nav class="breadcrumb_subproject_wrap" aria-label="Kruimelpad">' +
+      '<a href="/" class="breadcrumb_link is--icon w-inline-block" aria-label="Home">' + home + "</a>" + sep +
+      crumb("/pan-asian-awards/awards", "Pan Asian Awards") +
+      (edition ? sep + crumb(awardsEditionUrl(edition), edition) + sep + crumb(awardsEditionUrl(edition, "longlist"), "Longlist") : "") +
+      sep + '<div class="breadcrumb_link is--current" aria-current="page"><div>' + escHtml(name) + "</div></div></nav>";
+  }
+}
+
 function initAwardsTemplate() {
   const page = nextPage.matches && nextPage.matches("[data-awards-template]") ? nextPage : nextPage.querySelector("[data-awards-template]");
   if (!page || page.dataset.awardsBuilt === "true") return;
@@ -4134,6 +4244,9 @@ function initAwardsTemplate() {
       hidden[0].parentNode.insertBefore(note, hidden[0]);
     }
   }
+
+  // Shortlist / longlist: grid met kaarten (foto, naam, functie, korte tekst) naar de eigen pagina per genomineerde
+  if (panel && (tab === "shortlist" || tab === "longlist")) buildNomineeGrids(panel);
 
   // Tab-navigatie
   const labelToTab = { introductie: "awards", awards: "awards", shortlist: "shortlist", longlist: "longlist", jury: "jury", photowall: "photowall", media: "media" };
