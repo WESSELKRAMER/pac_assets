@@ -4157,3 +4157,18 @@ html.pac-loader-on::after {
   border-color: var(--awards-archive-dark);
   color: var(--pac-light--500, #fff);
 }
+
+/* Awards-nav: breedte volgt de tabs (er paste niet alles in de vaste 800px) */
+.award_nav_inner {
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (min-width: 992px) {
+  .award_nav_item {
+    min-width: 6rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
