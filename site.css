@@ -3969,3 +3969,8 @@ html.pac-loader-on::after {
 .agenda_day_month_wrap .is--low_opacity {
   opacity: 0.45;
 }
+
+/* Downloads-component: hele sectie weg als er geen downloads aan het item hangen */
+.section_downloads:not(:has(.download_item)) {
+  display: none;
+}
