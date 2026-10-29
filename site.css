@@ -4092,12 +4092,18 @@ html.pac-loader-on::after {
     padding-bottom: 1rem;
   }
 }
+@media (max-width: 767px) {
+  .award_nav_item {
+    padding: 0.5rem 0.55rem;
+    font-size: 0.875rem;
+  }
+}
 @media (max-width: 479px) {
   .award_nav_inner {
     padding: 3px;
   }
   .award_nav_item {
-    padding: 0.5rem 0.6rem;
+    padding: 0.5rem 0.5rem;
     font-size: 0.8125rem;
   }
   .award_nav .pac-award-year {
@@ -4110,4 +4116,33 @@ html.pac-loader-on::after {
   [data-award-tab] .domains_module:not([data-domains-mobile="desktop"]) .domains_collection_item h3 {
     font-size: 0.875rem;
   }
+}
+
+/* Video's in rich text: altijd volle breedte, 16:9, afgeronde hoeken */
+.w-richtext figure.w-richtext-figure-type-video {
+  position: relative;
+  width: 100% !important;
+  max-width: none !important;
+  height: 0 !important;
+  padding-bottom: 56.25% !important;
+  margin: 1rem 0 2rem;
+  float: none;
+  clear: both;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+.w-richtext figure.w-richtext-figure-type-video > div {
+  position: absolute;
+  inset: 0;
+}
+.w-richtext figure.w-richtext-figure-type-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+}
+.w-richtext figure.w-richtext-figure-type-video + p,
+.w-richtext p + figure.w-richtext-figure-type-video {
+  margin-top: 0.5rem;
 }
