@@ -3571,9 +3571,7 @@ html.js [data-awards-redirect].is-redirect-failed {
   justify-content: flex-start;
   align-self: stretch;
 }
-[data-chapter].is-no-image.is-pair .flex_text_wrap {
-  max-width: none;
-}
+
 [data-chapter].is-no-image .flex_text_wrap > :last-child,
 [data-chapter].is-no-image .rich-text > :last-child {
   margin-bottom: 0;
@@ -3584,11 +3582,6 @@ html.js [data-awards-redirect].is-redirect-failed {
   }
 }
 @media (min-width: 992px) {
-  [data-chapter].is-no-image.is-pair .flex_content_inner {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-    align-items: stretch;
-  }
   [data-chapter].is-no-image .flex_text_wrap {
     padding: 3rem;
   }
@@ -4304,15 +4297,76 @@ html.pac-loader-on::after {
   display: none;
 }
 
-/* Losse tekstkaart naast andere tekstkaarten: zelfde breedte als een kaart uit een paar */
-@media (min-width: 992px) {
-  [data-chapter].is-no-image + [data-chapter].is-no-image:not(.is-pair) .flex_content_inner,
-  [data-chapter].is-no-image:not(.is-pair):has(+ [data-chapter].is-no-image) .flex_content_inner {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
+
+/* Tags: "Slanted Reveal" (Osmo Supply) */
+.tag.btn-slanted {
+  position: relative;
+  overflow: hidden;
+  --rotate: 20deg;
+  --move: 150%;
+}
+.btn-slanted-label__wrap {
+  z-index: 1;
+  place-items: center;
+  display: grid;
+  position: relative;
+}
+.btn-slanted-bg {
+  z-index: 0;
+  transform-origin: 50% 0;
+  border-radius: inherit;
+  background-color: color-mix(in srgb, var(--pac-dark--900, #1b1c1e) 72%, var(--pac-light--500, #fff));
+  width: 120%;
+  height: 100%;
+  position: absolute;
+  top: auto;
+  bottom: 0%;
+  right: 0;
+  transform: rotate(-30deg) translate(0%, 200%);
+  transition: transform 0.45s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.btn-slanted-label {
+  transform-origin: 50% 1000%;
+  transition: transform 0.45s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.btn-slanted-label:not(:nth-of-type(1)) {
+  position: absolute;
+}
+.btn-slanted-label:nth-of-type(1) {
+  transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
+  transition-delay: 0.075s;
+}
+.btn-slanted-label:nth-of-type(2) {
+  transform: translate(calc(var(--move) * -0.2), calc(var(--move) * 2.5)) rotate(calc(var(--rotate) * -2));
+  transition-delay: 0s;
+}
+@media (hover: hover) {
+  .btn-slanted:hover .btn-slanted-label:nth-of-type(1) {
+    transform: translate(calc(var(--move) * 0.2), calc(var(--move) * -2.5)) rotate(calc(var(--rotate) * 2));
+    transition-delay: 0s;
   }
-  [data-chapter].is-no-image + [data-chapter].is-no-image:not(.is-pair) .flex_text_wrap,
-  [data-chapter].is-no-image:not(.is-pair):has(+ [data-chapter].is-no-image) .flex_text_wrap {
-    max-width: none;
+  .btn-slanted:hover .btn-slanted-label:nth-of-type(2) {
+    transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
+    transition-delay: 0.075s;
+  }
+  .btn-slanted:hover .btn-slanted-bg {
+    transform: translate(0%, 0%) rotate(0deg);
+  }
+}
+.btn-slanted:focus-visible .btn-slanted-label:nth-of-type(1) {
+  transform: translate(calc(var(--move) * 0.2), calc(var(--move) * -2.5)) rotate(calc(var(--rotate) * 2));
+  transition-delay: 0s;
+}
+.btn-slanted:focus-visible .btn-slanted-label:nth-of-type(2) {
+  transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
+  transition-delay: 0.075s;
+}
+.btn-slanted:focus-visible .btn-slanted-bg {
+  transform: translate(0%, 0%) rotate(0deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-slanted-bg,
+  .btn-slanted-label {
+    transition: none;
   }
 }
