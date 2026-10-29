@@ -4247,3 +4247,47 @@ html.pac-loader-on::after {
     width: 120%;
   }
 }
+
+/* Awards: hero-illustratie van de editie, subtiel achter de titel */
+.section_award_hero.has-hero-illu {
+  position: relative;
+  overflow: clip;
+}
+.section_award_hero.has-hero-illu > .container {
+  position: relative;
+  z-index: 1;
+}
+.pac-hero-illu {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 36%;
+  width: max(68.75rem, 92vw);
+  aspect-ratio: 4.5 / 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) rotate(-4deg) scale(0.94);
+  -webkit-mask-image: radial-gradient(ellipse 50% 60% at 50% 50%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 50% 60% at 50% 50%, #000 30%, transparent 78%);
+  transition: opacity 1.6s ease, transform 2.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.pac-hero-illu img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.section_award_hero.is-hero-illu-ready .pac-hero-illu {
+  opacity: 0.45;
+  transform: translateX(-50%) rotate(-4deg) scale(1);
+}
+@media (max-width: 767px) {
+  .pac-hero-illu {
+    top: 40%;
+    width: 220vw;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pac-hero-illu {
+    transition: none;
+  }
+}

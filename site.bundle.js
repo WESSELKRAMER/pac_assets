@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 18:30";
+window.PAC_BUNDLE = "2026-10-29 18:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4199,6 +4199,27 @@ function initAwardWinnerStyles(page) {
     const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.32;
   };
+  // Hero-illustratie (CMS: Editie > Hero illustratie), subtiel achter de titel in het kleurverloop
+  const heroSrc = illu("hero");
+  if (heroSrc) {
+    page.querySelectorAll(".section_award_hero").forEach((hero) => {
+      if (hero.querySelector(".pac-hero-illu")) return;
+      const w = document.createElement("div");
+      w.className = "pac-hero-illu";
+      w.setAttribute("aria-hidden", "true");
+      const im = document.createElement("img");
+      im.alt = "";
+      im.decoding = "async";
+      im.onload = () => {
+        if (im.naturalWidth && im.naturalHeight) w.style.aspectRatio = im.naturalWidth + " / " + im.naturalHeight;
+        hero.classList.add("is-hero-illu-ready");
+      };
+      im.src = heroSrc;
+      w.appendChild(im);
+      hero.classList.add("has-hero-illu");
+      hero.insertBefore(w, hero.firstChild);
+    });
+  }
   page.querySelectorAll(".winner_section").forEach((sec) => {
     const title = ((sec.querySelector("h2") || {}).textContent || "").trim();
     const hit = KEYS.find(([, re]) => re.test(title));
