@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-28 21:55";
+window.PAC_BUNDLE = "2026-10-29 12:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -1206,18 +1206,14 @@ function initSplitAriaObserver() {
 // Kleine ARIA-reparaties per pagina
 function initA11yFixes() {
   const root = document;
-  // Eén main-landmark: alles in de Barba-container behalve de footer, in een wrapper met display: contents
+  // Eén main-landmark: de Barba-container zelf. Geen extra wrapper: de layout-CSS gebruikt directe kinderen
+  // van de container (bijv. [data-project-page] > …), een wrapper breekt de spacing.
   const containers = document.querySelectorAll('[data-barba="container"]');
   const container = containers[containers.length - 1];
-  if (container && !container.querySelector(":scope > .pac-main")) {
-    document.querySelectorAll("#pac-main").forEach((el) => el.removeAttribute("id"));
-    const main = document.createElement("div");
-    main.className = "pac-main";
-    main.id = "pac-main";
-    main.setAttribute("role", "main");
-    const footer = container.querySelector(":scope > footer");
-    Array.from(container.children).forEach((c) => c !== footer && main.appendChild(c));
-    container.insertBefore(main, footer || null);
+  if (container) {
+    document.querySelectorAll("#pac-main").forEach((el) => el !== container && el.removeAttribute("id"));
+    container.id = "pac-main";
+    container.setAttribute("role", "main");
   }
   const cursor = document.querySelector(".cursor");
   if (cursor) cursor.setAttribute("aria-hidden", "true");

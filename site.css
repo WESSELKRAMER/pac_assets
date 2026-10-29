@@ -3963,12 +3963,9 @@ html.pac-loader-on::after {
   outline: 2px solid var(--pac-green--500, #b2ce73);
   outline-offset: 3px;
 }
-.pac-main [tabindex="-1"]:focus {
+#pac-main [tabindex="-1"]:focus {
   outline: none;
 }
 .agenda_day_month_wrap .is--low_opacity {
   opacity: 0.45;
-}
-.pac-main {
-  display: contents;
 }
