@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 14:30";
+window.PAC_BUNDLE = "2026-10-29 15:35";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4072,13 +4072,14 @@ function initAwardsTemplate() {
   // Actieve tab
   let tab = "awards";
   try { tab = (new URL(pacNextHref, window.location.origin).searchParams.get("tab") || "awards").toLowerCase(); } catch (e) {}
-  // Toon longlist / Toon jury (CMS-schakelaars). Ontbreekt het veld, dan blijft de tab gewoon staan.
+  // Toon longlist / Toon jury (CMS-schakelaars). Uit = tab blijft, maar toont "coming soon".
+  // Ontbreekt het veld, dan geldt hij als aan.
   const optional = (k) => {
     const field = page.querySelector('[data-edition-field="' + k + '"]');
     return !field || flag(k);
   };
-  const tabOn = { longlist: optional("longlist"), jury: optional("jury") };
-  const available = AWARDS_TABS.filter((k) => tabOn[k] !== false && page.querySelector('[data-award-tab="' + k + '"]'));
+  const tabOn = { shortlist: shortlistOn, longlist: optional("longlist"), jury: optional("jury") };
+  const available = AWARDS_TABS.filter((k) => page.querySelector('[data-award-tab="' + k + '"]'));
   if (!available.includes(tab)) tab = "awards";
   page.setAttribute("data-awards-page", tab);
   page.querySelectorAll("[data-award-tab]").forEach((p) => {
@@ -4095,8 +4096,8 @@ function initAwardsTemplate() {
     });
   }
 
-  // Shortlist nog niet bekend -> zelfde coming soon als een lege longlist
-  if (panel && tab === "shortlist" && !shortlistOn) panel.querySelectorAll(".w-dyn-item").forEach((i) => i.remove());
+  // Shortlist nog niet bekend / longlist of jury uitgezet -> zelfde coming soon als een lege lijst
+  if (panel && tabOn[tab] === false) panel.querySelectorAll(".w-dyn-item").forEach((i) => i.remove());
 
   // Lege lijsten -> coming soon
   if (panel && tab !== "awards") {
@@ -4146,17 +4147,11 @@ function initAwardsTemplate() {
     });
   });
 
-  // Interne ?tab= links (CTA's) volledig maken; links naar een uitgezette tab verdwijnen
+  // Interne ?tab= links (CTA's) volledig maken
   page.querySelectorAll('a[href*="?tab="]').forEach((a) => {
     const href = a.getAttribute("href") || "";
     if (!/^(https?:\/\/)?\?tab=/.test(href)) return;
     const key = href.split("?tab=")[1].toLowerCase();
-    if (tabOn[key] === false) {
-      // Jury uit: het hele jury-blok op de introductie weg. Longlist uit: alleen de knop.
-      const section = key === "jury" && panel ? Array.from(panel.children).find((c) => c.contains(a)) : null;
-      (section || a.closest(".button_wrapper") || a).remove();
-      return;
-    }
     a.setAttribute("href", awardsEditionUrl(slug, available.includes(key) ? key : "awards"));
   });
 
