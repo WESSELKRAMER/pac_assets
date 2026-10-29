@@ -4303,3 +4303,16 @@ html.pac-loader-on::after {
 [data-awards-archive] .section_award_hero .display_text_big_wrapper {
   display: none;
 }
+
+/* Losse tekstkaart naast andere tekstkaarten: zelfde breedte als een kaart uit een paar */
+@media (min-width: 992px) {
+  [data-chapter].is-no-image + [data-chapter].is-no-image:not(.is-pair) .flex_content_inner,
+  [data-chapter].is-no-image:not(.is-pair):has(+ [data-chapter].is-no-image) .flex_content_inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+  [data-chapter].is-no-image + [data-chapter].is-no-image:not(.is-pair) .flex_text_wrap,
+  [data-chapter].is-no-image:not(.is-pair):has(+ [data-chapter].is-no-image) .flex_text_wrap {
+    max-width: none;
+  }
+}
