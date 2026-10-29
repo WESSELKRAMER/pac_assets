@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 17:00";
+window.PAC_BUNDLE = "2026-10-29 17:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4099,6 +4099,15 @@ function initNomineePage() {
   page.dataset.nomineeBuilt = "true";
   const edition = (page.getAttribute("data-nominee-edition") || "").trim();
   const name = ((page.querySelector(".nominee_name") || {}).textContent || "").trim();
+
+  // Losse video (shortlist-video) weglaten als dezelfde video al in de tekst staat
+  const vidEl = page.querySelector(".nominee_video");
+  if (vidEl) {
+    const url = (vidEl.getAttribute("data-media-url") || "").trim();
+    const m = url.match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([\w-]{11})/);
+    const rt = page.querySelector(".nominee_content .w-richtext, .nominee_content .rich-text");
+    if (!url || (m && rt && rt.innerHTML.indexOf(m[1]) > -1)) vidEl.remove();
+  }
 
   const cat = page.querySelector(".nominee_category");
   if (cat) {
