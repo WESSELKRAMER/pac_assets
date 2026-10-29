@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 17:40";
+window.PAC_BUNDLE = "2026-10-29 18:20";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4176,6 +4176,56 @@ function initNomineePage() {
   }
 }
 
+// Winnaars in de kleur en illustratie van hun award (CMS: Editie > Kleur … / Illustratie …)
+function initAwardWinnerStyles(page) {
+  const KEYS = [
+    ["pan-asian", /pan\s*asian/i],
+    ["innovasian", /innovasian/i],
+    ["rising-star", /rising\s*star/i],
+  ];
+  const styleEl = page.querySelector("[data-award-style]");
+  const hex = (k) => {
+    const v = ((styleEl && styleEl.getAttribute("data-color-" + k)) || "").trim();
+    return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? v : "";
+  };
+  const illu = (k) => {
+    const img = page.querySelector('[data-award-illu="' + k + '"]');
+    const src = img && !img.classList.contains("w-dyn-bind-empty") ? img.currentSrc || img.getAttribute("src") || "" : "";
+    return src && !/placeholder/i.test(src) ? src : "";
+  };
+  const isLight = (h) => {
+    let c = h.slice(1);
+    if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.32;
+  };
+  page.querySelectorAll(".winner_section").forEach((sec) => {
+    const title = ((sec.querySelector("h2") || {}).textContent || "").trim();
+    const hit = KEYS.find(([, re]) => re.test(title));
+    if (!hit) return;
+    const key = hit[0];
+    sec.setAttribute("data-award", key);
+    const color = hex(key);
+    if (color) {
+      sec.style.setProperty("--award-color", color);
+      sec.setAttribute("data-award-tone", isLight(color) ? "light" : "dark");
+    }
+    const src = illu(key);
+    const right = sec.querySelector(".winner_section_right");
+    if (src && right && !right.querySelector(".pac-award-illu")) {
+      const im = document.createElement("img");
+      im.className = "pac-award-illu";
+      im.src = src;
+      im.alt = "";
+      im.setAttribute("aria-hidden", "true");
+      im.loading = "lazy";
+      im.decoding = "async";
+      right.insertBefore(im, right.firstChild);
+      sec.classList.add("has-award-illu");
+    }
+  });
+}
+
 function initAwardsTemplate() {
   const page = nextPage.matches && nextPage.matches("[data-awards-template]") ? nextPage : nextPage.querySelector("[data-awards-template]");
   if (!page || page.dataset.awardsBuilt === "true") return;
@@ -4191,6 +4241,7 @@ function initAwardsTemplate() {
   const isArchive = status === "archief";
   const theme = val("theme").toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
   if (theme) page.setAttribute("data-awards-theme", theme);
+  initAwardWinnerStyles(page);
   const shortlistOn = flag("shortlist");
   const winnersOn = flag("winners");
   if (status === "actueel") awardsCacheSet(slug);

@@ -4190,3 +4190,62 @@ html.pac-loader-on::after {
     padding-bottom: 5rem;
   }
 }
+
+/* Awards: winnaars in de kleur en illustratie van hun award (per editie in het CMS) */
+.award_edition_data [data-award-illu],
+.award_edition_data [data-award-style] {
+  display: none !important;
+}
+.winner_section[style*="--award-color"] {
+  background-color: var(--award-color);
+}
+.winner_section[style*="--award-color"] .winner_section_right {
+  background-color: color-mix(in srgb, var(--award-color) 78%, #fff);
+}
+.winner_section[style*="--award-color"] .winner_highlight {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--award-color) 35%, #fff), rgba(255, 255, 255, 0) 66%);
+}
+.winner_section[data-award-tone="dark"],
+.winner_section[data-award-tone="dark"] .winner_section_left {
+  color: var(--pac-light--500, #fff);
+}
+.winner_section[data-award-tone="light"],
+.winner_section[data-award-tone="light"] .winner_section_left {
+  color: var(--pac-dark--1000, #0e0e0e);
+}
+.winner_section[data-award-tone] .secondary_cta {
+  color: inherit;
+}
+.winner_section_right .pac-award-illu {
+  position: absolute;
+  z-index: 1;
+  right: -18%;
+  bottom: -14%;
+  width: 92%;
+  height: auto;
+  max-width: none;
+  pointer-events: none;
+  opacity: 0.95;
+  transform: rotate(-8deg);
+  transform-origin: 70% 70%;
+}
+.winner_section_right .winner_img_wrap,
+.winner_section_right .winner_text_wrap {
+  position: relative;
+  z-index: 2;
+}
+@media (max-width: 767px) {
+  .winner_section_right .pac-award-illu {
+    width: 110%;
+    right: -30%;
+    bottom: -18%;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .winner_section.has-award-illu .pac-award-illu {
+    transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .winner_section.has-award-illu:hover .pac-award-illu {
+    transform: rotate(-4deg) scale(1.03);
+  }
+}
