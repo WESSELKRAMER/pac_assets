@@ -4094,7 +4094,7 @@ html.pac-loader-on::after {
 }
 @media (max-width: 767px) {
   .award_nav_item {
-    padding: 0.5rem 0.55rem;
+    padding: 0.5rem 0.42rem;
     font-size: 0.875rem;
   }
 }
