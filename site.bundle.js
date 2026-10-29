@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 18:50";
+window.PAC_BUNDLE = "2026-10-29 19:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4290,6 +4290,7 @@ function initAwardsTemplate() {
   const slug = val("slug");
   const status = val("status").toLowerCase();
   const isArchive = status === "archief";
+  if (isArchive) page.setAttribute("data-awards-archive", "");
   const theme = val("theme").toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
   if (theme) page.setAttribute("data-awards-theme", theme);
   initAwardWinnerStyles(page);

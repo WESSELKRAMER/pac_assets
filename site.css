@@ -4293,3 +4293,13 @@ html.pac-loader-on::after {
     transition: none;
   }
 }
+
+/* Met een hero-illustratie het grote jaartal verbergen (botste met de illustratie) */
+.section_award_hero.has-hero-illu .display_text_big_wrapper {
+  display: none;
+}
+
+/* Archief-edities: geen groot jaartal in de hero */
+[data-awards-archive] .section_award_hero .display_text_big_wrapper {
+  display: none;
+}
