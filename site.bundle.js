@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 16:10";
+window.PAC_BUNDLE = "2026-10-29 16:25";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4062,7 +4062,10 @@ function buildNomineeGrids(panel) {
         const img = item.querySelector("img");
         const name = (item.querySelector("[data-team-name]") || {}).textContent || "";
         const role = (item.querySelector("[data-team-role]") || {}).textContent || "";
-        const bio = (item.querySelector("[data-team-bio]") || {}).textContent || "";
+        // Rich text (veld Tekst) heeft voorrang; het oude platte veld is de terugval
+        const rich = item.querySelector("[data-team-bio-rich]");
+        const richText = rich ? Array.from(rich.children).map((c) => c.textContent).join(" ") : "";
+        const bio = richText.trim() || (item.querySelector("[data-team-bio]") || {}).textContent || "";
         const href = slug ? NOMINEE_BASE + slug : "";
         const tag = href ? "a" : "div";
         return (
