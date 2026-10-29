@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 12:45";
+window.PAC_BUNDLE = "2026-10-29 14:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4072,7 +4072,13 @@ function initAwardsTemplate() {
   // Actieve tab
   let tab = "awards";
   try { tab = (new URL(pacNextHref, window.location.origin).searchParams.get("tab") || "awards").toLowerCase(); } catch (e) {}
-  const available = AWARDS_TABS.filter((k) => page.querySelector('[data-award-tab="' + k + '"]'));
+  // Toon longlist / Toon jury (CMS-schakelaars). Ontbreekt het veld, dan blijft de tab gewoon staan.
+  const optional = (k) => {
+    const field = page.querySelector('[data-edition-field="' + k + '"]');
+    return !field || flag(k);
+  };
+  const tabOn = { longlist: optional("longlist"), jury: optional("jury") };
+  const available = AWARDS_TABS.filter((k) => tabOn[k] !== false && page.querySelector('[data-award-tab="' + k + '"]'));
   if (!available.includes(tab)) tab = "awards";
   page.setAttribute("data-awards-page", tab);
   page.querySelectorAll("[data-award-tab]").forEach((p) => {
@@ -4140,11 +4146,17 @@ function initAwardsTemplate() {
     });
   });
 
-  // Interne ?tab= links (CTA's) volledig maken
+  // Interne ?tab= links (CTA's) volledig maken; links naar een uitgezette tab verdwijnen
   page.querySelectorAll('a[href*="?tab="]').forEach((a) => {
     const href = a.getAttribute("href") || "";
     if (!/^(https?:\/\/)?\?tab=/.test(href)) return;
     const key = href.split("?tab=")[1].toLowerCase();
+    if (tabOn[key] === false) {
+      // Jury uit: het hele jury-blok op de introductie weg. Longlist uit: alleen de knop.
+      const section = key === "jury" && panel ? Array.from(panel.children).find((c) => c.contains(a)) : null;
+      (section || a.closest(".button_wrapper") || a).remove();
+      return;
+    }
     a.setAttribute("href", awardsEditionUrl(slug, available.includes(key) ? key : "awards"));
   });
 
