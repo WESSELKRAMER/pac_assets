@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 18:45";
+window.PAC_BUNDLE = "2026-10-29 18:50";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";

@@ -3477,10 +3477,12 @@ html.js [data-awards-redirect].is-redirect-failed {
   --awards-archive: var(--pac-pink--500);
   --awards-archive-dark: var(--pac-brown--700, #2b1814);
 }
+/* Paars (vervangt bruin; "bruin" valt terug op paars zolang de optie nog zo heet) */
+[data-awards-theme="paars"],
 [data-awards-theme="bruin"] {
-  --awards-theme: var(--pac-brown--200, #bd947e);
-  --awards-archive: var(--pac-brown--200, #bd947e);
-  --awards-archive-dark: var(--pac-brown--500, #442823);
+  --awards-theme: #c9a7cf;
+  --awards-archive: #8d4f9a;
+  --awards-archive-dark: #2a0d2e;
 }
 [data-awards-theme] .section_award_hero {
   background-image: linear-gradient(180deg, var(--awards-theme), var(--pac-light--500, #fff));
