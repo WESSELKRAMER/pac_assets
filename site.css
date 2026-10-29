@@ -4219,15 +4219,23 @@ html.pac-loader-on::after {
 .winner_section_right .pac-award-illu {
   position: absolute;
   z-index: 1;
-  right: -18%;
-  bottom: -14%;
-  width: 92%;
-  height: auto;
-  max-width: none;
+  left: 50%;
+  top: 44%;
+  width: min(130%, 34rem);
+  max-height: 120%;
+  transform: translate(-30%, -58%) rotate(-6deg);
+  overflow: hidden;
   pointer-events: none;
-  opacity: 0.95;
-  transform: rotate(-8deg);
-  transform-origin: 70% 70%;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.winner_section.has-award-illu .pac-award-illu {
+  opacity: 1;
+}
+.winner_section_right .pac-award-illu img {
+  position: absolute;
+  max-width: none;
+  height: auto;
 }
 .winner_section_right .winner_img_wrap,
 .winner_section_right .winner_text_wrap {
@@ -4236,16 +4244,6 @@ html.pac-loader-on::after {
 }
 @media (max-width: 767px) {
   .winner_section_right .pac-award-illu {
-    width: 110%;
-    right: -30%;
-    bottom: -18%;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .winner_section.has-award-illu .pac-award-illu {
-    transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-  .winner_section.has-award-illu:hover .pac-award-illu {
-    transform: rotate(-4deg) scale(1.03);
+    width: 120%;
   }
 }

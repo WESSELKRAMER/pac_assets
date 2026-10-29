@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 18:20";
+window.PAC_BUNDLE = "2026-10-29 18:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4213,15 +4213,45 @@ function initAwardWinnerStyles(page) {
     const src = illu(key);
     const right = sec.querySelector(".winner_section_right");
     if (src && right && !right.querySelector(".pac-award-illu")) {
+      const wrap = document.createElement("div");
+      wrap.className = "pac-award-illu";
+      wrap.setAttribute("aria-hidden", "true");
       const im = document.createElement("img");
-      im.className = "pac-award-illu";
-      im.src = src;
       im.alt = "";
-      im.setAttribute("aria-hidden", "true");
-      im.loading = "lazy";
       im.decoding = "async";
-      right.insertBefore(im, right.firstChild);
-      sec.classList.add("has-award-illu");
+      im.crossOrigin = "anonymous";
+      wrap.appendChild(im);
+      right.insertBefore(wrap, right.firstChild);
+      im.onload = () => {
+        // Alleen het getekende deel tonen (transparante randen wegsnijden)
+        let box = [0, 0, im.naturalWidth, im.naturalHeight];
+        try {
+          const c = document.createElement("canvas");
+          const sc = Math.min(1, 400 / im.naturalWidth);
+          c.width = Math.round(im.naturalWidth * sc);
+          c.height = Math.round(im.naturalHeight * sc);
+          const x = c.getContext("2d");
+          x.drawImage(im, 0, 0, c.width, c.height);
+          const d = x.getImageData(0, 0, c.width, c.height).data;
+          let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
+          for (let y = 0; y < c.height; y++)
+            for (let X = 0; X < c.width; X++)
+              if (d[(y * c.width + X) * 4 + 3] > 24) {
+                if (X < x0) x0 = X;
+                if (X > x1) x1 = X;
+                if (y < y0) y0 = y;
+                if (y > y1) y1 = y;
+              }
+          if (x1 > x0 && y1 > y0) box = [x0 / sc, y0 / sc, (x1 + 1) / sc, (y1 + 1) / sc];
+        } catch (e) {}
+        const bw = box[2] - box[0], bh = box[3] - box[1];
+        wrap.style.aspectRatio = bw + " / " + bh;
+        im.style.width = (im.naturalWidth / bw) * 100 + "%";
+        im.style.left = (-box[0] / bw) * 100 + "%";
+        im.style.top = (-box[1] / bh) * 100 + "%";
+        sec.classList.add("has-award-illu");
+      };
+      im.src = src;
     }
   });
 }
