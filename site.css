@@ -4172,3 +4172,11 @@ html.pac-loader-on::after {
     padding-right: 0.75rem;
   }
 }
+
+/* Shortlist/longlist: minder ruimte tussen hero en de lijst (~10rem) */
+:is([data-award-tab="shortlist"], [data-award-tab="longlist"]) .section_award_hero .award_hero_inner {
+  padding-bottom: 2rem;
+}
+:is([data-award-tab="shortlist"], [data-award-tab="longlist"]) .section_award_hero .u-sec-spacer {
+  display: none;
+}
