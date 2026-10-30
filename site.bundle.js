@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-30 11:55";
+window.PAC_BUNDLE = "2026-10-30 13:05";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -490,7 +490,22 @@ barba.hooks.afterLeave(data => {
 barba.hooks.enter(data => {
   initBarbaNavUpdate(data);
   initNavCurrentUnderline();
+  runEmbedScripts(data.next.container);
 });
+
+// Scripts in Webflow-embeds (bijv. een Whydonate-widget) draaien na een Barba-overgang niet vanzelf:
+// innerHTML voert geen <script> uit. Hier maken we ze opnieuw aan zodat ze alsnog uitgevoerd worden.
+function runEmbedScripts(container) {
+  if (!container) return;
+  container.querySelectorAll(".w-embed script, [data-run-scripts] script").forEach((old) => {
+    const type = (old.getAttribute("type") || "").toLowerCase();
+    if (type && !/javascript|module/.test(type)) return; // JSON-LD e.d. overslaan
+    const sc = document.createElement("script");
+    Array.from(old.attributes).forEach((a) => sc.setAttribute(a.name, a.value));
+    if (!old.src) sc.textContent = old.textContent;
+    old.replaceWith(sc);
+  });
+}
 
 barba.hooks.afterOnce(data => {
   initAfterEnterFunctions(data.next.container);
