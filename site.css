@@ -4298,12 +4298,15 @@ html.pac-loader-on::after {
 }
 
 
-/* Tags: "Slanted Reveal" (Osmo Supply) */
+/* Tags: "Slanted Reveal" (Osmo Supply), sneller en subtieler afgesteld */
 .tag.btn-slanted {
   position: relative;
   overflow: hidden;
-  --rotate: 20deg;
-  --move: 150%;
+  isolation: isolate;
+  --rotate: 7deg;
+  --move: 115%;
+  --tag-ease: cubic-bezier(0.625, 0.05, 0, 1);
+  transition: color 0.3s var(--tag-ease);
 }
 .btn-slanted-label__wrap {
   z-index: 1;
@@ -4313,58 +4316,60 @@ html.pac-loader-on::after {
 }
 .btn-slanted-bg {
   z-index: 0;
-  transform-origin: 50% 0;
   border-radius: inherit;
-  background-color: color-mix(in srgb, var(--pac-dark--900, #1b1c1e) 72%, var(--pac-light--500, #fff));
-  width: 120%;
-  height: 100%;
+  background-color: var(--tag-hover-bg, color-mix(in srgb, var(--pac-dark--900, #1b1c1e) 78%, var(--pac-light--500, #fff)));
   position: absolute;
-  top: auto;
-  bottom: 0%;
-  right: 0;
-  transform: rotate(-30deg) translate(0%, 200%);
-  transition: transform 0.45s cubic-bezier(0.625, 0.05, 0, 1);
+  inset: 0;
+  transform: translateY(101%);
+  transition: transform 0.3s var(--tag-ease);
 }
 .btn-slanted-label {
-  transform-origin: 50% 1000%;
-  transition: transform 0.45s cubic-bezier(0.625, 0.05, 0, 1);
+  transform-origin: 50% 600%;
+  transition: transform 0.3s var(--tag-ease);
 }
 .btn-slanted-label:not(:nth-of-type(1)) {
   position: absolute;
 }
 .btn-slanted-label:nth-of-type(1) {
-  transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
-  transition-delay: 0.075s;
+  transform: translate(0, 0) rotate(0deg);
+  transition-delay: 0.04s;
 }
 .btn-slanted-label:nth-of-type(2) {
-  transform: translate(calc(var(--move) * -0.2), calc(var(--move) * 2.5)) rotate(calc(var(--rotate) * -2));
+  transform: translate(calc(var(--move) * -0.1), calc(var(--move) * 1.6)) rotate(calc(var(--rotate) * -2));
   transition-delay: 0s;
 }
 @media (hover: hover) {
+  :is(.btn-slanted:hover, a:hover .btn-slanted) {
+    color: var(--tag-hover-text, inherit);
+  }
   :is(.btn-slanted:hover, a:hover .btn-slanted) .btn-slanted-label:nth-of-type(1) {
-    transform: translate(calc(var(--move) * 0.2), calc(var(--move) * -2.5)) rotate(calc(var(--rotate) * 2));
+    transform: translate(calc(var(--move) * 0.1), calc(var(--move) * -1.6)) rotate(calc(var(--rotate) * 2));
     transition-delay: 0s;
   }
   :is(.btn-slanted:hover, a:hover .btn-slanted) .btn-slanted-label:nth-of-type(2) {
-    transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
-    transition-delay: 0.075s;
+    transform: translate(0, 0) rotate(0deg);
+    transition-delay: 0.04s;
   }
   :is(.btn-slanted:hover, a:hover .btn-slanted) .btn-slanted-bg {
-    transform: translate(0%, 0%) rotate(0deg);
+    transform: translateY(0);
   }
 }
+:is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) {
+  color: var(--tag-hover-text, inherit);
+}
 :is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) .btn-slanted-label:nth-of-type(1) {
-  transform: translate(calc(var(--move) * 0.2), calc(var(--move) * -2.5)) rotate(calc(var(--rotate) * 2));
+  transform: translate(calc(var(--move) * 0.1), calc(var(--move) * -1.6)) rotate(calc(var(--rotate) * 2));
   transition-delay: 0s;
 }
 :is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) .btn-slanted-label:nth-of-type(2) {
-  transform: translate(calc(var(--move) * 0), calc(var(--move) * 0)) rotate(calc(var(--rotate) * 0));
-  transition-delay: 0.075s;
+  transform: translate(0, 0) rotate(0deg);
+  transition-delay: 0.04s;
 }
 :is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) .btn-slanted-bg {
-  transform: translate(0%, 0%) rotate(0deg);
+  transform: translateY(0);
 }
 @media (prefers-reduced-motion: reduce) {
+  .tag.btn-slanted,
   .btn-slanted-bg,
   .btn-slanted-label {
     transition: none;

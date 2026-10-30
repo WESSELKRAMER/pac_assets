@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-29 19:45";
+window.PAC_BUNDLE = "2026-10-30 09:00";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -1208,6 +1208,7 @@ function initSplitAriaObserver() {
 // Kleine ARIA-reparaties per pagina
 // Tags: schuin-omhoog wissel van het label met een achtergrond die meekantelt (Osmo "Button with Slanted Reveal")
 function initTagHover() {
+  const tags = [];
   nextPage.querySelectorAll(".tag:not([data-tag-anim])").forEach((tag) => {
     const text = tag.textContent.replace(/\s+/g, " ").trim();
     if (!text) return;
@@ -1222,7 +1223,68 @@ function initTagHover() {
       '<span aria-hidden="true" class="btn-slanted-label' + innerCls + '">' + esc + "</span>" +
       "</div>" +
       '<div class="btn-slanted-bg"></div>';
+    tags.push([tag, text.toLowerCase()]);
   });
+  if (!tags.length) return;
+  // Hoverkleur = kleur van het domein (uit de Domeinen-pagina, eenmalig per bezoek opgehaald)
+  pacDomainColors().then((map) => {
+    tags.forEach(([tag, key]) => {
+      const c = map[key];
+      if (!c) return;
+      tag.style.setProperty("--tag-hover-bg", c);
+      tag.style.setProperty("--tag-hover-text", pacIsLightColor(c) ? "var(--pac-dark--900, #1b1c1e)" : "var(--pac-light--500, #fff)");
+    });
+  });
+}
+
+let pacDomainColorsPromise = null;
+function pacDomainColors() {
+  if (pacDomainColorsPromise) return pacDomainColorsPromise;
+  try {
+    const cached = JSON.parse(sessionStorage.getItem("pac_domain_colors") || "null");
+    if (cached && typeof cached === "object") return (pacDomainColorsPromise = Promise.resolve(cached));
+  } catch (e) {}
+  pacDomainColorsPromise = fetch("/domeinen", { credentials: "same-origin" })
+    .then((r) => (r.ok ? r.text() : ""))
+    .then((html) => {
+      const map = {};
+      if (!html) return map;
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const names = Array.from(doc.querySelectorAll(".domains_collection_item")).map((t) => t.textContent.replace(/\s+/g, " ").trim().toLowerCase());
+      const colorEls = Array.from(doc.querySelectorAll(".domain_contents_item [data-domain-color], [data-domain-color]"));
+      // Kleur staat in de inline style van de Webflow-binding; tijdelijk in de pagina hangen om hem uit te lezen
+      const holder = document.createElement("div");
+      holder.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;visibility:hidden";
+      document.body.appendChild(holder);
+      names.forEach((n, i) => {
+        const src = colorEls[i];
+        if (!n || !src) return;
+        const attr = (src.getAttribute("data-domain-color") || "").trim();
+        let col = /^(#|rgb|hsl)/.test(attr) ? attr : "";
+        if (!col) {
+          const probe = src.cloneNode(false);
+          holder.appendChild(probe);
+          const bg = getComputedStyle(probe).backgroundColor;
+          if (bg && bg !== "transparent" && !/rgba\([^)]*,\s*0\)/.test(bg)) col = bg;
+        }
+        if (col) map[n] = col;
+      });
+      holder.remove();
+      try { sessionStorage.setItem("pac_domain_colors", JSON.stringify(map)); } catch (e) {}
+      return map;
+    })
+    .catch(() => ({}));
+  return pacDomainColorsPromise;
+}
+
+function pacIsLightColor(c) {
+  const el = document.createElement("div");
+  el.style.color = c;
+  document.body.appendChild(el);
+  const m = getComputedStyle(el).color.match(/[\d.]+/g) || [0, 0, 0];
+  el.remove();
+  const [r, g, b] = m.slice(0, 3).map((v) => +v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4;
 }
 
 function initA11yFixes() {
