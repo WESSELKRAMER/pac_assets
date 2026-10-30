@@ -4397,3 +4397,9 @@ html.pac-loader-on::after {
   font-size: 1.0625rem;
   letter-spacing: 0.02em;
 }
+
+/* Downloads-sectie: verbergen als er voor deze pagina geen downloads zijn */
+.section_downloads:not(:has(.w-dyn-item)),
+.section_downloads[data-downloads-empty] {
+  display: none;
+}

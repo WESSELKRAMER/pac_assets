@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-30 10:55";
+window.PAC_BUNDLE = "2026-10-30 11:10";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -147,6 +147,7 @@ function initBeforeEnterFunctions(next) {
   if (has("form[data-pac-form]")) initPacForms();
   if (has("[data-flex-video]")) initFlexVideos();
   if (has(".tag")) initTagHover();
+  if (has(".section_downloads")) initDownloads();
   initA11yFixes();
 }
 
@@ -3058,6 +3059,17 @@ function createDatePicker(host, opts) {
       wrap.remove();
     }
   };
+}
+
+// Downloads-sectie: CMS-voorvoegsel als "[Bijlage artikel]" uit de titel halen; lege sectie verbergen
+function initDownloads() {
+  nextPage.querySelectorAll(".section_downloads").forEach((sec) => {
+    sec.querySelectorAll(".download_item h3").forEach((h) => {
+      const t = h.textContent.replace(/^\s*\[[^\]]*\]\s*/, "");
+      if (t !== h.textContent) h.textContent = t;
+    });
+    if (!sec.querySelector(".w-dyn-item")) sec.setAttribute("data-downloads-empty", "");
+  });
 }
 
 function preloadFilterPages() {
