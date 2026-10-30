@@ -4406,3 +4406,14 @@ html.pac-loader-on::after {
 [data-download-file] {
   display: none !important;
 }
+
+/* Awards: titels van de tabs (h2 voor SEO) krijgen dezelfde typografie als de h1 */
+[data-hero-title] {
+  font-family: var(--_typography---h1--font);
+  font-size: var(--_typesetting---h1);
+  line-height: var(--_typography---h1--line-height);
+  font-weight: var(--_typography---h1--font-weight);
+  letter-spacing: var(--_typography---h1--letter-spacing);
+  margin-top: 0;
+  margin-bottom: 0;
+}
