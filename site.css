@@ -4394,7 +4394,7 @@ html.pac-loader-on::after {
 
 /* Secondary CTA (all caps): iets kleiner zodat het minder zwaar oogt */
 .secondary_cta {
-  font-size: 1.0625rem;
+  font-size: 1rem;
   letter-spacing: 0.02em;
 }
 
