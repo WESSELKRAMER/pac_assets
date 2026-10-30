@@ -3570,6 +3570,14 @@ html.js [data-awards-redirect].is-redirect-failed {
   );
   justify-content: flex-start;
   align-self: stretch;
+  /* Niet sticky en gecentreerd in de sectie */
+  position: relative;
+  top: auto;
+  justify-self: center;
+  margin-inline: auto;
+}
+[data-chapter].is-no-image .flex_content_inner {
+  justify-items: center;
 }
 
 [data-chapter].is-no-image .flex_text_wrap > :last-child,
