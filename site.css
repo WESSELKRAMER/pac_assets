@@ -4336,7 +4336,7 @@ html.pac-loader-on::after {
 .btn-slanted-bg {
   z-index: 0;
   border-radius: inherit;
-  background-color: var(--tag-hover-bg, color-mix(in srgb, var(--pac-dark--900, #1b1c1e) 80%, var(--pac-light--500, #fff)));
+  background-color: var(--tag-hover-bg, var(--pac-blue--100, #e3ecf7));
   position: absolute;
   inset: 0;
   transform: translateY(101%);
@@ -4354,7 +4354,7 @@ html.pac-loader-on::after {
 }
 @media (hover: hover) {
   :is(.btn-slanted:hover, a:hover .btn-slanted) {
-    color: var(--tag-hover-text, var(--pac-light--500, #fff));
+    color: var(--tag-hover-text, var(--pac-dark--1000, #0e0e0e));
   }
   :is(.btn-slanted:hover, a:hover .btn-slanted) .btn-slanted-label:nth-of-type(1) {
     transform: translateY(-115%) rotate(-4deg);
@@ -4371,7 +4371,7 @@ html.pac-loader-on::after {
   }
 }
 :is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) {
-  color: var(--tag-hover-text, var(--pac-light--500, #fff));
+  color: var(--tag-hover-text, var(--pac-dark--1000, #0e0e0e));
 }
 :is(.btn-slanted:focus-visible, a:focus-visible .btn-slanted) .btn-slanted-label:nth-of-type(1) {
   transform: translateY(-115%) rotate(-4deg);
