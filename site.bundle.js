@@ -1241,7 +1241,7 @@ let pacDomainColorsPromise = null;
 function pacDomainColors() {
   if (pacDomainColorsPromise) return pacDomainColorsPromise;
   try {
-    const cached = JSON.parse(sessionStorage.getItem("pac_domain_colors") || "null");
+    const cached = JSON.parse(sessionStorage.getItem("pac_domain_colors2") || "null");
     if (cached && typeof cached === "object") return (pacDomainColorsPromise = Promise.resolve(cached));
   } catch (e) {}
   pacDomainColorsPromise = fetch("/domeinen", { credentials: "same-origin" })
@@ -1250,7 +1250,7 @@ function pacDomainColors() {
       const map = {};
       if (!html) return map;
       const doc = new DOMParser().parseFromString(html, "text/html");
-      const names = Array.from(doc.querySelectorAll(".domains_collection_item")).map((t) => t.textContent.replace(/\s+/g, " ").trim().toLowerCase());
+      const names = Array.from(doc.querySelectorAll(".domains_collection_item")).map((t) => { const h = t.querySelector("h2, h3, h4") || t; return h.textContent.replace(/\s+/g, " ").trim().replace(/^\d+\s*/, "").toLowerCase(); });
       const colorEls = Array.from(doc.querySelectorAll(".domain_contents_item [data-domain-color], [data-domain-color]"));
       // Kleur staat in de inline style van de Webflow-binding; tijdelijk in de pagina hangen om hem uit te lezen
       const holder = document.createElement("div");
@@ -1270,7 +1270,7 @@ function pacDomainColors() {
         if (col) map[n] = col;
       });
       holder.remove();
-      try { sessionStorage.setItem("pac_domain_colors", JSON.stringify(map)); } catch (e) {}
+      try { sessionStorage.setItem("pac_domain_colors2", JSON.stringify(map)); } catch (e) {}
       return map;
     })
     .catch(() => ({}));
