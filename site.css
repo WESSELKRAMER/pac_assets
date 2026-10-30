@@ -4336,7 +4336,7 @@ html.pac-loader-on::after {
 .btn-slanted-bg {
   z-index: 0;
   border-radius: inherit;
-  background-color: var(--tag-hover-bg, var(--pac-blue--100, var(--pac-blue--300, #e0e8fa)));
+  background-color: var(--tag-hover-bg, var(--pac-blue--500, #bdcae7));
   position: absolute;
   inset: 0;
   transform: translateY(101%);
