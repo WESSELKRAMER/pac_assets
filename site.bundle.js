@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-30 11:10";
+window.PAC_BUNDLE = "2026-10-30 11:25";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -72,7 +72,7 @@ function initOnceFunctions() {
   initLogoHover();
   initNavCurrentUnderline();
   initDynamicTextCursor();
-  initFaviconAnimation();
+  // initFaviconAnimation(); // uitgezet: gewone favicon
   initSkipLink();
   initSplitAriaObserver();
 }
@@ -3067,6 +3067,18 @@ function initDownloads() {
     sec.querySelectorAll(".download_item h3").forEach((h) => {
       const t = h.textContent.replace(/^\s*\[[^\]]*\]\s*/, "");
       if (t !== h.textContent) h.textContent = t;
+    });
+    // PDF-link: een (verborgen) link met [data-download-file], gekoppeld aan het PDF-veld,
+    // levert de URL voor de Download-knop (de knop-component kan zelf geen bestandsveld koppelen)
+    sec.querySelectorAll(".download_item").forEach((item) => {
+      const src = item.querySelector("[data-download-file]");
+      const url = src && (src.getAttribute("href") || "").trim();
+      if (!url || url === "#") return;
+      const cta = item.querySelector(".primary_cta, a:not([data-download-file])");
+      if (!cta) return;
+      cta.setAttribute("href", url);
+      cta.setAttribute("target", "_blank");
+      cta.setAttribute("rel", "noopener");
     });
     if (!sec.querySelector(".w-dyn-item")) sec.setAttribute("data-downloads-empty", "");
   });

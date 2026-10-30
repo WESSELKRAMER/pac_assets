@@ -4403,3 +4403,6 @@ html.pac-loader-on::after {
 .section_downloads[data-downloads-empty] {
   display: none;
 }
+[data-download-file] {
+  display: none !important;
+}
