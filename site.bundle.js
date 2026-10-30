@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-30 09:10";
+window.PAC_BUNDLE = "2026-10-30 10:05";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -3068,23 +3068,56 @@ function preloadFilterPages() {
     if (!lists.length) return;
     root.setAttribute("data-filter-loading", "");
     const parser = new DOMParser();
+    // Extra pagina's: parallel ophalen (aantal onthouden per lijst) en per sessie cachen,
+    // zodat de filters niet op meerdere trage serverrenders na elkaar hoeven te wachten.
+    const store = (fn) => { try { return fn(); } catch (e) { return null; } };
+    const fetchPage = (key, n) =>
+      fetch(location.pathname + "?" + key + "=" + n, { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.text() : ""))
+        .then((html) => {
+          if (!html) return null;
+          const doc = parser.parseFromString(html, "text/html");
+          const link = Array.from(doc.querySelectorAll(".w-pagination-next, .w-pagination-previous")).find((a) => (a.getAttribute("href") || "").indexOf(key + "=") !== -1);
+          const other = link ? link.closest(".w-dyn-list") : null;
+          const otherItems = other && other.querySelector(".w-dyn-items");
+          if (!otherItems) return null;
+          return { html: otherItems.innerHTML, hasNext: !!other.querySelector(".w-pagination-next") };
+        })
+        .catch(() => null);
     const loadList = async (list) => {
       const items = list.querySelector(".w-dyn-items");
-      let next = list.querySelector(".w-pagination-next");
+      const next = list.querySelector(".w-pagination-next");
       const key = next && ((next.getAttribute("href") || "").match(/[?&]([^=&]+_page)=/) || [])[1];
-      let guard = 0;
-      while (next && items && key && guard++ < 30) {
-        const url = new URL(next.getAttribute("href"), location.href);
-        const html = await fetch(url.pathname + url.search, { credentials: "same-origin" }).then((r) => (r.ok ? r.text() : ""));
-        if (!html) break;
-        const doc = parser.parseFromString(html, "text/html");
-        const link = Array.from(doc.querySelectorAll(".w-pagination-next, .w-pagination-previous")).find((a) => (a.getAttribute("href") || "").indexOf(key + "=") !== -1);
-        const other = link ? link.closest(".w-dyn-list") : null;
-        const otherItems = other && other.querySelector(".w-dyn-items");
-        if (!otherItems) break;
-        Array.from(otherItems.children).forEach((el) => items.appendChild(document.importNode(el, true)));
-        next = other.querySelector(".w-pagination-next");
+      if (!items || !key) return;
+      const cacheKey = "pac_pages:" + (window.PAC_V || "") + ":" + location.pathname + ":" + key;
+      const cached = store(() => sessionStorage.getItem(cacheKey));
+      let chunks = [];
+      if (cached) {
+        chunks = [cached];
+      } else {
+        const known = parseInt(store(() => localStorage.getItem("pac_pagecount:" + location.pathname + ":" + key)) || "0", 10);
+        let last = Math.min(Math.max(known, 2), 30);
+        const pages = await Promise.all(Array.from({ length: last - 1 }, (_, i) => fetchPage(key, i + 2)));
+        let ok = true;
+        pages.forEach((pg) => {
+          if (!ok) return;
+          if (!pg) { ok = false; return; }
+          chunks.push(pg.html);
+        });
+        // Meer pagina's dan gedacht: sequentieel verder
+        let tail = ok && pages.length ? pages[pages.length - 1] : null;
+        while (tail && tail.hasNext && last < 30) {
+          last++;
+          tail = await fetchPage(key, last);
+          if (tail) chunks.push(tail.html);
+        }
+        const total = chunks.length + 1;
+        store(() => localStorage.setItem("pac_pagecount:" + location.pathname + ":" + key, String(total)));
+        store(() => sessionStorage.setItem(cacheKey, chunks.join("")));
       }
+      const tpl = document.createElement("template");
+      tpl.innerHTML = chunks.join("");
+      items.appendChild(tpl.content);
       list.querySelectorAll(".w-pagination-wrapper").forEach((w) => w.remove());
     };
     Promise.all(lists.map((l) => loadList(l).catch(() => {}))).then(() => {
