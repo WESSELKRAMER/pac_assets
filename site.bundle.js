@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-10-30 13:05";
+window.PAC_BUNDLE = "2026-11-02 08:40";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -294,7 +294,8 @@ function buildPageLoader() {
   };
 
   gsap.set(navLogo, { visibility: "hidden" });
-  gsap.set(ring, { attr: { "stroke-dasharray": "1 1", "stroke-dashoffset": 1 } });
+  // Iets langer dan de omtrek, zodat afronding (pathLength) geen 1-2px gat laat bij het sluiten
+  gsap.set(ring, { attr: { "stroke-dasharray": "1.03 1.03", "stroke-dashoffset": 1.03 } });
   gsap.set(letterGroups, { y: 24 });
   pacIntroDelay = 1.1;
 
@@ -309,6 +310,8 @@ function buildPageLoader() {
 
   const tl = gsap.timeline({ paused: true });
   tl.to(ring, { attr: { "stroke-dashoffset": 0 }, duration: 0.72, ease: "pacDraw" }, 0);
+  // Na het tekenen de dash weghalen: dan is de ring gegarandeerd dicht
+  tl.set(ring, { attr: { "stroke-dasharray": "none", "stroke-dashoffset": 0 } }, 0.72);
   tl.to(letterGroups, { y: 0, duration: 0.58, stagger: 0.07, ease: "osmo" }, 0.1);
 
   // Daarna vliegt het logo naar zijn plek in de navbar (waarden worden pas bij de start gemeten)
