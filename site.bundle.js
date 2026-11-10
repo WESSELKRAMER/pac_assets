@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-11-10 12:05";
+window.PAC_BUNDLE = "2026-11-10 12:45";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4477,8 +4477,14 @@ function createWinnersPanel(page) {
   if (ps[1]) ps[1].textContent = "Lees het juryrapport en bekijk hun videoportret.";
   const sec = winnersSec.cloneNode(true);
   sec.classList.add("pac-winners-tab");
+  // Illustraties opnieuw laten opbouwen (de kloon is gemaakt voordat ze bijgesneden waren)
+  sec.querySelectorAll(".pac-award-illu").forEach((e) => e.remove());
+  sec.querySelectorAll(".winner_section").forEach((w) => w.classList.remove("has-award-illu"));
+  hero.querySelectorAll(".pac-hero-illu").forEach((e) => e.remove());
+  hero.classList.remove("has-hero-illu", "is-hero-illu-ready");
   panel.append(hero, sec);
   awardsPanel.after(panel);
+  initAwardWinnerStyles(page);
 }
 
 // Juryrapport en video van de pagina van de winnaar ophalen
@@ -4655,6 +4661,14 @@ function initAwardsTemplate() {
         (w.querySelector("div") || w).textContent = "Winnaars";
         intro.after(w);
       }
+    }
+    // Volgorde per fase: zolang de shortlist niet bekend is, staat de longlist vóór de shortlist
+    if (!shortlistOn && !navEl.dataset.tabOrder) {
+      const find = (re) => Array.from(navEl.querySelectorAll("a")).find((a) => re.test(a.textContent.trim()));
+      const sl = find(/^shortlist$/i);
+      const ll = find(/^longlist$/i);
+      if (sl && ll) sl.before(ll);
+      navEl.dataset.tabOrder = "longlist";
     }
     if (/^\d{4}$/.test(slug) && !navEl.querySelector(".pac-award-year")) {
       const y = document.createElement("span");

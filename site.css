@@ -4435,3 +4435,4 @@ html.pac-loader-on::after {
 .pac-winner-link { display: block; color: inherit; }
 .pac-winners-tab .winner_section_left { height: auto; }
 .nominee_jury .rich-text > :last-child { margin-bottom: 0; }
+[data-nominee-jury]:has(.w-dyn-bind-empty) { display: none; }
