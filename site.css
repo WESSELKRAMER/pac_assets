@@ -4417,3 +4417,21 @@ html.pac-loader-on::after {
   margin-top: 0;
   margin-bottom: 0;
 }
+
+/* Winnaars-tab: juryrapport en videoportret bij elke winnaar */
+.pac-winner-extra {
+  margin-top: 2rem;
+  display: grid;
+  gap: 1.25rem;
+}
+.pac-winner-jury-title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.pac-winner-jury > :first-child { margin-top: 0; }
+.pac-winner-jury > :last-child { margin-bottom: 0; }
+.pac-winner-video { width: 100%; }
+.pac-winner-link { display: block; color: inherit; }
+.pac-winners-tab .winner_section_left { height: auto; }
+.nominee_jury .rich-text > :last-child { margin-bottom: 0; }
