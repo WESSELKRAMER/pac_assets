@@ -1,4 +1,4 @@
-window.PAC_BUNDLE = "2026-11-02 08:40";
+window.PAC_BUNDLE = "2026-11-10 11:30";
 gsap.registerPlugin(CustomEase);
 
 history.scrollRestoration = "manual";
@@ -4210,9 +4210,25 @@ function nomineeExcerpt(text, max = 150) {
   return cut.slice(0, cut.lastIndexOf(" ") > 80 ? cut.lastIndexOf(" ") : max).replace(/[,.;:–-]+$/, "") + "…";
 }
 
-function buildNomineeGrids(panel) {
+// Volgorde uit het CMS (Editie > Volgorde longlist, versleepbaar). Wie er niet in staat, komt daarna in de bestaande volgorde.
+function nomineeOrder(page, type) {
+  return Array.from(page.querySelectorAll('[data-edition-order="' + type + '"] [data-order-slug]'))
+    .map((el) => (el.getAttribute("data-order-slug") || "").trim())
+    .filter(Boolean);
+}
+
+function sortByOrder(items, order) {
+  if (!order.length) return items;
+  const pos = new Map(order.map((s, i) => [s, i]));
+  return items
+    .map((item, i) => ({ item, i, p: pos.has((item.getAttribute("data-nominee-slug") || "").trim()) ? pos.get((item.getAttribute("data-nominee-slug") || "").trim()) : order.length + i }))
+    .sort((a, b) => a.p - b.p)
+    .map((x) => x.item);
+}
+
+function buildNomineeGrids(panel, order) {
   panel.querySelectorAll("[data-team-slider]").forEach((slider) => {
-    const items = Array.from(slider.querySelectorAll("[data-team-item]"));
+    const items = sortByOrder(Array.from(slider.querySelectorAll("[data-team-item]")), order || []);
     if (!items.length) return;
     const cards = items
       .map((item) => {
@@ -4530,7 +4546,7 @@ function initAwardsTemplate() {
   }
 
   // Shortlist / longlist: grid met kaarten (foto, naam, functie, korte tekst) naar de eigen pagina per genomineerde
-  if (panel && (tab === "shortlist" || tab === "longlist")) buildNomineeGrids(panel);
+  if (panel && (tab === "shortlist" || tab === "longlist")) buildNomineeGrids(panel, nomineeOrder(page, "longlist"));
 
   // Tab-navigatie
   const labelToTab = { introductie: "awards", awards: "awards", shortlist: "shortlist", longlist: "longlist", jury: "jury", photowall: "photowall", media: "media" };
